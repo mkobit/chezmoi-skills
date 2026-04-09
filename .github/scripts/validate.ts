@@ -2,9 +2,24 @@ import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { join } from "path";
 import * as yaml from "yaml";
 import { z } from "zod";
+import { parseArgs } from "util";
 
-const skillsDir = "skills";
-const claudePluginDir = ".claude-plugin";
+const { values } = parseArgs({
+  args: process.argv.slice(2),
+  options: {
+    "skills-dir": {
+      type: "string",
+      default: "skills",
+    },
+    "claude-plugin-dir": {
+      type: "string",
+      default: ".claude-plugin",
+    },
+  },
+});
+
+const skillsDir = values["skills-dir"] as string;
+const claudePluginDir = values["claude-plugin-dir"] as string;
 let failed = false;
 
 // 1. Validate SKILL.md and Frontmatter
@@ -14,7 +29,7 @@ const skillSchema = z.object({
 });
 
 if (existsSync(skillsDir)) {
-  console.log("Validating skills directory...");
+  console.log(`Validating skills directory (${skillsDir})...`);
   const dirs = readdirSync(skillsDir).filter((file) =>
     statSync(join(skillsDir, file)).isDirectory()
   );
@@ -62,7 +77,7 @@ if (existsSync(skillsDir)) {
 
 // 2. Validate Claude Plugin JSON
 if (existsSync(claudePluginDir)) {
-  console.log("Validating Claude plugin JSON files...");
+  console.log(`Validating Claude plugin JSON files (${claudePluginDir})...`);
   const files = readdirSync(claudePluginDir).filter(f => f.endsWith('.json'));
   for (const file of files) {
     const filePath = join(claudePluginDir, file);

@@ -11,7 +11,6 @@
   "keywords": [
     "chezmoi",
     "dotfiles",
-    "templates",
-    "configuration"
+    "homedir"
   ]
 }

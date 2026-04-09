@@ -1,5 +1,5 @@
 ---
 name: Source directory skill
-version: 1.0.0
+version: 0.1.0
 ---
 # Source directory skill

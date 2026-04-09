@@ -12,16 +12,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
+      - name: Setup bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: 1.2.14
+
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install
 
-      - name: Validate Skills and Claude configs
+      - name: Validate skills and claude configs
         run: bun run validate
 
-      - name: Lint Markdown Files
+      - name: Lint markdown files
         run: bun run lint
