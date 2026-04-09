@@ -29,6 +29,17 @@ jobs:
           fi
           echo "All skill directories have SKILL.md"
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Validate Skill Frontmatter
+        run: bun run .github/scripts/check_skills.ts
+
       - name: Validate Claude Plugin JSON
         run: |
           echo "Validating Claude Plugin JSON files..."

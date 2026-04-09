@@ -1,0 +1,6 @@
+{
+  "name": "chezmoi-skills",
+  "dependencies": {
+    "yaml": "^2.3.4"
+  }
+}
