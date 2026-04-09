@@ -2,96 +2,97 @@ import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { join } from "path";
 import * as yaml from "yaml";
 import { z } from "zod";
-import { parseArgs } from "util";
+import { Command } from "commander";
+import * as R from "remeda";
 
-const { values } = parseArgs({
-  args: process.argv.slice(2),
-  options: {
-    "skills-dir": {
-      type: "string",
-      default: "skills",
-    },
-    "claude-plugin-dir": {
-      type: "string",
-      default: ".claude-plugin",
-    },
-  },
-});
+const program = new Command();
 
-const skillsDir = values["skills-dir"] as string;
-const claudePluginDir = values["claude-plugin-dir"] as string;
-let failed = false;
+program
+  .option('--skills-dir <dir>', 'Directory containing skills', 'skills')
+  .option('--claude-plugin-dir <dir>', 'Directory containing claude plugin configs', '.claude-plugin')
+  .parse(process.argv);
 
-// 1. Validate SKILL.md and Frontmatter
+const options = program.opts();
+const skillsDir = options.skillsDir;
+const claudePluginDir = options.claudePluginDir;
+
 const skillSchema = z.object({
   name: z.string(),
   version: z.string(),
 });
 
-if (existsSync(skillsDir)) {
+const pluginSchema = z.object({}).passthrough();
+
+const validateSkills = (): boolean => {
+  if (!existsSync(skillsDir)) {
+    console.error(`Error: ${skillsDir} directory not found.`);
+    return false;
+  }
+
   console.log(`Validating skills directory (${skillsDir})...`);
   const dirs = readdirSync(skillsDir).filter((file) =>
     statSync(join(skillsDir, file)).isDirectory()
   );
 
-  for (const dir of dirs) {
-    const skillMdPath = join(skillsDir, dir, "SKILL.md");
-    if (!existsSync(skillMdPath)) {
-      console.error(`Error: Skill directory ${dir} is missing SKILL.md`);
-      failed = true;
-      continue;
-    }
-
-    let content = "";
-    try {
-      content = readFileSync(skillMdPath, "utf-8");
-    } catch (e) {
-      console.error(`Error: Could not read ${skillMdPath}`);
-      failed = true;
-      continue;
-    }
-
-    const match = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!match) {
-      console.error(`Error: Missing frontmatter in ${skillMdPath}`);
-      failed = true;
-      continue;
-    }
-
-    try {
-      const data = yaml.parse(match[1]);
-      skillSchema.parse(data);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        console.error(`Error: Invalid frontmatter schema in ${skillMdPath}`, e.errors);
-      } else {
-        console.error(`Error: Invalid YAML frontmatter in ${skillMdPath}`);
+  const results = R.pipe(
+    dirs,
+    R.map((dir) => {
+      const skillMdPath = join(skillsDir, dir, "SKILL.md");
+      if (!existsSync(skillMdPath)) {
+        console.error(`Error: Skill directory ${dir} is missing SKILL.md`);
+        return false;
       }
-      failed = true;
-    }
-  }
-} else {
-  console.error(`Error: ${skillsDir} directory not found.`);
-  failed = true;
-}
+      try {
+        const content = readFileSync(skillMdPath, "utf-8");
+        const match = content.match(/^---\n([\s\S]*?)\n---/);
+        if (!match) {
+          console.error(`Error: Missing frontmatter in ${skillMdPath}`);
+          return false;
+        }
+        const data = yaml.parse(match[1]);
+        skillSchema.parse(data);
+        return true;
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          console.error(`Error: Invalid frontmatter schema in ${skillMdPath}`, e.errors);
+        } else {
+          console.error(`Error: Invalid YAML frontmatter in ${skillMdPath}`);
+        }
+        return false;
+      }
+    })
+  );
+  return results.every(Boolean);
+};
 
-// 2. Validate Claude Plugin JSON
-if (existsSync(claudePluginDir)) {
+const validatePlugins = (): boolean => {
+  if (!existsSync(claudePluginDir)) return true;
+
   console.log(`Validating Claude plugin JSON files (${claudePluginDir})...`);
   const files = readdirSync(claudePluginDir).filter(f => f.endsWith('.json'));
-  for (const file of files) {
-    const filePath = join(claudePluginDir, file);
-    try {
-      const content = readFileSync(filePath, "utf-8");
-      JSON.parse(content);
-    } catch (e) {
-      console.error(`Error: Invalid JSON in ${filePath}`);
-      failed = true;
-    }
-  }
-}
 
-if (failed) {
+  const results = R.pipe(
+    files,
+    R.map((file) => {
+      const filePath = join(claudePluginDir, file);
+      try {
+        const content = readFileSync(filePath, "utf-8");
+        const parsed = JSON.parse(content);
+        pluginSchema.parse(parsed);
+        return true;
+      } catch (e) {
+        console.error(`Error: Invalid JSON in ${filePath}`);
+        return false;
+      }
+    })
+  );
+  return results.every(Boolean);
+};
+
+const skillsValid = validateSkills();
+const pluginsValid = validatePlugins();
+
+if (!skillsValid || !pluginsValid) {
   process.exit(1);
 } else {
   console.log("Validation successful!");

@@ -4,6 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown: 14
     groups:
       actions-dependencies:
         patterns:
@@ -12,6 +13,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown: 14
     groups:
       npm-dependencies:
         patterns:

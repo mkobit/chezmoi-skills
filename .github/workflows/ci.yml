@@ -33,3 +33,6 @@ jobs:
 
       - name: Lint markdown files
         run: bun run lint
+
+      - name: Prune bun cache
+        run: bun pm cache rm
