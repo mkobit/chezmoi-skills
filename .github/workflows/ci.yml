@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Skill Format
+        run: |
+          echo "Checking that each skill directory contains a SKILL.md file..."
+          FAILED=0
+          for dir in skills/*; do
+            if [ -d "$dir" ]; then
+              if [ ! -f "$dir/SKILL.md" ]; then
+                echo "Error: Skill directory $dir is missing SKILL.md"
+                FAILED=1
+              fi
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            sh -c "exit 1"
+          fi
+          echo "All skill directories have SKILL.md"
+
+      - name: Validate Claude Plugin JSON
+        run: |
+          echo "Validating Claude Plugin JSON files..."
+          FAILED=0
+          if [ -d ".claude-plugin" ]; then
+            for file in .claude-plugin/*.json; do
+              if [ -f "$file" ]; then
+                if ! jq empty "$file" > /dev/null 2>&1; then
+                   echo "Error: Invalid JSON in $file"
+                   FAILED=1
+                fi
+              fi
+            done
+            if [ "$FAILED" -eq 1 ]; then
+              sh -c "exit 1"
+            fi
+            echo "All Claude Plugin JSON files are valid"
+          else
+            echo "No .claude-plugin directory found, skipping JSON validation."
+          fi
+
+      - name: Setup Node.js (for markdownlint)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Lint Markdown Files
+        run: markdownlint "**/*.md" --ignore node_modules

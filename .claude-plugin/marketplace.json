@@ -1,0 +1,15 @@
+{
+  "name": "chezmoi-skills",
+  "owner": {
+    "name": "Chezmoi Agent",
+    "url": "https://chezmoi.io/"
+  },
+  "plugins": [
+    {
+      "name": "chezmoi",
+      "source": "./",
+      "description": "Claude Skills for chezmoi dotfile management",
+      "version": "1.0.0"
+    }
+  ]
+}
