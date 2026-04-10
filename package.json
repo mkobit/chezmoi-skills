@@ -1,16 +1,12 @@
 {
   "name": "chezmoi-skills",
   "scripts": {
-    "lint": "markdownlint-cli2 \"**/*.md\" \"!node_modules\"",
     "validate": "bun run .github/scripts/validate.ts --skills-dir=skills --claude-plugin-dir=.claude-plugin"
   },
   "dependencies": {
-    "yaml": "^2.3.4",
-    "zod": "^3.23.8",
     "commander": "^11.1.0",
-    "remeda": "^1.61.0"
-  },
-  "devDependencies": {
-    "markdownlint-cli2": "^0.13.0"
+    "remeda": "^1.61.0",
+    "yaml": "^2.3.4",
+    "zod": "^4.3.6"
   }
 }
