@@ -2,7 +2,7 @@
   "name": "chezmoi-skills",
   "scripts": {
     "validate": "bun run .github/scripts/validate.ts --claude-plugin-dir=.claude-plugin",
-    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\""
+    "lint:md": "markdownlint-cli2"
   },
   "dependencies": {
     "commander": "^11.1.0",
