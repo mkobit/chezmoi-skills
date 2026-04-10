@@ -1,0 +1,16 @@
+{
+  "name": "chezmoi",
+  "version": "1.0.0",
+  "description": "Agent skills for managing dotfiles with chezmoi, including templates, source directory, targets, and config.",
+  "author": {
+    "name": "Chezmoi Agent",
+    "url": "https://chezmoi.io/"
+  },
+  "repository": "https://github.com/your-username/chezmoi-skills",
+  "license": "MIT",
+  "keywords": [
+    "chezmoi",
+    "dotfiles",
+    "homedir"
+  ]
+}
