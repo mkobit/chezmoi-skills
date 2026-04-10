@@ -1,12 +1,12 @@
 {
   "name": "chezmoi-skills",
   "scripts": {
-    "validate": "bun run .github/scripts/validate.ts --skills-dir=skills --claude-plugin-dir=.claude-plugin"
+    "validate": "bun run .github/scripts/validate.ts --claude-plugin-dir=.claude-plugin"
   },
   "dependencies": {
     "commander": "^11.1.0",
+    "gray-matter": "^4.0.3",
     "remeda": "^1.61.0",
-    "yaml": "^2.3.4",
-    "zod": "^4.3.6"
+    "zod": "^3.23.8"
   }
 }

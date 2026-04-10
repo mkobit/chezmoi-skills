@@ -1,6 +1,6 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { readdirSync, statSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
-import * as yaml from "yaml";
+import matter from "gray-matter";
 import { z } from "zod";
 import { Command } from "commander";
 import * as R from "remeda";
@@ -8,12 +8,10 @@ import * as R from "remeda";
 const program = new Command();
 
 program
-  .option('--skills-dir <dir>', 'Directory containing skills', 'skills')
   .option('--claude-plugin-dir <dir>', 'Directory containing claude plugin configs', '.claude-plugin')
   .parse(process.argv);
 
 const options = program.opts();
-const skillsDir = options.skillsDir;
 const claudePluginDir = options.claudePluginDir;
 
 const skillSchema = z.object({
@@ -21,79 +19,130 @@ const skillSchema = z.object({
   version: z.string(),
 });
 
-const pluginSchema = z.object({}).passthrough();
+type ValidationResult =
+  | { valid: true; name: string }
+  | { valid: false; name: string; details: string | z.ZodIssue[] };
 
-const validateSkills = (): boolean => {
-  if (!existsSync(skillsDir)) {
-    console.error(`Error: ${skillsDir} directory not found.`);
-    return false;
+const getSkillsDirectories = (): string[] => {
+  const marketplaceJsonPath = join(claudePluginDir, "marketplace.json");
+  if (!existsSync(marketplaceJsonPath)) {
+    console.error(`Error: ${marketplaceJsonPath} not found. Cannot determine skills directories.`);
+    return [];
   }
 
-  console.log(`Validating skills directory (${skillsDir})...`);
-  const dirs = readdirSync(skillsDir).filter((file) =>
-    statSync(join(skillsDir, file)).isDirectory()
-  );
+  try {
+    const content = readFileSync(marketplaceJsonPath, "utf-8");
+    const parsed = JSON.parse(content);
 
-  const results = R.pipe(
-    dirs,
-    R.map((dir) => {
+    if (!parsed.plugins || !Array.isArray(parsed.plugins)) {
+      console.error(`Error: Invalid plugins array in ${marketplaceJsonPath}`);
+      return [];
+    }
+
+    return parsed.plugins.map((p: any) => {
+      const src = p.source || "./";
+      return join(claudePluginDir, "..", src, "skills");
+    });
+  } catch (e) {
+    console.error(`Error reading ${marketplaceJsonPath}`, e);
+    return [];
+  }
+};
+
+const validateSkills = (): ValidationResult[] => {
+  const allSkillsDirs = getSkillsDirectories();
+  if (allSkillsDirs.length === 0) {
+    return [{ valid: false, name: "Skills Resolution", details: "Failed to determine any skills directories from plugin config" }];
+  }
+
+  const allResults: ValidationResult[] = [];
+
+  R.forEach(allSkillsDirs, (skillsDir) => {
+    if (!existsSync(skillsDir)) {
+      allResults.push({ valid: false, name: skillsDir, details: "Directory not found" });
+      return;
+    }
+
+    console.log(`Validating skills directory (${skillsDir})...`);
+
+    const dirs = readdirSync(skillsDir).filter((file) =>
+      statSync(join(skillsDir, file)).isDirectory()
+    );
+
+    if (dirs.length === 0) {
+      allResults.push({ valid: false, name: skillsDir, details: "No skills found in directory" });
+      return;
+    }
+
+    const dirResults = R.map(dirs, (dir): ValidationResult => {
       const skillMdPath = join(skillsDir, dir, "SKILL.md");
       if (!existsSync(skillMdPath)) {
-        console.error(`Error: Skill directory ${dir} is missing SKILL.md`);
-        return false;
+        return { valid: false, name: dir, details: "Missing SKILL.md" };
       }
       try {
         const content = readFileSync(skillMdPath, "utf-8");
-        const match = content.match(/^---\n([\s\S]*?)\n---/);
-        if (!match) {
-          console.error(`Error: Missing frontmatter in ${skillMdPath}`);
-          return false;
-        }
-        const data = yaml.parse(match[1]);
+        const { data } = matter(content);
         skillSchema.parse(data);
-        return true;
+        return { valid: true, name: dir };
       } catch (e) {
         if (e instanceof z.ZodError) {
-          console.error(`Error: Invalid frontmatter schema in ${skillMdPath}`, e.errors);
-        } else {
-          console.error(`Error: Invalid YAML frontmatter in ${skillMdPath}`);
+          return { valid: false, name: dir, details: e.errors };
         }
-        return false;
+        return { valid: false, name: dir, details: String(e) };
       }
-    })
-  );
-  return results.every(Boolean);
+    });
+
+    allResults.push(...dirResults);
+  });
+
+  return allResults;
 };
 
-const validatePlugins = (): boolean => {
-  if (!existsSync(claudePluginDir)) return true;
+const validatePlugins = (): ValidationResult[] => {
+  if (!existsSync(claudePluginDir)) {
+      return [{ valid: false, name: claudePluginDir, details: "Claude plugin directory not found" }];
+  }
 
   console.log(`Validating Claude plugin JSON files (${claudePluginDir})...`);
   const files = readdirSync(claudePluginDir).filter(f => f.endsWith('.json'));
 
-  const results = R.pipe(
-    files,
-    R.map((file) => {
-      const filePath = join(claudePluginDir, file);
-      try {
-        const content = readFileSync(filePath, "utf-8");
-        const parsed = JSON.parse(content);
-        pluginSchema.parse(parsed);
-        return true;
-      } catch (e) {
-        console.error(`Error: Invalid JSON in ${filePath}`);
-        return false;
+  const jsonSchema = z.record(z.any());
+
+  return R.map(files, (file): ValidationResult => {
+    const filePath = join(claudePluginDir, file);
+    try {
+      const content = readFileSync(filePath, "utf-8");
+      jsonSchema.parse(JSON.parse(content));
+      return { valid: true, name: file };
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        return { valid: false, name: file, details: e.errors };
       }
-    })
-  );
-  return results.every(Boolean);
+      return { valid: false, name: file, details: "Invalid JSON format" };
+    }
+  });
 };
 
-const skillsValid = validateSkills();
-const pluginsValid = validatePlugins();
+const handleResults = (results: ValidationResult[]) => {
+  let hasErrors = false;
+  R.forEach(results, (res) => {
+    if (!res.valid) {
+      console.error(`❌ Validation failed for ${res.name}:`, res.details);
+      hasErrors = true;
+    } else {
+      console.log(`✅ Validated ${res.name}`);
+    }
+  });
+  return hasErrors;
+};
 
-if (!skillsValid || !pluginsValid) {
+const skillResults = validateSkills();
+const pluginResults = validatePlugins();
+
+const failed = handleResults([...skillResults, ...pluginResults]);
+
+if (failed) {
   process.exit(1);
 } else {
-  console.log("Validation successful!");
+  console.log("All validations passed!");
 }
