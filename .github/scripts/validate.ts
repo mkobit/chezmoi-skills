@@ -127,7 +127,7 @@ const validatePluginFile = async (filePath: string, file: string): Promise<Valid
     return { valid: false, name: file, details: "Invalid JSON format" };
   }
 
-  const schemaResult = z.record(z.any()).safeParse(parsedJson);
+  const schemaResult = z.record(z.string(), z.any()).safeParse(parsedJson);
   if (!schemaResult.success) {
     return { valid: false, name: file, details: schemaResult.error.errors };
   }
