@@ -1,8 +1,7 @@
 ---
-version: 1.0.0
+version: 0.0.1
 name: chezmoi-configuration
 description: Manage chezmoi.toml/.chezmoi.yaml configuration options and data injection.
 ---
-version: 1.0.0
 
 TODO: Add instructions for configuring chezmoi.
