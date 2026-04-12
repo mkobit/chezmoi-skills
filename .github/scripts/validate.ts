@@ -4,7 +4,6 @@ import { join } from "path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { Command } from "commander";
-import * as R from "remeda";
 
 const program = new Command();
 
@@ -87,7 +86,7 @@ const validateSkills = async (): Promise<ValidationResult[]> => {
     return [{ valid: false, name: "Skills Resolution", details: "Failed to determine any skills directories from plugin config" }];
   }
 
-  const allResultsPromises = R.map(allSkillsDirs, async (skillsDir) => {
+  const allResultsPromises = allSkillsDirs.map(async (skillsDir) => {
     if (!existsSync(skillsDir)) {
       return [{ valid: false, name: skillsDir, details: "Directory not found" }];
     }
@@ -95,7 +94,7 @@ const validateSkills = async (): Promise<ValidationResult[]> => {
     console.log(`Validating skills directory (${skillsDir})...`);
 
     const files = await readdir(skillsDir).catch(() => []);
-    const dirsPromises = R.map(files, async (file) => {
+    const dirsPromises = files.map(async (file) => {
       const isDir = await stat(join(skillsDir, file)).then(s => s.isDirectory()).catch(() => false);
       return isDir ? file : null;
     });
@@ -106,7 +105,7 @@ const validateSkills = async (): Promise<ValidationResult[]> => {
       return [{ valid: false, name: skillsDir, details: "No skills found in directory" }];
     }
 
-    const dirResultsPromises = R.map(dirs, (dir) => validateSkillDir(skillsDir, dir));
+    const dirResultsPromises = dirs.map((dir) => validateSkillDir(skillsDir, dir));
     return Promise.all(dirResultsPromises);
   });
 
@@ -127,7 +126,7 @@ const validatePluginFile = async (filePath: string, file: string): Promise<Valid
     return { valid: false, name: file, details: "Invalid JSON format" };
   }
 
-  const schemaResult = z.record(z.any()).safeParse(parsedJson);
+  const schemaResult = z.record(z.string(), z.any()).safeParse(parsedJson);
   if (!schemaResult.success) {
     return { valid: false, name: file, details: schemaResult.error.errors };
   }
@@ -143,7 +142,7 @@ const validatePlugins = async (): Promise<ValidationResult[]> => {
   const files = await readdir(claudePluginDir).catch(() => []);
   const jsonFiles = files.filter(f => f.endsWith('.json'));
 
-  const resultsPromises = R.map(jsonFiles, (file) => {
+  const resultsPromises = jsonFiles.map((file) => {
     const filePath = join(claudePluginDir, file);
     return validatePluginFile(filePath, file);
   });
@@ -153,7 +152,7 @@ const validatePlugins = async (): Promise<ValidationResult[]> => {
 
 const handleResults = (results: ValidationResult[]) => {
   let hasErrors = false;
-  R.forEach(results, (res) => {
+  results.forEach((res) => {
     if (!res.valid) {
       console.error(`❌ Validation failed for ${res.name}:`, res.details);
       hasErrors = true;
