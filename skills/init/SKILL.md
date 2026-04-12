@@ -1,6 +1,8 @@
 ---
-name: Init skill
-version: 0.1.0
+version: 1.0.0
+name: chezmoi-init
+description: Initialize and set up chezmoi, including bare repository handling and initial configuration.
 ---
+version: 1.0.0
 
-# Init skill
+TODO: Add instructions for initializing and setting up chezmoi.
