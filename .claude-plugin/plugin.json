@@ -1,6 +1,6 @@
 {
+  "version": "2.0.0",
   "name": "chezmoi",
-  "version": "0.0.1",
   "description": "Agent skills for managing dotfiles with chezmoi, including templates, source directory, targets, and config.",
   "author": {
     "name": "Chezmoi Agent",

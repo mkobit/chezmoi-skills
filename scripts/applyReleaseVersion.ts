@@ -26,19 +26,23 @@ const MarketplaceSchema = z.object({
   plugins: z.array(MarketplacePluginSchema).optional(),
 }).catchall(z.any());
 
-const getAllSkillFiles = (dir: string): string[] => {
-  let results: string[] = [];
-  const list = readdirSync(dir);
-  list.forEach(file => {
+const getAllSkillFiles = (dir: string): readonly string[] => {
+  const entries = readdirSync(dir);
+
+  return entries.reduce((acc, file) => {
     const fullPath = join(dir, file);
     const stat = statSync(fullPath);
+
     if (stat && stat.isDirectory()) {
-      results = results.concat(getAllSkillFiles(fullPath));
-    } else if (file === "SKILL.md") {
-      results.push(fullPath);
+      return [...acc, ...getAllSkillFiles(fullPath)];
     }
-  });
-  return results;
+
+    if (file === "SKILL.md") {
+      return [...acc, fullPath];
+    }
+
+    return acc;
+  }, [] as readonly string[]);
 };
 
 const applyVersion = () => {
@@ -46,28 +50,41 @@ const applyVersion = () => {
   const rawPluginData = JSON.parse(readFileSync(pluginPath, "utf-8"));
   const pluginData = PluginSchema.parse(rawPluginData);
 
-  pluginData.version = newVersion;
-  writeFileSync(pluginPath, JSON.stringify(pluginData, null, 2) + "\n");
+  const updatedPluginData = {
+    ...pluginData,
+    version: newVersion
+  };
+
+  writeFileSync(pluginPath, JSON.stringify(updatedPluginData, null, 2) + "\n");
   console.log(`Updated ${pluginPath} to ${newVersion}`);
 
   const marketPath = ".claude-plugin/marketplace.json";
   const rawMarketData = JSON.parse(readFileSync(marketPath, "utf-8"));
   const marketData = MarketplaceSchema.parse(rawMarketData);
 
-  if (marketData.plugins?.[0]) {
-    marketData.plugins[0].version = newVersion;
-    writeFileSync(marketPath, JSON.stringify(marketData, null, 2) + "\n");
-    console.log(`Updated ${marketPath} to ${newVersion}`);
-  }
+  const updatedMarketData = {
+    ...marketData,
+    plugins: marketData.plugins?.map(plugin => ({
+      ...plugin,
+      version: newVersion
+    }))
+  };
+
+  writeFileSync(marketPath, JSON.stringify(updatedMarketData, null, 2) + "\n");
+  console.log(`Updated ${marketPath} to ${newVersion}`);
 
   const skillFiles = getAllSkillFiles("skills");
+
   skillFiles.forEach(file => {
     const content = readFileSync(file, "utf-8");
     const parsed = matter(content);
 
     if (parsed.data && parsed.data.version) {
-      parsed.data.version = newVersion;
-      const newContent = matter.stringify(parsed.content, parsed.data);
+      const updatedData = {
+        ...parsed.data,
+        version: newVersion
+      };
+      const newContent = matter.stringify(parsed.content, updatedData);
       writeFileSync(file, newContent, "utf-8");
       console.log(`Updated ${file} to ${newVersion}`);
     }

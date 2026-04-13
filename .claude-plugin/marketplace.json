@@ -1,11 +1,11 @@
 {
-  "name": "chezmoi-skills",
   "plugins": [
     {
+      "version": "2.0.0",
       "name": "chezmoi",
       "source": "./",
-      "description": "Agent skills for chezmoi dotfile management",
-      "version": "0.0.1"
+      "description": "Agent skills for chezmoi dotfile management"
     }
-  ]
+  ],
+  "name": "chezmoi-skills"
 }
