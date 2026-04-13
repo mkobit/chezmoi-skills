@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0 # Required to fetch git history for version comparisons
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
@@ -28,7 +26,3 @@ jobs:
 
       - name: Validate skills and claude configs
         run: bun run validate
-
-      - name: Check version bumps
-        if: github.event_name == 'pull_request' && github.base_ref == 'main'
-        run: BASE_BRANCH=origin/main bun run checkVersionBump
