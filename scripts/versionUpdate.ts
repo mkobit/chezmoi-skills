@@ -1,114 +1,49 @@
-import { Command, Option } from "commander";
-import { exec } from "child_process";
-import { promisify } from "util";
-import { readFile, writeFile } from "fs/promises";
-import matter from "gray-matter";
+import { execSync } from "child_process";
+import { readFileSync, writeFileSync } from "fs";
 import semver from "semver";
-import path from "path";
 
-const execAsync = promisify(exec);
+const baseBranch = process.argv.includes("--base") ? process.argv[process.argv.indexOf("--base") + 1] : "origin/main";
+const bumpType = process.argv.includes("--major") ? "major" : process.argv.includes("--minor") ? "minor" : "patch";
 
-const program = new Command();
-
-program
-  .name("versionUpdate")
-  .description("Automatically update versions of modified SKILL.md files")
-  .addOption(new Option("--major", "Bump major version").conflicts(["minor", "patch"]))
-  .addOption(new Option("--minor", "Bump minor version").conflicts(["major", "patch"]))
-  .addOption(new Option("--patch", "Bump patch version").conflicts(["major", "minor"]))
-  .option("--base <branch>", "Base branch to compare against", "main")
-  .parse(process.argv);
-
-const options = program.opts();
-const bumpType: semver.ReleaseType = options.major
-  ? "major"
-  : options.minor
-  ? "minor"
-  : "patch";
-const baseBranch = options.base;
-
-async function getModifiedSkillFiles(): Promise<string[]> {
+try {
+  // Get tracked modifications vs base branch
+  let diffStdout = "";
   try {
-    // Get both tracked and untracked modifications, plus staged ones compared to base branch
-    // 1. Get changed files compared to base branch
-    const { stdout } = await execAsync(`git diff --name-only origin/${baseBranch}...HEAD || git diff --name-only ${baseBranch}...HEAD || git diff --name-only HEAD`);
-
-    // Also include files that are modified in working tree but not staged
-    const { stdout: workingStdout } = await execAsync(`git diff --name-only`);
-
-    // Also include untracked files
-    const { stdout: untrackedStdout } = await execAsync(`git ls-files --others --exclude-standard`);
-
-    const allFiles = [
-      ...stdout.split("\n"),
-      ...workingStdout.split("\n"),
-      ...untrackedStdout.split("\n")
-    ];
-
-    const uniqueFiles = [...new Set(allFiles)].filter(Boolean);
-
-    return uniqueFiles.filter(
-      (file) => file.startsWith("skills/") && file.endsWith("SKILL.md")
-    );
-  } catch (error) {
-    console.error("Failed to get modified files from git.", error);
-    process.exit(1);
-  }
-}
-
-async function updateFileVersion(filePath: string, releaseType: semver.ReleaseType) {
-  try {
-    const fileContent = await readFile(filePath, "utf-8");
-    const parsed = matter(fileContent);
-
-    if (!parsed.data || !parsed.data.version) {
-      console.log(`[Skipped] ${filePath}: No version found in frontmatter.`);
-      return;
-    }
-
-    const currentVersion = parsed.data.version.toString();
-    const cleanVersion = semver.clean(currentVersion) || semver.coerce(currentVersion)?.version;
-
-    if (!cleanVersion || !semver.valid(cleanVersion)) {
-      console.warn(`[Warning] ${filePath}: Invalid semver '${currentVersion}'.`);
-      return;
-    }
-
-    const newVersion = semver.inc(cleanVersion, releaseType);
-    if (!newVersion) {
-      console.error(`[Error] ${filePath}: Failed to increment version.`);
-      return;
-    }
-
-    parsed.data.version = newVersion;
-
-    // Use matter to convert back to string
-    // Gray-matter's stringify sometimes changes formatting, so doing it manually if possible is safer for just one field
-    // However, gray-matter handles it cleanly usually. Let's use stringify.
-    const newContent = matter.stringify(parsed.content, parsed.data);
-    await writeFile(filePath, newContent, "utf-8");
-    console.log(`[Updated] ${filePath}: ${currentVersion} -> ${newVersion}`);
-  } catch (error) {
-    console.error(`[Error] processing ${filePath}:`, error);
-  }
-}
-
-async function main() {
-  const modifiedFiles = await getModifiedSkillFiles();
-
-  if (modifiedFiles.length === 0) {
-    console.log("No modified SKILL.md files found.");
-    return;
+    diffStdout = execSync(`git diff --name-only ${baseBranch}...HEAD`).toString();
+  } catch {
+    diffStdout = execSync(`git diff --name-only`).toString();
   }
 
-  console.log(`Found ${modifiedFiles.length} modified SKILL.md file(s). Applying ${bumpType} version bump...`);
+  // Get untracked files
+  const untrackedStdout = execSync(`git ls-files --others --exclude-standard`).toString();
 
-  await Promise.all(
-    modifiedFiles.map((file) => updateFileVersion(file, bumpType))
-  );
-}
+  const allFiles = [...diffStdout.split('\n'), ...untrackedStdout.split('\n')];
+  const hasSkillChanges = allFiles.some(f => f.startsWith('skills/'));
 
-main().catch((err) => {
-  console.error("Unexpected error:", err);
+  if (!hasSkillChanges) {
+    console.log("No changes in skills/ detected. Skipping version bump.");
+    process.exit(0);
+  }
+
+  // Update plugin.json
+  const pluginPath = ".claude-plugin/plugin.json";
+  const pluginData = JSON.parse(readFileSync(pluginPath, "utf-8"));
+  const newVersion = semver.inc(pluginData.version, bumpType as semver.ReleaseType);
+  if (!newVersion) throw new Error("Failed to increment version");
+
+  pluginData.version = newVersion;
+  writeFileSync(pluginPath, JSON.stringify(pluginData, null, 2) + "\n");
+  console.log(`Updated ${pluginPath} to ${newVersion}`);
+
+  // Update marketplace.json
+  const marketPath = ".claude-plugin/marketplace.json";
+  const marketData = JSON.parse(readFileSync(marketPath, "utf-8"));
+  if (marketData.plugins?.[0]) {
+    marketData.plugins[0].version = newVersion;
+    writeFileSync(marketPath, JSON.stringify(marketData, null, 2) + "\n");
+    console.log(`Updated ${marketPath} to ${newVersion}`);
+  }
+} catch (error) {
+  console.error("Failed to update version:", error);
   process.exit(1);
-});
+}
