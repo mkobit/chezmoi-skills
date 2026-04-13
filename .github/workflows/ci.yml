@@ -10,7 +10,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Required to fetch git history for version comparisons
 
@@ -30,4 +30,5 @@ jobs:
         run: bun run validate
 
       - name: Check version bumps
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: BASE_BRANCH=origin/main bun run checkVersionBump
