@@ -14,7 +14,8 @@
       {
         "assets": [
           ".claude-plugin/plugin.json",
-          ".claude-plugin/marketplace.json"
+          ".claude-plugin/marketplace.json",
+          "skills/*/SKILL.md"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
