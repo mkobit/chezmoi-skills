@@ -10,7 +10,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to fetch git history for version comparisons
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
@@ -26,3 +28,6 @@ jobs:
 
       - name: Validate skills and claude configs
         run: bun run validate
+
+      - name: Check version bumps
+        run: BASE_BRANCH=origin/main bun run checkVersionBump

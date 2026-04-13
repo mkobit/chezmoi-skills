@@ -2,15 +2,19 @@
   "name": "chezmoi-skills",
   "scripts": {
     "validate": "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin",
-    "lint:md": "markdownlint-cli2"
+    "lint:md": "markdownlint-cli2",
+    "versionUpdate": "bun run scripts/versionUpdate.ts",
+    "checkVersionBump": "bun run scripts/checkVersionBump.ts"
   },
   "dependencies": {
     "commander": "14.0.3",
     "gray-matter": "^4.0.3",
     "remeda": "2.33.6",
+    "semver": "7.7.4",
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@types/semver": "7.7.1",
     "markdownlint-cli2": "0.22.0"
   }
 }
