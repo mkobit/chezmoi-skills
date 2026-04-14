@@ -18,15 +18,15 @@ const isDryRun = program.opts().dryRun;
 
 const PluginSchema = z.object({
   version: z.string(),
-}).passthrough();
+}); // loose by default now, will avoid explicit method entirely
 
 const MarketplacePluginSchema = z.object({
   version: z.string().optional(),
-}).passthrough();
+});
 
 const MarketplaceSchema = z.object({
   plugins: z.array(MarketplacePluginSchema).optional(),
-}).passthrough();
+});
 
 const getAllSkillFiles = (dir: string): readonly string[] => {
   const entries = readdirSync(dir);
@@ -50,9 +50,11 @@ const getAllSkillFiles = (dir: string): readonly string[] => {
 const applyVersion = () => {
   const pluginPath = ".claude-plugin/plugin.json";
   const rawPluginData = JSON.parse(readFileSync(pluginPath, "utf-8"));
-  const pluginData = PluginSchema.parse(rawPluginData);
 
+  // Directly spread the parsed object alongside the original unparsed source to guarantee we keep all keys
+  const pluginData = PluginSchema.parse(rawPluginData);
   const updatedPluginData = {
+    ...rawPluginData,
     ...pluginData,
     version: newVersion
   };
@@ -67,11 +69,16 @@ const applyVersion = () => {
   const marketData = MarketplaceSchema.parse(rawMarketData);
 
   const updatedMarketData = {
+    ...rawMarketData,
     ...marketData,
-    plugins: marketData.plugins?.map(plugin => ({
-      ...plugin,
-      version: newVersion
-    }))
+    plugins: rawMarketData.plugins?.map((plugin: any, idx: number) => {
+       const validatedPlugin = marketData.plugins?.[idx];
+       return {
+         ...plugin,
+         ...validatedPlugin,
+         version: newVersion
+       };
+    })
   };
 
   if (!isDryRun) {
