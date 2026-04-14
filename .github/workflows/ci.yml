@@ -12,8 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup bun
-        uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup-bun
 
       - name: Lint markdown
         run: bun run lint:md
