@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { z } from "zod";
 import matter from "gray-matter";
 
@@ -10,9 +10,11 @@ program
   .name("applyReleaseVersion")
   .description("Applies the new semantic-release version to plugin JSONs and skills")
   .argument("<version>", "The new version to apply")
+  .addOption(new Option("--dry-run", "Print changes without modifying files").default(false))
   .parse(process.argv);
 
 const newVersion = program.args[0];
+const isDryRun = program.opts().dryRun;
 
 const PluginSchema = z.object({
   version: z.string(),
@@ -55,8 +57,10 @@ const applyVersion = () => {
     version: newVersion
   };
 
-  writeFileSync(pluginPath, JSON.stringify(updatedPluginData, null, 2) + "\n");
-  console.log(`Updated ${pluginPath} to ${newVersion}`);
+  if (!isDryRun) {
+    writeFileSync(pluginPath, JSON.stringify(updatedPluginData, null, 2) + "\n");
+  }
+  console.log(`[${isDryRun ? "DRY-RUN" : "UPDATED"}] ${pluginPath} to ${newVersion}`);
 
   const marketPath = ".claude-plugin/marketplace.json";
   const rawMarketData = JSON.parse(readFileSync(marketPath, "utf-8"));
@@ -70,8 +74,10 @@ const applyVersion = () => {
     }))
   };
 
-  writeFileSync(marketPath, JSON.stringify(updatedMarketData, null, 2) + "\n");
-  console.log(`Updated ${marketPath} to ${newVersion}`);
+  if (!isDryRun) {
+    writeFileSync(marketPath, JSON.stringify(updatedMarketData, null, 2) + "\n");
+  }
+  console.log(`[${isDryRun ? "DRY-RUN" : "UPDATED"}] ${marketPath} to ${newVersion}`);
 
   const skillFiles = getAllSkillFiles("skills");
 
@@ -84,9 +90,11 @@ const applyVersion = () => {
         ...parsed.data,
         version: newVersion
       };
-      const newContent = matter.stringify(parsed.content, updatedData);
-      writeFileSync(file, newContent, "utf-8");
-      console.log(`Updated ${file} to ${newVersion}`);
+      if (!isDryRun) {
+        const newContent = matter.stringify(parsed.content, updatedData);
+        writeFileSync(file, newContent, "utf-8");
+      }
+      console.log(`[${isDryRun ? "DRY-RUN" : "UPDATED"}] ${file} to ${newVersion}`);
     }
   });
 };
