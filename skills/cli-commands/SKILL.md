@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 0.0.1
 name: chezmoi-cli-commands
 description: Understand and execute chezmoi CLI commands and subcommands effectively.
 ---
