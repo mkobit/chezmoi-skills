@@ -18,15 +18,15 @@ const isDryRun = program.opts().dryRun;
 
 const PluginSchema = z.looseObject({
   version: z.string(),
-});
+}).readonly();
 
 const MarketplacePluginSchema = z.looseObject({
   version: z.string().optional(),
-});
+}).readonly();
 
 const MarketplaceSchema = z.looseObject({
   plugins: z.array(MarketplacePluginSchema).optional(),
-});
+}).readonly();
 
 const getAllSkillFiles = (dir: string): readonly string[] => {
   const entries = readdirSync(dir);
