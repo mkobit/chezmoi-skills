@@ -1,36 +1,68 @@
 # Chezmoi initialization examples
 
-## Basic initialization
+## Command variations
 
-Initialize chezmoi with a repository.
-
-```bash
-chezmoi init https://github.com/username/dotfiles.git
-```
-
-## Initialization with immediate apply
-
-Initialize and apply the configuration in a single command.
+Initialize using the GitHub username guessing feature.
 
 ```bash
-chezmoi init --apply https://github.com/username/dotfiles.git
+chezmoi init username
 ```
 
-## Templated configuration file
+Initialize using an explicit SSH URL and apply immediately.
 
-Example `.chezmoi.toml.tmpl` using prompts and assigning variables.
+```bash
+chezmoi init --apply git@github.com:username/dotfiles.git
+```
+
+Initialize guessing an SSH URL instead of HTTPS.
+
+```bash
+chezmoi init --ssh username
+```
+
+Initialize targeting a specific branch for testing.
+
+```bash
+chezmoi init --branch feature/new-setup username
+```
+
+Initialize in a transient CI environment leaving no source state behind.
+
+```bash
+chezmoi init --one-shot username
+```
+
+## Complex configuration template
+
+This is a comprehensive `.chezmoi.toml.tmpl` example demonstrating advanced templating features.
+It utilizes conditionals based on the operating system to selectively prompt for variables.
 
 ```toml
-{{- $email := promptStringOnce . "email" "Email address" -}}
-{{- $name := promptStringOnce . "name" "Full name" -}}
+{{- $email := "default@example.com" -}}
+{{- $name := "Default Name" -}}
+{{- $isWork := false -}}
+
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $email = promptStringOnce . "email" "Apple ID Email" -}}
+{{-   $name = promptStringOnce . "name" "Full Name" -}}
+{{-   $isWork = promptBoolOnce . "isWork" "Is this a work machine?" -}}
+{{- else if eq .chezmoi.os "linux" -}}
+{{-   $email = promptStringOnce . "email" "Linux Git Email" -}}
+{{- end -}}
 
 [data]
     email = {{ $email | quote }}
     name = {{ $name | quote }}
+    isWork = {{ $isWork }}
 
 [edit]
-    command = "vim"
+    command = "nvim"
+
+[git]
+    autoCommit = true
+    autoPush = false
 ```
 
-This template prompts the user for an email and a name if not already set.
-The generated file is stored as `~/.config/chezmoi/chezmoi.toml`.
+This template dynamically adjusts its prompts based on whether the host is macOS or Linux.
+It stores these values in the `[data]` section, making them available as variables to all other templates in the source state.
+The resulting generated TOML file allows the rest of the dotfiles to adapt to the machine's specific context.
