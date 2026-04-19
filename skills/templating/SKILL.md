@@ -12,7 +12,7 @@ The `.tmpl` extension is stripped from the target filename.
 
 ## Built-in chezmoi template data
 
-Available as `.chezmoi.*` in every template:
+Available as `.chezmoi.*` in every template (see [built-in variables](references/built-in-variables.md)):
 
 | Variable | Example value |
 | --- | --- |
@@ -75,7 +75,7 @@ External data files at `.chezmoidata.toml` or `.chezmoidata.yaml` in the source 
 ## Sprig functions
 
 chezmoi includes the [Sprig](http://masterminds.github.io/sprig/) function library.
-Common Sprig functions:
+Common Sprig functions (see [sprig functions](references/sprig-functions.md)):
 
 | Function | Use |
 | --- | --- |
@@ -92,7 +92,7 @@ Common Sprig functions:
 
 ## Shared template fragments (`.chezmoitemplates/`)
 
-Place reusable fragments in `.chezmoitemplates/` in the source dir:
+Place reusable fragments in `.chezmoitemplates/` in the source dir (see [shared template fragments](references/shared-template-fragments.md)):
 
 ```text
 .chezmoitemplates/
@@ -115,7 +115,7 @@ Use in another template:
 
 ## Interactive prompts
 
-Use prompt functions in `chezmoi.toml.tmpl` to gather input on init:
+Use prompt functions in `chezmoi.toml.tmpl` to gather input on init (see [prompt functions](references/prompt-functions.md)):
 
 ```gotmpl
 {{- $email := promptString "email" -}}
