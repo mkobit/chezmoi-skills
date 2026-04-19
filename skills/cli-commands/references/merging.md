@@ -1,0 +1,2 @@
+- [chezmoi merge](https://www.chezmoi.io/reference/commands/merge/): Three-way merge a file with conflicts.
+- [chezmoi merge-all](https://www.chezmoi.io/reference/commands/merge-all/): Merge all files with conflicts at once.

@@ -1,0 +1,2 @@
+- [chezmoi re-add](https://www.chezmoi.io/reference/commands/re-add/): Re-adds modified target files back to the source state.
+- [chezmoi forget](https://www.chezmoi.io/reference/commands/forget/): Stops tracking a file without removing it from the target.

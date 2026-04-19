@@ -1,0 +1,2 @@
+- [chezmoi archive](https://www.chezmoi.io/reference/commands/archive/): Create a tar archive of the target state.
+- [chezmoi state](https://www.chezmoi.io/reference/commands/state/): Inspect the internal bolt database (script run history, etc.).
