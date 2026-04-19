@@ -1,0 +1,1 @@
+[https://www.chezmoi.io/reference/commands/status/](https://www.chezmoi.io/reference/commands/status/) - Print the status of the files and scripts managed by chezmoi in a format similar to git status.

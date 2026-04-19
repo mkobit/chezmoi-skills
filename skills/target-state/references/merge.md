@@ -1,0 +1,1 @@
+[https://www.chezmoi.io/reference/commands/merge/](https://www.chezmoi.io/reference/commands/merge/) - Perform a three-way merge between the destination state, the target state, and the source state for each target.
