@@ -1,0 +1,1 @@
+For a deep dive on file name prefixes and attributes, refer to the [chezmoi official documentation for source state attributes](https://www.chezmoi.io/reference/source-state-attributes/#source-state-attributes).
