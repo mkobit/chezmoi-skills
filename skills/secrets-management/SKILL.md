@@ -16,6 +16,8 @@ Use encrypted files for static credentials or keys you want in-repo.
 
 ## Password manager template functions
 
+See [password managers reference](./references/password-managers.md) for deeper integrations and full function lists.
+
 ### 1Password
 
 ```gotmpl
@@ -73,6 +75,8 @@ Use sparingly — environment variables are less secure than a password manager.
 
 ## Encrypted files with age
 
+See [encryption reference](./references/encryption.md) for detailed configuration options.
+
 ### Age setup
 
 ```toml
@@ -103,6 +107,8 @@ chezmoi stores the file as `encrypted_private_dot_ssh/encrypted_id_ed25519.age` 
 The identity file must be present and readable.
 
 ## Encrypted files with gpg
+
+See [encryption reference](./references/encryption.md) for detailed configuration options.
 
 ### GPG setup
 
