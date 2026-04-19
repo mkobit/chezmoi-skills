@@ -1,0 +1,4 @@
+- [init command overview](https://www.chezmoi.io/reference/commands/init/): Detailed documentation on the `init` command.
+- [Flags](https://www.chezmoi.io/reference/commands/init/#flags): Available flags for the `init` command.
+- [Common flags](https://www.chezmoi.io/reference/commands/init/#common-flags): Common flags for the `init` command like exclude and include.
+- [Examples](https://www.chezmoi.io/reference/commands/init/#examples): Examples of using the `init` command.

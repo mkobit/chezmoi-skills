@@ -1,0 +1,6 @@
+- [Setup user guide](https://www.chezmoi.io/user-guide/setup/): Overview of setting up chezmoi.
+- [Understand chezmoi's files and directories](https://www.chezmoi.io/user-guide/setup/#understand-chezmois-files-and-directories): Explanation of how chezmoi manages its files.
+- [Use a hosted repo to manage your dotfiles across multiple machines](https://www.chezmoi.io/user-guide/setup/#use-a-hosted-repo-to-manage-your-dotfiles-across-multiple-machines): Setting up a remote git repo for dotfiles.
+- [Use a private repo to store your dotfiles](https://www.chezmoi.io/user-guide/setup/#use-a-private-repo-to-store-your-dotfiles): Setting up a private repo for dotfiles.
+- [Create a config file on a new machine automatically](https://www.chezmoi.io/user-guide/setup/#create-a-config-file-on-a-new-machine-automatically): Using templates to automatically create config files.
+- [Re-create your config file](https://www.chezmoi.io/user-guide/setup/#re-create-your-config-file): Updating your config file when templates change.
