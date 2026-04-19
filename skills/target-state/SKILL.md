@@ -41,7 +41,7 @@ chezmoi status
 Output columns:
 
 | Column | Meaning |
-|---|---|
+| --- | --- |
 | First | Source state change (A=added, M=modified, D=deleted) |
 | Second | Target state (A=added, M=modified, D=deleted) |
 | Path | Target file path |

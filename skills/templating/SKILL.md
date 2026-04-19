@@ -15,7 +15,7 @@ The `.tmpl` extension is stripped from the target filename.
 Available as `.chezmoi.*` in every template:
 
 | Variable | Example value |
-|---|---|
+| --- | --- |
 | `.chezmoi.os` | `"linux"`, `"darwin"`, `"windows"` |
 | `.chezmoi.arch` | `"amd64"`, `"arm64"` |
 | `.chezmoi.hostname` | `"my-laptop"` |
@@ -78,7 +78,7 @@ chezmoi includes the [Sprig](http://masterminds.github.io/sprig/) function libra
 Common Sprig functions:
 
 | Function | Use |
-|---|---|
+| --- | --- |
 | `upper` / `lower` | Change case |
 | `trim` / `trimAll` | Strip whitespace or characters |
 | `contains` | Substring check |
@@ -124,7 +124,7 @@ Use prompt functions in `chezmoi.toml.tmpl` to gather input on init:
 ```
 
 | Function | Behavior |
-|---|---|
+| --- | --- |
 | `promptString "label"` | Prompt for a string |
 | `promptString "label" "default"` | Prompt with a default |
 | `promptBool "label"` | Prompt for true/false |

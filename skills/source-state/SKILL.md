@@ -19,7 +19,7 @@ Multiple prefixes compose left to right.
 ### Attribute prefixes
 
 | Prefix | Meaning |
-|---|---|
+| --- | --- |
 | `dot_` | File/dir name starts with `.` (e.g., `dot_bashrc` → `.bashrc`) |
 | `private_` | File permissions `0600`, directory `0700` |
 | `executable_` | File permissions `0755` |
@@ -37,7 +37,7 @@ Multiple prefixes compose left to right.
 ### Suffix
 
 | Suffix | Meaning |
-|---|---|
+| --- | --- |
 | `.tmpl` | File is a Go template; rendered before applying |
 | `.age` | Encrypted with age (added automatically, not manual) |
 | `.asc` | Encrypted with gpg (added automatically, not manual) |
@@ -45,7 +45,7 @@ Multiple prefixes compose left to right.
 ### Examples
 
 | Source name | Target path | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `dot_bashrc` | `~/.bashrc` | Simple dotfile |
 | `private_dot_ssh/` | `~/.ssh/` | Directory with `0700` |
 | `private_dot_ssh/config` | `~/.ssh/config` | File inside private dir |

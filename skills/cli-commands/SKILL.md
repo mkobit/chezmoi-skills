@@ -7,7 +7,7 @@ description: Understand and execute chezmoi CLI commands and subcommands effecti
 ## Core workflow commands
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `chezmoi add <file>` | Track a file from the target directory into the source state |
 | `chezmoi apply` | Apply the source state to the target directory |
 | `chezmoi diff` | Show what `apply` would change |

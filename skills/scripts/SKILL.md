@@ -9,7 +9,7 @@ description: Manage execution scripts (run_once_, run_onchange_, before_, after_
 Scripts in `.chezmoiscripts/` (or anywhere in source) are identified by filename prefix:
 
 | Prefix | Runs when |
-|---|---|
+| --- | --- |
 | `run_` | Every `chezmoi apply` |
 | `run_once_` | Once ever (tracked in state database) |
 | `run_onchange_` | When the script content changes |

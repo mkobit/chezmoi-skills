@@ -20,7 +20,7 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 ## Key top-level options
 
 | Key | Purpose |
-|---|---|
+| --- | --- |
 | `sourceDir` | Override the source directory (default: `~/.local/share/chezmoi`) |
 | `destDir` | Override the target directory (default: `~`) |
 | `umask` | Set default file permissions |
