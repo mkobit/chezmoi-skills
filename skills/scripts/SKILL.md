@@ -6,7 +6,8 @@ description: Manage execution scripts (run_once_, run_onchange_, before_, after_
 
 ## Script file naming prefixes
 
-Scripts in `.chezmoiscripts/` (or anywhere in source) are identified by filename prefix:
+Scripts in `.chezmoiscripts/` (or anywhere in source) are identified by filename prefix.
+For more details, see [Script execution and naming](references/script-execution.md).
 
 | Prefix | Runs when |
 | --- | --- |
@@ -54,6 +55,7 @@ source ~/.bashrc
 ## Tracking state
 
 Chezmoi records which `run_once_` scripts have run in `~/.local/share/chezmoi/chezmoistate.boltdb`.
+For more details, see [Script state management](references/state-management.md).
 
 Inspect the state:
 
