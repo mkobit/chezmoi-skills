@@ -1,0 +1,7 @@
+- [chezmoi managed](https://www.chezmoi.io/reference/commands/managed/): Lists all managed files and directories.
+- [chezmoi unmanaged](https://www.chezmoi.io/reference/commands/unmanaged/): Lists files in the target directory not tracked by chezmoi.
+- [chezmoi source-path](https://www.chezmoi.io/reference/commands/source-path/): Prints the source path for a target file.
+- [chezmoi target-path](https://www.chezmoi.io/reference/commands/target-path/): Prints the target path for a source file.
+- [chezmoi cd](https://www.chezmoi.io/reference/commands/cd/): Opens a shell in the source directory.
+- [chezmoi doctor](https://www.chezmoi.io/reference/commands/doctor/): Verifies the installation and reports potential issues.
+- [chezmoi data](https://www.chezmoi.io/reference/commands/data/): Prints available template data as JSON.
