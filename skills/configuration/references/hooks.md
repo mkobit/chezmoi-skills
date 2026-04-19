@@ -1,0 +1,2 @@
+- [Hooks usage](https://www.chezmoi.io/reference/configuration-file/hooks/): Explains how to trigger shell commands before and after specific chezmoi operations.
+- [Hooks variables](https://www.chezmoi.io/reference/configuration-file/variables/#hooks): Defines the command and argument settings for pre and post operation hooks.

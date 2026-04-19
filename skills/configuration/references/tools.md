@@ -1,0 +1,3 @@
+- [Editor config](https://www.chezmoi.io/reference/configuration-file/editor/): Covers options and commands for opening configurations via your preferred editor.
+- [Diff settings](https://www.chezmoi.io/reference/configuration-file/variables/#diff): Documents configuration options for customizing diff output and selecting external diff commands.
+- [Merge tool variables](https://www.chezmoi.io/reference/configuration-file/variables/#merge): Explains how to set up external three-way merge tools and their arguments.
