@@ -1,3 +1,4 @@
 node_modules
 .bun-build
 .bun-cache
+.claude/settings.local.json
