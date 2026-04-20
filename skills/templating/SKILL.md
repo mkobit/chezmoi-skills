@@ -4,6 +4,8 @@ name: chezmoi-templating
 description: Use text/template, Sprig functions, and data variables from .chezmoidata for templating.
 ---
 
+When you need detailed examples, full lists of variables, Sprig functions, or external documentation links, scan the `references/` directory.
+
 ## What is a template?
 
 Any source file with the `.tmpl` suffix is treated as a Go `text/template`.
@@ -12,7 +14,7 @@ The `.tmpl` extension is stripped from the target filename.
 
 ## Built-in chezmoi template data
 
-Available as `.chezmoi.*` in every template (see [built-in variables](references/built-in-variables.md)):
+Available as `.chezmoi.*` in every template:
 
 | Variable | Example value |
 | --- | --- |
@@ -75,7 +77,7 @@ External data files at `.chezmoidata.toml` or `.chezmoidata.yaml` in the source 
 ## Sprig functions
 
 chezmoi includes the [Sprig](http://masterminds.github.io/sprig/) function library.
-Common Sprig functions (see [sprig functions](references/sprig-functions.md)):
+Common Sprig functions:
 
 | Function | Use |
 | --- | --- |
@@ -92,7 +94,7 @@ Common Sprig functions (see [sprig functions](references/sprig-functions.md)):
 
 ## Shared template fragments (`.chezmoitemplates/`)
 
-Place reusable fragments in `.chezmoitemplates/` in the source dir (see [shared template fragments](references/shared-template-fragments.md)):
+Place reusable fragments in `.chezmoitemplates/` in the source dir:
 
 ```text
 .chezmoitemplates/
@@ -115,7 +117,7 @@ Use in another template:
 
 ## Interactive prompts
 
-Use prompt functions in `chezmoi.toml.tmpl` to gather input on init (see [prompt functions](references/prompt-functions.md)):
+Use prompt functions in `chezmoi.toml.tmpl` to gather input on init:
 
 ```gotmpl
 {{- $email := promptString "email" -}}

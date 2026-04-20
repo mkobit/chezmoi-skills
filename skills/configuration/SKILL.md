@@ -4,14 +4,14 @@ name: chezmoi-configuration
 description: Manage chezmoi.toml/.chezmoi.yaml configuration options and data injection.
 ---
 
+When you need detailed examples, full lists of config file options, or external documentation links, scan the `references/` directory.
+
 ## Config file location
 
 chezmoi looks for its config file at `~/.config/chezmoi/chezmoi.toml` (preferred) or the XDG config home.
 Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 
 ## Minimal config example
-
-See [core references](./references/core.md).
 
 ```toml
 [data]
@@ -20,8 +20,6 @@ See [core references](./references/core.md).
 ```
 
 ## Key top-level options
-
-See [core references](./references/core.md).
 
 | Key | Purpose |
 | --- | --- |
@@ -34,8 +32,6 @@ See [core references](./references/core.md).
 
 ## Data injection
 
-See [data references](./references/data.md).
-
 ```toml
 [data]
   gitEmail = "work@company.com"
@@ -46,8 +42,6 @@ See [data references](./references/data.md).
 External data files can be placed at `~/.local/share/chezmoi/.chezmoidata.toml` or `.chezmoidata.yaml`.
 
 ## Encryption configuration
-
-See [encryption references](./references/encryption.md).
 
 ### age
 
@@ -70,8 +64,6 @@ encryption = "gpg"
 
 ## Editor and diff settings
 
-See [tool references](./references/tools.md).
-
 ```toml
 [edit]
   command = "nvim"
@@ -84,8 +76,6 @@ See [tool references](./references/tools.md).
 
 ## Merge tool
 
-See [tool references](./references/tools.md).
-
 ```toml
 [merge]
   command = "nvim"
@@ -93,8 +83,6 @@ See [tool references](./references/tools.md).
 ```
 
 ## Hooks (run shell commands around operations)
-
-See [hooks references](./references/hooks.md).
 
 ```toml
 [hooks.apply.pre]
@@ -105,8 +93,6 @@ See [hooks references](./references/hooks.md).
 Supported hook events: `apply`, `add`, `edit`, `update` with `.pre` and `.post` variants.
 
 ## Git integration
-
-See [git references](./references/git.md).
 
 ```toml
 [git]

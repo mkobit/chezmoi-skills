@@ -4,6 +4,8 @@ name: chezmoi-init
 description: Initialize and set up chezmoi, including bare repository handling and initial configuration.
 ---
 
+When you need detailed examples, full lists of init flags, or external documentation links, scan the `references/` directory.
+
 ## First-time initialization
 
 ```sh
@@ -13,15 +15,11 @@ chezmoi init
 Creates the source directory at `~/.local/share/chezmoi` as a git repository.
 Does not apply any files — run `chezmoi apply` separately.
 
-For an overview of setting up chezmoi, see the [Setup user guide](references/setup.md).
-
 ## Initialize from an existing dotfiles repo
 
 ```sh
 chezmoi init https://github.com/user/dotfiles.git
 ```
-
-For more details on init flags, see the [init command reference](references/commands.md).
 
 Use `--apply` to clone and apply in one step:
 
@@ -49,8 +47,6 @@ chezmoi init --source /path/to/source
 chezmoi init --destination /path/to/target
 chezmoi init --config /path/to/chezmoi.toml
 ```
-
-For a comprehensive list of all flags, refer to the [init command reference](references/commands.md).
 
 ## One-shot initialization script
 
