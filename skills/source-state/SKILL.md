@@ -4,6 +4,8 @@ name: chezmoi-source-state
 description: Manage the chezmoi source directory, understanding file states like run_, symlink_, and encrypted_ prefixes.
 ---
 
+When you need detailed examples, deep dives into special files or external documentation links, scan the `references/` directory.
+
 ## Source directory location
 
 Default: `~/.local/share/chezmoi`
@@ -13,8 +15,6 @@ Open a shell in it: `chezmoi cd`
 The source directory is a plain git repository.
 
 ## File name prefix system
-
-See also: [Source state attributes](references/attributes.md).
 
 Multiple prefixes compose left to right.
 
@@ -84,8 +84,6 @@ chezmoi destroy ~/.bashrc       # remove from source AND target
 
 ## `.chezmoiignore`
 
-See also: [Special files and directories](references/special-files-directories.md).
-
 Create `~/.local/share/chezmoi/.chezmoiignore` to exclude patterns from management:
 
 ```gitignore
@@ -97,8 +95,6 @@ README.md
 Supports Go template syntax.
 
 ## `.chezmoiexternal.toml`
-
-See also: [Special files and directories](references/special-files-directories.md).
 
 Fetch external files or archives into the source state:
 
@@ -112,14 +108,10 @@ Fetch external files or archives into the source state:
 
 ## `.chezmoitemplates/`
 
-See also: [Special files and directories](references/special-files-directories.md).
-
 Store shared template fragments here.
 Use in other templates: `{{ template "shared-fragment" . }}`
 
 ## Git operations on the source directory
-
-See also: [Git operations](references/git-operations.md).
 
 ```sh
 chezmoi git status

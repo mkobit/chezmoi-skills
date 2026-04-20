@@ -4,6 +4,8 @@ name: chezmoi-target-state
 description: Manage the target directory state, understanding chezmoi apply, updates, and diffs.
 ---
 
+When you need detailed examples, full lists of command options, or external documentation links, scan the `references/` directory.
+
 ## What is the target state?
 
 The target state is the desired end result: what your home directory should look like after chezmoi runs.
@@ -13,15 +15,11 @@ chezmoi computes the target state from the source state (including rendering tem
 
 ### Preview changes before applying
 
-[chezmoi diff](references/diff.md)
-
 ```sh
 chezmoi diff
 ```
 
 ### Apply the target state
-
-[chezmoi apply](references/apply.md)
 
 ```sh
 chezmoi apply
@@ -38,8 +36,6 @@ chezmoi apply ~/.bashrc       # apply only specific files
 
 ### Check current status
 
-[chezmoi status](references/status.md)
-
 ```sh
 chezmoi status
 ```
@@ -54,8 +50,6 @@ Output columns:
 
 ### Verify the target state matches disk
 
-[chezmoi verify](references/verify.md)
-
 ```sh
 chezmoi verify
 ```
@@ -64,8 +58,6 @@ Exits non-zero if any managed file differs from the target state.
 Useful in CI or scheduled checks.
 
 ## Updating from remote
-
-[chezmoi update](references/update.md)
 
 ```sh
 chezmoi update
@@ -94,9 +86,9 @@ When a target file has been modified outside chezmoi, `apply` reports it as modi
 
 Options:
 
-- `chezmoi diff <file>` — inspect what changed ([reference](references/diff.md))
-- `chezmoi merge <file>` — three-way merge (disk vs source vs last apply) ([reference](references/merge.md))
-- `chezmoi apply --force <file>` — overwrite with source state ([reference](references/apply.md))
+- `chezmoi diff <file>` — inspect what changed
+- `chezmoi merge <file>` — three-way merge (disk vs source vs last apply)
+- `chezmoi apply --force <file>` — overwrite with source state
 - `chezmoi re-add <file>` — update the source to match the current disk state
 
 ## Exact directories
@@ -130,8 +122,6 @@ chezmoi records run-once script state and last-apply checksums in:
 ```
 
 Inspect it:
-
-[chezmoi state](references/state.md)
 
 ```sh
 chezmoi state dump

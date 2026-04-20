@@ -4,6 +4,8 @@ name: chezmoi-secrets-management
 description: Integrate with password managers (Bitwarden, 1Password, etc.) and manage encrypted files using age or gpg.
 ---
 
+When you need detailed examples, full lists of template functions for password managers, or external documentation links, scan the `references/` directory.
+
 ## Approaches to secrets
 
 chezmoi supports two strategies for secrets in dotfiles:
@@ -15,8 +17,6 @@ Use template functions for secrets that may rotate.
 Use encrypted files for static credentials or keys you want in-repo.
 
 ## Password manager template functions
-
-See [password managers reference](./references/password-managers.md) for deeper integrations and full function lists.
 
 ### 1Password
 
@@ -75,8 +75,6 @@ Use sparingly — environment variables are less secure than a password manager.
 
 ## Encrypted files with age
 
-See [encryption reference](./references/encryption.md) for detailed configuration options.
-
 ### Age setup
 
 ```toml
@@ -107,8 +105,6 @@ chezmoi stores the file as `encrypted_private_dot_ssh/encrypted_id_ed25519.age` 
 The identity file must be present and readable.
 
 ## Encrypted files with gpg
-
-See [encryption reference](./references/encryption.md) for detailed configuration options.
 
 ### GPG setup
 
