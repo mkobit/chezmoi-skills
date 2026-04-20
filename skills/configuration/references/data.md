@@ -1,0 +1,1 @@
+- [Data injection variables](https://www.chezmoi.io/reference/configuration-file/variables/#data): Explains how to define custom template data variables within the chezmoi configuration.

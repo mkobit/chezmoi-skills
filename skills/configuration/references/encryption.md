@@ -1,0 +1,3 @@
+- [Encryption config option](https://www.chezmoi.io/reference/configuration-file/variables/#encryption): Defines the top-level encryption type, either age, gpg, or transparent.
+- [Age encryption settings](https://www.chezmoi.io/reference/configuration-file/variables/#age): Details variables for age-based encryption, including identity files and recipients.
+- [GPG encryption settings](https://www.chezmoi.io/reference/configuration-file/variables/#gpg): Outlines settings for GPG encryption such as symmetric usage, command args, and recipients.

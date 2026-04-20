@@ -1,0 +1,2 @@
+- [Config file examples](https://www.chezmoi.io/reference/configuration-file/#examples): Provides practical examples of chezmoi config files in JSON, JSONC, TOML, and YAML formats.
+- [Top-level configuration variables](https://www.chezmoi.io/reference/configuration-file/variables/#top-level): Documents standard configuration variables like cacheDir, sourceDir, and destDir.

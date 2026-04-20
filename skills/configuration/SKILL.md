@@ -11,6 +11,8 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 
 ## Minimal config example
 
+See [core references](./references/core.md).
+
 ```toml
 [data]
   email = "user@example.com"
@@ -18,6 +20,8 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 ```
 
 ## Key top-level options
+
+See [core references](./references/core.md).
 
 | Key | Purpose |
 | --- | --- |
@@ -30,6 +34,8 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 
 ## Data injection
 
+See [data references](./references/data.md).
+
 ```toml
 [data]
   gitEmail = "work@company.com"
@@ -40,6 +46,8 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 External data files can be placed at `~/.local/share/chezmoi/.chezmoidata.toml` or `.chezmoidata.yaml`.
 
 ## Encryption configuration
+
+See [encryption references](./references/encryption.md).
 
 ### age
 
@@ -62,6 +70,8 @@ encryption = "gpg"
 
 ## Editor and diff settings
 
+See [tool references](./references/tools.md).
+
 ```toml
 [edit]
   command = "nvim"
@@ -74,6 +84,8 @@ encryption = "gpg"
 
 ## Merge tool
 
+See [tool references](./references/tools.md).
+
 ```toml
 [merge]
   command = "nvim"
@@ -81,6 +93,8 @@ encryption = "gpg"
 ```
 
 ## Hooks (run shell commands around operations)
+
+See [hooks references](./references/hooks.md).
 
 ```toml
 [hooks.apply.pre]
@@ -91,6 +105,8 @@ encryption = "gpg"
 Supported hook events: `apply`, `add`, `edit`, `update` with `.pre` and `.post` variants.
 
 ## Git integration
+
+See [git references](./references/git.md).
 
 ```toml
 [git]

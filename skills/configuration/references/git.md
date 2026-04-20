@@ -1,0 +1,1 @@
+- [Git integration variables](https://www.chezmoi.io/reference/configuration-file/variables/#git): Details options for automatic adding, committing, pushing, and other git operations within chezmoi.
