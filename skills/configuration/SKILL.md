@@ -1,10 +1,8 @@
 ---
 version: 0.0.1
 name: chezmoi-configuration
-description: Manage chezmoi.toml/.chezmoi.yaml configuration options and data injection.
+description: "Configure chezmoi behavior: source/target dirs, data injection, encryption, editor, diff/merge tools, git auto-commit, and operation hooks."
 ---
-
-When you need detailed examples, full lists of config file options, or external documentation links, scan the `references/` directory.
 
 ## Config file location
 
@@ -30,6 +28,8 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 | `color` | `"auto"`, `"true"`, or `"false"` |
 | `mode` | `"file"` (default) or `"symlink"` |
 
+See `references/core.md` for a full list of top-level options.
+
 ## Data injection
 
 ```toml
@@ -40,6 +40,8 @@ Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 ```
 
 External data files can be placed at `~/.local/share/chezmoi/.chezmoidata.toml` or `.chezmoidata.yaml`.
+
+See `references/data.md` for more on data injection and templating.
 
 ## Encryption configuration
 
@@ -62,6 +64,8 @@ encryption = "gpg"
   recipient = "user@example.com"
 ```
 
+See `references/encryption.md` for age/gpg commands and configuration blocks.
+
 ## Editor and diff settings
 
 ```toml
@@ -82,6 +86,8 @@ encryption = "gpg"
   args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
 ```
 
+See `references/tools.md` for full configuration properties of `[edit]`, `[diff]`, and `[merge]`.
+
 ## Hooks (run shell commands around operations)
 
 ```toml
@@ -91,6 +97,8 @@ encryption = "gpg"
 ```
 
 Supported hook events: `apply`, `add`, `edit`, `update` with `.pre` and `.post` variants.
+
+See `references/hooks.md` for more hook examples and configurations.
 
 ## Git integration
 
@@ -102,6 +110,8 @@ Supported hook events: `apply`, `add`, `edit`, `update` with `.pre` and `.post` 
 ```
 
 With `autoCommit = true`, chezmoi commits after each `add` or `re-add`.
+
+See `references/git.md` for a full list of `[git]` configuration options.
 
 ## Multiple machine profiles
 
