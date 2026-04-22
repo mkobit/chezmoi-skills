@@ -1,15 +1,8 @@
 ---
 version: 0.0.1
 name: chezmoi-target-state
-description: Manage the target directory state, understanding chezmoi apply, updates, and diffs.
+description: Preview, apply, verify, and sync the target directory — diff, apply, status, verify, update, and conflict resolution.
 ---
-
-When you need detailed examples, full lists of command options, or external documentation links, scan the `references/` directory.
-
-## What is the target state?
-
-The target state is the desired end result: what your home directory should look like after chezmoi runs.
-chezmoi computes the target state from the source state (including rendering templates and decrypting files), then compares it to what is actually on disk.
 
 ## Core commands
 
@@ -18,6 +11,8 @@ chezmoi computes the target state from the source state (including rendering tem
 ```sh
 chezmoi diff
 ```
+
+See [references/diff.md](references/diff.md) for diff configuration and details.
 
 ### Apply the target state
 
@@ -34,11 +29,15 @@ chezmoi apply --force         # overwrite conflicts without prompting
 chezmoi apply ~/.bashrc       # apply only specific files
 ```
 
+See [references/apply.md](references/apply.md) for apply options and details.
+
 ### Check current status
 
 ```sh
 chezmoi status
 ```
+
+See [references/status.md](references/status.md) for status output details.
 
 Output columns:
 
@@ -57,6 +56,8 @@ chezmoi verify
 Exits non-zero if any managed file differs from the target state.
 Useful in CI or scheduled checks.
 
+See [references/verify.md](references/verify.md) for verify options and details.
+
 ## Updating from remote
 
 ```sh
@@ -64,6 +65,8 @@ chezmoi update
 ```
 
 Equivalent to `chezmoi git pull` followed by `chezmoi apply`.
+
+See [references/update.md](references/update.md) for update configuration and options.
 
 ## Target directory defaults
 
@@ -91,6 +94,8 @@ Options:
 - `chezmoi apply --force <file>` — overwrite with source state
 - `chezmoi re-add <file>` — update the source to match the current disk state
 
+See [references/merge.md](references/merge.md) for merge configuration and commands.
+
 ## Exact directories
 
 Directories prefixed with `exact_` in the source state cause chezmoi to remove target files not present in the source.
@@ -113,18 +118,4 @@ chezmoi status ~/.gitconfig
 chezmoi verify ~/.gitconfig
 ```
 
-## State database
-
-chezmoi records run-once script state and last-apply checksums in:
-
-```text
-~/.local/share/chezmoi/chezmoistate.boltdb
-```
-
-Inspect it:
-
-```sh
-chezmoi state dump
-```
-
-This database is local to each machine and is not committed to the source repo.
+Script run history is tracked in the state database — see the chezmoi-scripts skill.
