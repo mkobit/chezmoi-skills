@@ -1,16 +1,10 @@
 ---
 version: 0.0.1
 name: chezmoi-templating
-description: Use text/template, Sprig functions, and data variables from .chezmoidata for templating.
+description: 'Write chezmoi templates: OS/machine conditionals, user-defined data variables, Sprig functions, shared fragments, and interactive prompts.'
 ---
 
-When you need detailed examples, full lists of variables, Sprig functions, or external documentation links, scan the `references/` directory.
-
-## What is a template?
-
-Any source file with the `.tmpl` suffix is treated as a Go `text/template`.
-chezmoi renders it before writing to the target directory.
-The `.tmpl` extension is stripped from the target filename.
+**Fact:** Any source file with the `.tmpl` suffix is treated as a Go `text/template`. chezmoi renders it before writing to the target directory. The `.tmpl` extension is stripped from the target filename.
 
 ## Built-in chezmoi template data
 
@@ -26,6 +20,8 @@ Available as `.chezmoi.*` in every template:
 | `.chezmoi.sourceDir` | `"/home/alice/.local/share/chezmoi"` |
 | `.chezmoi.group` | Primary group name |
 | `.chezmoi.kernel.osRelease` | Linux `/etc/os-release` fields (Linux only) |
+
+See [built-in-variables.md](references/built-in-variables.md) for more details.
 
 Print all available data:
 
@@ -92,6 +88,8 @@ Common Sprig functions:
 | `env` | Read environment variable |
 | `include` | Include another template by name |
 
+See [sprig-functions.md](references/sprig-functions.md) for a complete list of Sprig and chezmoi functions.
+
 ## Shared template fragments (`.chezmoitemplates/`)
 
 Place reusable fragments in `.chezmoitemplates/` in the source dir:
@@ -115,6 +113,8 @@ Use in another template:
 {{ template "git-identity" . }}
 ```
 
+See [shared-template-fragments.md](references/shared-template-fragments.md) for more details.
+
 ## Interactive prompts
 
 Use prompt functions in `chezmoi.toml.tmpl` to gather input on init:
@@ -133,6 +133,8 @@ Use prompt functions in `chezmoi.toml.tmpl` to gather input on init:
 | `promptInt "label"` | Prompt for an integer |
 | `promptChoice "label" list` | Prompt from a list |
 
+See [prompt-functions.md](references/prompt-functions.md) for more prompt functions.
+
 Prompts only fire on `chezmoi init`, not on subsequent `apply` runs.
 
 ## Testing templates
@@ -146,7 +148,9 @@ chezmoi cat ~/.gitconfig
 
 ## Common mistakes
 
-- Forgetting to add `.tmpl` suffix — file is copied verbatim, template not rendered
-- Using `{{ }}` without whitespace control (`{{-` / `-}}`) — unexpected blank lines in output
-- Referencing `.chezmoi.hostname` before calling `chezmoi init` — data is only available after initialization
-- Using `promptString` outside of `chezmoi.toml.tmpl` — prompts only work in the config template
+| Mistake | Symptom | Fix |
+| --- | --- | --- |
+| Forgetting to add `.tmpl` suffix | file is copied verbatim, template not rendered | Add `.tmpl` suffix to filename |
+| Using `{{ }}` without whitespace control (`{{-` / `-}}`) | unexpected blank lines in output | Use whitespace control markers |
+| Referencing `.chezmoi.hostname` before calling `chezmoi init` | data is only available after initialization | Call `chezmoi init` first |
+| Using `promptString` outside of `chezmoi.toml.tmpl` | prompts only work in the config template | Move prompt to `chezmoi.toml.tmpl` |
