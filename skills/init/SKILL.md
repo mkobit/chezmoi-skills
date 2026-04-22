@@ -1,12 +1,12 @@
 ---
 version: 0.0.1
 name: chezmoi-init
-description: Initialize and set up chezmoi, including bare repository handling and initial configuration.
+description: Bootstrap chezmoi on a new machine, clone an existing dotfiles repo, migrate existing dotfiles, or run one-shot init scripts.
 ---
 
-When you need detailed examples, full lists of init flags, or external documentation links, scan the `references/` directory.
-
 ## First-time initialization
+
+See [`references/setup.md`](references/setup.md) for more details.
 
 ```sh
 chezmoi init
@@ -42,6 +42,8 @@ chezmoi init user/myrepo    # expands to https://github.com/user/myrepo.git
 
 ## Overriding directories
 
+See [`references/commands.md`](references/commands.md) for full flag details.
+
 ```sh
 chezmoi init --source /path/to/source
 chezmoi init --destination /path/to/target
@@ -65,12 +67,13 @@ To incorporate existing dotfiles into chezmoi:
 chezmoi add ~/.bashrc ~/.gitconfig
 ```
 
-## Bare repository setup
+## Custom source directory
 
 ```sh
 chezmoi init --source ~/.dotfiles
 ```
 
+This overrides the source directory for chezmoi commands. It does not set up a bare repository.
 Then migrate files using `chezmoi add`.
 
 ## Verifying the initialized state
