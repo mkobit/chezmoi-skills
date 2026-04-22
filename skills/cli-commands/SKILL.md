@@ -1,10 +1,8 @@
 ---
 version: 0.0.1
 name: chezmoi-cli-commands
-description: Understand and execute chezmoi CLI commands and subcommands effectively.
+description: "Look up and run chezmoi commands: add, apply, diff, status, update, edit, merge, re-add, and other core operations."
 ---
-
-When you need detailed examples, full lists of flags, or external documentation links for specific commands, scan the `references/` directory.
 
 ## Core workflow commands
 
@@ -18,6 +16,12 @@ When you need detailed examples, full lists of flags, or external documentation 
 | `chezmoi re-add` | Re-add modified target files back to the source state |
 | `chezmoi edit <file>` | Open a managed file in `$EDITOR` inside the source directory |
 | `chezmoi forget <file>` | Stop tracking a file without removing it from the target |
+| `chezmoi cat <file>` | Print the rendered target content of a managed file |
+| `chezmoi verify` | Exit non-zero if any managed file differs from target state |
+| `chezmoi execute-template` | Render a template string or file without applying |
+
+[See references/add.md](references/add.md)
+[See references/apply.md](references/apply.md)
 
 ## Inspection and navigation
 
@@ -29,10 +33,15 @@ When you need detailed examples, full lists of flags, or external documentation 
 - `chezmoi doctor` — verify the installation and report potential issues
 - `chezmoi data` — print available template data as JSON
 
+[See references/inspection.md](references/inspection.md)
+[See references/status.md](references/status.md)
+
 ## Making and previewing changes
 
 Use `chezmoi apply --dry-run` to simulate without writing.
 Use `chezmoi apply --verbose` for per-file detail.
+
+[See references/diff.md](references/diff.md)
 
 ## Merging and resolving conflicts
 
@@ -40,11 +49,15 @@ Use `chezmoi apply --verbose` for per-file detail.
 - `chezmoi merge-all` — merge all files with conflicts at once
 - Set `merge.command` in config to customize the merge tool
 
+[See references/merging.md](references/merging.md)
+
 ## Archive and state inspection
 
 - `chezmoi archive` — create a tar archive of the target state
 - `chezmoi state` — inspect the internal bolt database (script run history, etc.)
 - `chezmoi state delete-bucket --bucket=scriptState` — clear script run history
+
+[See references/state.md](references/state.md)
 
 ## Flags used across commands
 
