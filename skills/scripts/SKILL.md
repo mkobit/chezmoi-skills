@@ -1,7 +1,7 @@
 ---
 version: 0.0.1
 name: chezmoi-scripts
-description: Manage execution scripts (run_once_, run_onchange_, before_, after_) and their lifecycles.
+description: Run scripts on apply, once, or on content change — manage run_, run_once_, run_onchange_, run_before_, and run_after_ scripts and their state.
 ---
 
 ## Script file naming prefixes
@@ -27,8 +27,8 @@ Use numeric prefixes to control order: `run_once_before_00-setup.sh`, `run_once_
 ## Making scripts executable
 
 Scripts must be executable in the source state.
-Use `executable_` in the filename: `executable_run_once_before_install.sh`
-Or preserve the bit with `chezmoi add --follow`.
+Use the `executable_` prefix when adding a new script manually (e.g. `executable_run_once_before_install.sh`).
+Alternatively, use `chezmoi add --follow` when adding a file that already has the executable bit set on disk.
 
 ## Example: install packages once
 
@@ -46,7 +46,7 @@ brew install git curl
 ## Example: reload shell config on change
 
 ```sh
-#!/bin/sh
+#!/bin/bash
 # .chezmoiscripts/run_onchange_after_reload-shell.sh
 
 source ~/.bashrc
@@ -79,6 +79,7 @@ chezmoi state delete --bucket=scriptState --key=<hash>
 
 chezmoi hashes the script content to detect changes.
 If the script's text changes (including template output), it re-runs.
+For more details, see [Script execution and naming](references/script-execution.md).
 
 ## Skipping scripts
 
