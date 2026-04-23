@@ -1,10 +1,8 @@
 ---
 version: 0.0.1
 name: chezmoi-source-state
-description: Manage the chezmoi source directory, understanding file states like run_, symlink_, and encrypted_ prefixes.
+description: 'Work with the chezmoi source directory: file naming prefixes, adding/removing files, special directories (.chezmoiignore, .chezmoiexternal.toml, .chezmoitemplates/), and git operations.'
 ---
-
-When you need detailed examples, deep dives into special files or external documentation links, scan the `references/` directory.
 
 ## Source directory location
 
@@ -30,7 +28,6 @@ Multiple prefixes compose left to right.
 | `encrypted_` | File is encrypted (age or gpg) |
 | `exact_` | Directory: remove target files not present in source |
 | `literal_` | File name is used as-is, no prefix interpretation |
-| `once_` | *(deprecated, prefer `run_once_`)* |
 | `run_` | File is a script, not a dotfile |
 | `symlink_` | Create as a symlink in the target |
 | `modify_` | Script that modifies an existing target file |
@@ -43,6 +40,8 @@ Multiple prefixes compose left to right.
 | `.tmpl` | File is a Go template; rendered before applying |
 | `.age` | Encrypted with age (added automatically, not manual) |
 | `.asc` | Encrypted with gpg (added automatically, not manual) |
+
+[Read more about attributes in references/attributes.md](references/attributes.md)
 
 ### Examples
 
@@ -65,6 +64,8 @@ chezmoi add --follow ~/.config/nvim   # follow symlinks
 chezmoi add --encrypt ~/.ssh/id_ed25519
 chezmoi add --template ~/.gitconfig   # treat as template
 ```
+
+[Read more about attributes in references/attributes.md](references/attributes.md)
 
 ## Inspecting the source state
 
@@ -94,6 +95,8 @@ README.md
 
 Supports Go template syntax.
 
+[Read more about special files and directories in references/special-files-directories.md](references/special-files-directories.md)
+
 ## `.chezmoiexternal.toml`
 
 Fetch external files or archives into the source state:
@@ -101,10 +104,14 @@ Fetch external files or archives into the source state:
 ```toml
 [".local/bin/gh"]
   type = "file"
-  url = "https://github.com/cli/cli/releases/download/v2.x.x/gh_linux_amd64.tar.gz"
+  url = "https://example.com/tool.tar.gz"
   executable = true
   stripComponents = 2
 ```
+
+Note that `stripComponents` trims leading path segments from the archive.
+
+[Read more about special files and directories in references/special-files-directories.md](references/special-files-directories.md)
 
 ## `.chezmoitemplates/`
 
@@ -121,3 +128,5 @@ chezmoi git push
 ```
 
 Or `cd $(chezmoi source-path)` and use git directly.
+
+[Read more about git operations in references/git-operations.md](references/git-operations.md)
