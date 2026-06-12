@@ -42,6 +42,23 @@ chezmoi git pull -- --autostash --rebase && chezmoi diff
 
 This runs `git pull --autostash --rebase` in your source directory and `chezmoi diff` then shows the difference between the target state computed from your source directory and the actual state.
 
+## Resolve a failed pull or rebase
+
+`chezmoi update` runs `git pull --autostash --rebase`; if the rebase hits conflicts, git stops mid-rebase in the source directory.
+Resolve it with plain git:
+
+```sh
+chezmoi cd
+git status                 # see conflicted files
+# edit files to resolve conflicts
+git add <resolved-files>
+git rebase --continue      # or: git rebase --abort
+exit
+chezmoi apply
+```
+
+This is distinct from target-file conflicts (a managed file modified outside chezmoi); for those, see `chezmoi merge` in the chezmoi-cli-commands skill.
+
 ## Automatically commit and push changes to your repo
 
 chezmoi can automatically commit and push changes to your source directory to your repo. This feature is disabled by default. To enable it, add the following to your config file:
@@ -52,7 +69,9 @@ chezmoi can automatically commit and push changes to your source directory to yo
     autoPush = true
 ```
 
-Whenever a change is made to your source directory, chezmoi will commit the changes with an automatically-generated commit message (if `autoCommit` is true) and push them to your repo (if `autoPush` is true). `autoPush` implies `autoCommit`.
+Whenever a change is made to your source directory, chezmoi will commit the changes with an automatically-generated commit message (if `autoCommit` is true) and push them to your repo (if `autoPush` is true). `autoPush` implies `autoCommit`; setting only `autoCommit` commits without pushing.
+
+Caution with `autoPush`: if the dotfiles repo is public and a secret is accidentally added in plain text, it is pushed immediately.
 
 You can override the commit message by setting the `git.commitMessageTemplate` configuration variable. For example, to have chezmoi prompt you for a commit message each time:
 
