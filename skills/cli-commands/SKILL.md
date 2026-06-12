@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-cli-commands
 description: "Look up and run chezmoi commands: add, apply, diff, status, update, edit, merge, re-add, and other core operations."
 ---

@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-source-state
 description: 'Work with the chezmoi source directory: file naming prefixes, adding/removing files, special directories (.chezmoiignore, .chezmoiexternal.toml, .chezmoitemplates/), and git operations.'
 ---

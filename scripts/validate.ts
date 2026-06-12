@@ -17,7 +17,7 @@ const claudePluginDir = options.claudePluginDir;
 
 const skillSchema = z.object({
   name: z.string(),
-  version: z.string(),
+  description: z.string(),
 });
 
 type ValidationResult =
@@ -151,6 +151,35 @@ const validatePlugins = async (): Promise<ValidationResult[]> => {
   return Promise.all(resultsPromises);
 };
 
+const validateVersionSync = async (): Promise<ValidationResult[]> => {
+  const name = "version sync";
+  const readJson = async (path: string) => JSON.parse(await readFile(path, "utf-8"));
+
+  try {
+    const versionTxt = (await readFile("version.txt", "utf-8")).trim();
+    const plugin = await readJson(join(claudePluginDir, "plugin.json"));
+    const marketplace = await readJson(join(claudePluginDir, "marketplace.json"));
+
+    const versions = [
+      { source: "version.txt", version: versionTxt },
+      { source: "plugin.json", version: plugin.version },
+      ...(marketplace.plugins ?? []).map((p: any, i: number) => ({
+        source: `marketplace.json plugins[${i}]`,
+        version: p.version,
+      })),
+    ];
+
+    const mismatched = versions.filter(v => v.version !== versionTxt);
+    if (mismatched.length > 0) {
+      const details = versions.map(v => `${v.source}=${v.version}`).join(", ");
+      return [{ valid: false, name, details: `Versions out of sync: ${details}` }];
+    }
+    return [{ valid: true, name: `${name} (${versionTxt})` }];
+  } catch (e) {
+    return [{ valid: false, name, details: String(e) }];
+  }
+};
+
 const handleResults = (results: ValidationResult[]) => {
   let hasErrors = false;
   R.forEach(results, (res) => {
@@ -167,8 +196,9 @@ const handleResults = (results: ValidationResult[]) => {
 const run = async () => {
   const skillResults = await validateSkills();
   const pluginResults = await validatePlugins();
+  const versionResults = await validateVersionSync();
 
-  const failed = handleResults([...skillResults, ...pluginResults]);
+  const failed = handleResults([...skillResults, ...pluginResults, ...versionResults]);
 
   if (failed) {
     process.exit(1);

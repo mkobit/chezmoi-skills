@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-init
 description: Bootstrap chezmoi on a new machine, clone an existing dotfiles repo, migrate existing dotfiles, or run one-shot init scripts.
 ---

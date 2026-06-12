@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-templating
 description: 'Write chezmoi templates: OS/machine conditionals, user-defined data variables, Sprig functions, shared fragments, and interactive prompts.'
 ---
