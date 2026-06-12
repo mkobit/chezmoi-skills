@@ -1,48 +1,44 @@
 # Script state management
 
-Chezmoi tracks the execution of `run_once_` and `run_onchange_` scripts in a persistent state database.
+Reference: <https://www.chezmoi.io/reference/commands/state/>
+chezmoi tracks the execution of `run_once_` and `run_onchange_` scripts in a persistent state database.
 
-## State Subcommands
+## State subcommands
 
-You can interact with the persistent state using the `chezmoi state` command. The subcommands include:
+Interact with the persistent state using `chezmoi state`:
 
-- `dump`: Generate a dump of the persistent state.
-- `delete`: Delete a specific value from the persistent state.
-- `delete-bucket`: Delete an entire bucket from the persistent state.
-- `get-bucket`: Get a bucket from the persistent state.
-- `list-buckets`: List all buckets in the persistent state.
-- `get`: Get a value from the persistent state.
-- `reset`: Reset the persistent state.
-- `set`: Set a value from the persistent state.
-- `data`: Print the raw data in the persistent state.
+| Subcommand | Purpose |
+| --- | --- |
+| `data` | Print the raw data in the persistent state |
+| `delete` | Delete a value (`--bucket=$BUCKET --key=$KEY`) |
+| `delete-bucket` | Delete an entire bucket (`--bucket=$BUCKET`) |
+| `dump` | Generate a dump of the persistent state |
+| `get` | Get a value (`--bucket=$BUCKET --key=$KEY`) |
+| `get-bucket` | Get a bucket (`--bucket=$BUCKET`) |
+| `list-buckets` | List all buckets |
+| `reset` | Reset the persistent state |
+| `set` | Set a value (`--bucket=$BUCKET --key=$KEY --value=$VALUE`) |
 
-## Bucket Names
+## Bucket names
 
-Chezmoi uses specific "buckets" within its state database to track script executions:
+- `scriptState`: tracks the execution of `run_once_` scripts.
+- `entryState`: tracks the execution and hashes of `run_onchange_` scripts.
 
-- `scriptState`: Tracks the execution of `run_once_` scripts.
-- `entryState`: Tracks the execution and hashes of `run_onchange_` scripts.
+## Inspecting script state
 
-## Inspecting Script State
-
-You can inspect which `run_once_` scripts have run and view their stored hashes by running:
+Dump the full persistent state:
 
 ```sh
 chezmoi state dump
 ```
 
-Alternatively, to retrieve only the `run_once_` state, use:
+Retrieve only the `run_once_` state:
 
 ```sh
 chezmoi state get-bucket --bucket=scriptState
 ```
 
-## State Database Path
+## State database path
 
-The state database file (`chezmoistate.boltdb`) is stored locally on each machine. Its default location varies by operating system:
-
-- **Linux:** `~/.config/chezmoi/chezmoistate.boltdb`
-- **macOS:** `~/Library/Application Support/chezmoi/chezmoistate.boltdb`
-- **Windows:** `~/AppData/Roaming/chezmoi/chezmoistate.boltdb`
-
-The location can also be manually specified or overridden using the `--persistent-state` CLI option or the `persistentState` configuration file setting.
+chezmoi stores its persistent state in `chezmoistate.boltdb` in the same directory as its config file (default `~/.config/chezmoi/chezmoistate.boltdb`).
+Override the location with the `--persistent-state` global flag or the `persistentState` configuration option.
