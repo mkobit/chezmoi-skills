@@ -1,4 +1,4 @@
-# Encryption References
+# Encryption references
 
 - [Encryption Overview](https://www.chezmoi.io/user-guide/encryption/): Overview of how chezmoi encrypts and stores files using various backends.
 - [Age Encryption](https://www.chezmoi.io/user-guide/encryption/age/): Guide on setting up and using the age encryption backend with chezmoi.

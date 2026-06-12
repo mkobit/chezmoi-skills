@@ -1,4 +1,4 @@
-# Password Manager References
+# Password manager references
 
 - [1Password Functions](https://www.chezmoi.io/reference/templates/1password-functions/): Covers template functions for fetching secrets, documents, and item details from 1Password.
 - [Bitwarden Functions](https://www.chezmoi.io/reference/templates/bitwarden-functions/): Covers template functions for accessing secrets, fields, and attachments from Bitwarden.
