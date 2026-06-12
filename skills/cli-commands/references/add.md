@@ -34,3 +34,9 @@ chezmoi add ~/.ssh/id_rsa --encrypt
 chezmoi add ~/.vim --recursive
 chezmoi add ~/.oh-my-zsh --exact --recursive
 ```
+
+## Caveats
+
+- `--autotemplate` uses a greedy algorithm that can produce unwanted variable substitutions; review generated templates.
+- `chezmoi add --exact --recursive DIR` on a nested directory (e.g., `~/.config/nvim`) marks all parent directories `exact_` too, so unrelated files under `~/.config` get removed on the next `apply`. Add a `.keep` file in the parent first: `chezmoi add ~/.config/.keep`, then add the subdirectory.
+- Adding an entry inside a directory implicitly created by an external fails (upstream issue #1574).

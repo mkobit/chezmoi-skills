@@ -6,15 +6,15 @@
 - [chezmoi archive](https://www.chezmoi.io/reference/commands/archive/): Generate an archive (tar, zip, etc.) of the target state.
 - [chezmoi execute-template](https://www.chezmoi.io/reference/commands/execute-template/): Execute templates (useful for testing or calling from other scripts).
 - [chezmoi cat](https://www.chezmoi.io/reference/commands/cat/): Write the target contents of files, scripts, or symlinks to stdout.
-- [chezmoi verify](https://www.chezmoi.io/reference/commands/verify/): Verify that all targets match their target state. Exits with code 0 if they match, 1 otherwise.
+- chezmoi verify: see [verify.md](verify.md).
 
 ## Flags
 
 - **re-add**: `-x`/`--exclude`, `-i`/`--include`, `--re-encrypt`, `-r`/`--recursive`
 - **destroy**: `--force` (destroy without prompting), `-r`/`--recursive`
-- **archive**: `-f`/`--format` (tar, tar.gz, tgz, zip), `-z`/`--gzip`
-- **execute-template**: `-f`/`--file` (treat args as filenames), `-i`/`--init`
-- **verify**: `-x`/`--exclude`, `-i`/`--include`, `--init`, `-P`/`--parent-dirs`, `-r`/`--recursive`
+- **archive**: `-f`/`--format` (tar, tar.gz, tgz, zip; guessed from `--output` extension), `-z`/`--gzip`, `-x`/`--exclude`, `-i`/`--include`, `--init`, `-P`/`--parent-dirs`, `-r`/`--recursive`
+- **execute-template**: `-f`/`--file` (treat args as filenames), `-i`/`--init`, `--with-stdin` (set `.chezmoi.stdin` from stdin), `--left-delimiter`/`--right-delimiter`, `--stdinisatty bool`
+- **execute-template prompt simulation**: `-p`/`--promptString`, `--promptBool`, `--promptInt`, `--promptChoice`, `--promptMultichoice` — each takes comma-separated `prompt=value` pairs to simulate the corresponding template function
 
 ## Examples
 
@@ -25,5 +25,5 @@ chezmoi archive | tar tvf -
 chezmoi archive --output=dotfiles.tar.gz
 chezmoi execute-template '{{ .chezmoi.os }}' / '{{ .chezmoi.arch }}'
 chezmoi cat ~/.bashrc
-chezmoi verify ~/.bashrc
+chezmoi execute-template --init --promptString email=me@home.org < ~/.local/share/chezmoi/.chezmoi.toml.tmpl
 ```

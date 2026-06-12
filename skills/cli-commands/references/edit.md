@@ -6,9 +6,9 @@ If no targets are given then the working tree of the source directory is opened.
 
 | Flag | Description |
 | --- | --- |
-| `-a`, `--apply` | Apply the target immediately after editing |
+| `-a`, `--apply` | Apply the target immediately after editing (ignored with no targets; does not apply scripts) |
 | `--hardlink bool` | Invoke the editor with a hard link to the source file (default true) |
-| `--watch` | Automatically apply changes when files are saved (requires `edit.watch` config and supported OS) |
+| `--watch` | Automatically apply on save (requires targets as arguments, working `edit.hardlink`, and an fsnotify-supported OS) |
 
 ## Common flags
 

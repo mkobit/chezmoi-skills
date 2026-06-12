@@ -14,8 +14,9 @@
 | --- | --- |
 | `-x`, `--exclude types` | Exclude target state entries of specific types |
 | `-i`, `--include types` | Include target state entries of specific types |
-| `-p`, `--path-style style` | Print paths in style (`absolute`, `relative`, `source-absolute`, `source-relative`, `all`) |
+| `-p`, `--path-style style` | Print paths in style; default `relative` (`managed`: `absolute`, `relative`, `source-absolute`, `source-relative`, `all`; `unmanaged`: `absolute`, `relative` only) |
 | `-t`, `--tree` | Print paths as a tree instead of a list |
+| `-0`, `--nul-path-separator` | Separate paths with NUL instead of newline |
 | `-f`, `--format` | Output format (json or yaml, `managed` only) |
 
 ## `doctor` flags
