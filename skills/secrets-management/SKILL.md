@@ -19,58 +19,87 @@ Use encrypted files for static credentials or keys you want in-repo.
 
 ### 1Password
 
+| Function | Signature |
+| --- | --- |
+| `onepasswordRead` | `onepasswordRead url [account]` |
+| `onepassword` | `onepassword uuid [vault [account]]` |
+| `onepasswordDetailsFields` | `onepasswordDetailsFields uuid [vault [account]]` |
+| `onepasswordDocument` | `onepasswordDocument uuid [vault [account]]` |
+
 ```gotmpl
-{{ onepassword "Item Name" "vault" "account" }}
-{{ onepasswordDocument "Document Name" }}
-{{ onepasswordDetailsFields "Item Name" "field" }}
+{{ onepasswordRead "op://vault/item/field" }}
+{{ (onepassword "$UUID").fields }}
+{{ (onepasswordDetailsFields "$UUID").password.value }}
+{{- onepasswordDocument "$UUID" -}}
 ```
 
-Requires `op` CLI and active session.
+`onepassword` and `onepasswordDetailsFields` return structured data parsed from `op` JSON output, not plain strings.
+Requires the `op` CLI; chezmoi prompts to sign in if there is no valid session.
 
 ### Bitwarden
 
 ```gotmpl
-{{ bitwarden "item" "field" }}
-{{ bitwardenFields "item" "field" }}
-{{ bitwardenAttachment "filename" "item" }}
+{{ (bitwarden "item" "$ITEMID").login.password }}
+{{ (bitwardenFields "item" "$ITEMID").token.value }}
+{{- bitwardenAttachment "$FILENAME" "$ITEMID" -}}
 ```
 
-Requires `bw` CLI and `BW_SESSION` env var.
+`bitwarden` and `bitwardenFields` pass their arguments to `bw get` unchanged and parse the JSON output; `bitwardenFields` indexes the `fields` array by field `name`.
+Requires `bw` CLI and the `BW_SESSION` env var, or set `bitwarden.unlock = "auto"` in config to run `bw unlock --raw` automatically.
 
 ### pass / gopass
 
 ```gotmpl
 {{ pass "path/to/secret" }}
+{{ (passFields "path/to/secret").password }}
 {{ gopass "path/to/secret" }}
 ```
+
+`pass` and `gopass` return only the first line of output; `passRaw` and `gopassRaw` return the full output.
 
 ### KeePassXC
 
 ```gotmpl
-{{ keepassxc "Entry Name" "field" }}
+{{ (keepassxc "Entry Name").Password }}
+{{ keepassxcAttribute "Entry Name" "attribute" }}
+{{- keepassxcAttachment "Entry Name" "filename" -}}
 ```
 
-Requires `keepassxc-cli`.
+Requires `keepassxc-cli` and `keepassxc.database` set in config.
 
-### macOS Keychain
+### OS keyring (macOS Keychain, GNOME Keyring, Windows Credentials Manager)
 
 ```gotmpl
-{{ keychain "service" "account" }}
+{{ keyring "service" "user" }}
+```
+
+Set values with:
+
+```sh
+chezmoi secret keyring set --service=$SERVICE --user=$USER
 ```
 
 ### Vault (HashiCorp)
 
 ```gotmpl
-{{ vault "secret/path" "key" }}
+{{ (vault "$KEY").data.data.password }}
 ```
 
-### Generic: environment variable fallback
+`vault` takes a single key, passes it to `vault kv get -format=json $KEY`, and returns the parsed JSON.
+
+### Generic: any CLI secret tool
+
+```toml
+[secret]
+    command = "vault"
+```
 
 ```gotmpl
-{{ env "MY_SECRET" }}
+{{ secret "arg" }}
+{{ secretJSON "kv" "get" "-format=json" "$ID" }}
 ```
 
-Use sparingly — environment variables are less secure than a password manager.
+`secret` returns raw command output with whitespace trimmed; `secretJSON` parses the output as JSON.
 
 ## Encrypted files with age
 
@@ -85,6 +114,8 @@ encryption = "age"
   recipient = "age1..."
 ```
 
+`encryption` must be set at the top level before any section; use `identities`/`recipients` (plural, lists) for multiple keys.
+
 Generate a key:
 
 ```sh
@@ -97,7 +128,7 @@ age-keygen -o ~/.config/chezmoi/key.txt
 chezmoi add --encrypt ~/.ssh/id_ed25519
 ```
 
-chezmoi stores the file as `encrypted_private_dot_ssh/encrypted_id_ed25519.age` in the source.
+chezmoi stores the file as `private_dot_ssh/encrypted_private_id_ed25519.age` in the source (`encrypted_` applies to files only, never directories).
 
 ### Decryption at apply time
 
@@ -136,7 +167,7 @@ chezmoi prompts for a passphrase on add and apply.
 Encrypted files in the source dir are named with the `encrypted_` prefix:
 
 - `encrypted_dot_netrc.age` → `~/.netrc`
-- `encrypted_private_dot_ssh/encrypted_id_ed25519.age` → `~/.ssh/id_ed25519`
+- `private_dot_ssh/encrypted_private_id_ed25519.age` → `~/.ssh/id_ed25519`
 
 The `.age` or `.asc` extension is stripped at apply time.
 
@@ -146,7 +177,7 @@ You can use password manager functions directly in `chezmoi.toml.tmpl`:
 
 ```toml
 [data]
-  gitSigningKey = "{{ onepasswordDetailsFields "GPG Key" "public key" }}"
+  gitSigningKey = {{ onepasswordRead "op://vault/GPG Key/public key" | quote }}
 ```
 
 ## Best practices
