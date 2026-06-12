@@ -116,10 +116,10 @@ encryption = "age"
 
 `encryption` must be set at the top level before any section; use `identities`/`recipients` (plural, lists) for multiple keys.
 
-Generate a key:
+Generate a key (`chezmoi age-keygen` works without `age` installed):
 
 ```sh
-age-keygen -o ~/.config/chezmoi/key.txt
+chezmoi age-keygen --output ~/.config/chezmoi/key.txt
 ```
 
 ### Add an encrypted file with age

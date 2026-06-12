@@ -1,6 +1,6 @@
 # Editor, Diff, and Merge Tools
 
-Reference: <https://www.chezmoi.io/reference/configuration-file/variables/#top-level>
+Reference: <https://www.chezmoi.io/reference/configuration-file/variables/>
 Configure the tools used for editing, diffing, and merging files.
 
 ## Edit
@@ -14,7 +14,7 @@ Configure the tools used for editing, diffing, and merging files.
 | `edit.minDuration` | `duration` | `1s` | Minimum duration for edit command. |
 | `edit.watch` | `bool` | `false` | Automatically apply changes when files are saved. |
 
-### Edit Example
+### Edit example
 
 ```toml
 [edit]
@@ -40,7 +40,7 @@ Configure the tools used for editing, diffing, and merging files.
 | `diff.reverse` | `bool` | `false` | Reverse order of arguments to diff. |
 | `diff.scriptContents` | `bool` | `true` | Show script contents. |
 
-### Diff Example
+### Diff example
 
 ```toml
 [diff]
@@ -60,7 +60,10 @@ Configure the tools used for editing, diffing, and merging files.
 | `merge.args` | `[]string` | see docs | Extra args to three-way merge CLI command. |
 | `merge.command` | `string` | `none` | Three-way merge CLI command. |
 
-### Merge Example
+The default merge command is `vimdiff`.
+Elements of `merge.args` are interpreted as templates with `.Destination`, `.Source`, and `.Target` containing the filenames of the file in the destination, source, and target state respectively.
+
+### Merge example
 
 ```toml
 [merge]

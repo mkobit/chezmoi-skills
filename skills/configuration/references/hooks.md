@@ -3,31 +3,34 @@
 Reference: <https://www.chezmoi.io/reference/configuration-file/hooks/>
 Hook commands are executed before and after events. Unlike scripts, hooks are always run, even if `--dry-run` is specified. Hooks should be fast and idempotent.
 
-## Supported Hook Events
+## Supported hook events
 
 The following events are defined:
 
 | Event | Trigger |
 | --- | --- |
-| `command` | Running chezmoi commands such as `apply`, `add`, `edit`, `update`, `init`, etc. |
+| *command* | Running any chezmoi command, e.g. `apply`, `add`, `update` |
 | `git-auto-commit` | Generating an automatic git commit |
 | `git-auto-push` | Running an automatic git push |
 | `read-source-state` | Reading the source state |
 
-Each event can have a `.pre` and/or a `.post` command. The `event.pre` command is executed before the event occurs and the `event.post` command is executed after the event has occurred.
+Each event can have a `.pre` and/or a `.post` command.
+The `event.pre` command is executed before the event occurs and the `event.post` command is executed after the event has occurred.
 
-A hook contains a `command` or `script` and an optional array of strings `args`. `commands` are executed directly. `scripts` are executed with configured interpreter for the script's extension.
+A hook contains a `command` or `script` and an optional array of strings `args`.
+Commands are executed directly.
+Scripts are executed with the configured interpreter for the script's extension.
 
-## Hook Variables
+## Hook variables
 
 | Variable | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hooks.command.post.args` | `[]string` | `none` | Extra arguments to command to run after command. |
-| `hooks.command.post.command` | `[]string` | `none` | Command to run after command. |
-| `hooks.command.pre.args` | `[]string` | `none` | Extra arguments to command to run before command. |
-| `hooks.command.pre.command` | `[]string` | `none` | Command to run before command. |
+| `hooks.`*event*`.post.args` | `[]string` | `none` | Extra arguments to the command to run after the event. |
+| `hooks.`*event*`.post.command` | `[]string` | `none` | Command to run after the event. |
+| `hooks.`*event*`.pre.args` | `[]string` | `none` | Extra arguments to the command to run before the event. |
+| `hooks.`*event*`.pre.command` | `[]string` | `none` | Command to run before the event. |
 
-## Environment Variables during Hooks
+## Environment variables during hooks
 
 When running hooks, the `CHEZMOI=1` and `CHEZMOI_*` environment variables will be set:
 

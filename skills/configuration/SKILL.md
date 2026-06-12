@@ -5,7 +5,8 @@ description: "Configure chezmoi behavior: source/target dirs, data injection, en
 
 ## Config file location
 
-chezmoi looks for its config file at `~/.config/chezmoi/chezmoi.toml` (preferred) or the XDG config home.
+chezmoi reads its config file from `~/.config/chezmoi/chezmoi.$FORMAT`, where `$FORMAT` is one of `json`, `jsonc`, `toml`, or `yaml`.
+If multiple formats are present, chezmoi reports an error.
 Use `chezmoi doctor` to confirm the path chezmoi is actually using.
 
 ## Minimal config example
@@ -38,32 +39,15 @@ See `references/core.md` for a full list of top-level options.
   os = "linux"
 ```
 
-External data files can be placed at `~/.local/share/chezmoi/.chezmoidata.toml` or `.chezmoidata.yaml`.
+Static data can also live in `.chezmoidata.$FORMAT` files in the source directory.
 
 See `references/data.md` for more on data injection and templating.
 
 ## Encryption configuration
 
-### age
-
-```toml
-encryption = "age"
-
-[age]
-  identity = "~/.config/chezmoi/key.txt"
-  recipient = "age1..."
-```
-
-### gpg
-
-```toml
-encryption = "gpg"
-
-[gpg]
-  recipient = "user@example.com"
-```
-
-See `references/encryption.md` for age/gpg commands and configuration blocks.
+The top-level `encryption` option (`age`, `gpg`, or `transparent`) plus an `[age]` or `[gpg]` section configure encrypted files.
+`encryption` must appear before any section in the config file.
+The chezmoi-secrets-management skill owns encryption setup, key generation, and workflows.
 
 ## Editor and diff settings
 
@@ -95,7 +79,8 @@ See `references/tools.md` for full configuration properties of `[edit]`, `[diff]
   args = ["applying chezmoi"]
 ```
 
-Supported hook events: `apply`, `add`, `edit`, `update` with `.pre` and `.post` variants.
+Hooks can be defined for any command (`apply`, `add`, `update`, ...) plus the `git-auto-commit`, `git-auto-push`, and `read-source-state` events, each with `.pre` and `.post` variants.
+Hooks always run, even with `--dry-run`.
 
 See `references/hooks.md` for more hook examples and configurations.
 
@@ -108,11 +93,11 @@ See `references/hooks.md` for more hook examples and configurations.
   commitMessageTemplate = "chore: update dotfiles"
 ```
 
-With `autoCommit = true`, chezmoi commits after each `add` or `re-add`.
+With `autoCommit = true`, chezmoi commits whenever a change is made to the source directory.
 
 See `references/git.md` for a full list of `[git]` configuration options.
 
 ## Multiple machine profiles
 
-Use template conditionals with `.chezmoi.hostname` or custom `[data]` flags to vary behavior per machine.
-Do not use multiple config files — use templates to branch within one config.
+Do not use multiple config files — use a single `.chezmoi.$FORMAT.tmpl` config template to branch per machine.
+The chezmoi-machine-config skill owns multi-machine patterns.
