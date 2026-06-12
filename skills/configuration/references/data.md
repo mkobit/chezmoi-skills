@@ -1,9 +1,9 @@
-# Data Injection and Templates
+# Data injection and templates
 
 Reference: <https://www.chezmoi.io/user-guide/templating/#template-data>
 How to structure custom data injection and variables in `chezmoi`.
 
-## Template Data
+## Template data
 
 chezmoi provides a variety of template variables. For a full list, run `chezmoi data`.
 
@@ -13,7 +13,7 @@ These come from a variety of sources (later data overwrite earlier ones):
 * Variables created by you in `.chezmoidata.$FORMAT` configuration files. The various supported formats (`json`, `jsonc`, `toml`, and `yaml`) are read in alphabetical order.
 * Variables created by you in the `data` section of the configuration file.
 
-### Data Section Config
+### Data section config
 
 You can place custom fields directly in the configuration file under `[data]`:
 
@@ -26,9 +26,10 @@ You can place custom fields directly in the configuration file under `[data]`:
   os = "linux"
 ```
 
-### External Data Files
+### External data files
 
-External data files can be placed at `~/.local/share/chezmoi/.chezmoidata.toml` or `.chezmoidata.yaml`.
+External data files can be placed at `.chezmoidata.$FORMAT` in the source directory.
+The chezmoi-machine-config skill owns per-machine data patterns and merge rules.
 
 ```toml
 # ~/.local/share/chezmoi/.chezmoidata.toml
@@ -42,7 +43,7 @@ git:
   email: "user@example.com"
 ```
 
-### Using Data in Templates
+### Using data in templates
 
 Data is accessible directly on the top-level template context:
 

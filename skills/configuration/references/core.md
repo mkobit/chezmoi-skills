@@ -1,4 +1,4 @@
-# Core Configuration Options
+# Core configuration options
 
 Reference: <https://www.chezmoi.io/reference/configuration-file/variables/#top-level>
 A list of all top-level configuration options available in `chezmoi.toml` / `chezmoi.yaml`.
@@ -14,7 +14,7 @@ A list of all top-level configuration options available in `chezmoi.toml` / `che
 | `encryption` | `string` | `none` | Encryption type, either `age`, `gpg`, or `transparent`. |
 | `env` | `object` | `none` | Extra environment variables for scripts and commands. |
 | `format` | `string` | `"json"` | Format for data output, either `json` or `yaml`. |
-| `interactive` | `string` | `false` | Prompt for all changes. |
+| `interactive` | `bool` | `false` | Prompt for all changes. |
 | `mode` | `string` | `"file"` | Mode in target dir, either `file` or `symlink`. |
 | `pager` | `string` | `$PAGER` | Default pager CLI command. |
 | `pagerArgs` | `[]string` | `none` | Extra args to the pager command. |

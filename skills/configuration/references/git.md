@@ -3,7 +3,7 @@
 Reference: <https://www.chezmoi.io/reference/configuration-file/variables/#git>
 Configure how chezmoi interacts with git in the source directory.
 
-## Git Variables
+## Git variables
 
 | Variable | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -15,15 +15,10 @@ Configure how chezmoi interacts with git in the source directory.
 | `git.commitMessageTemplateFile` | `string` | `none` | Commit message template file (relative to source directory). |
 | `git.lfs` | `bool` | `false` | Run `git lfs pull` after cloning. |
 
-### Auto-Commit Behavior
+### Auto-commit behavior
 
-With `autoCommit = true` (or `autoAdd = true`), chezmoi will automatically add and commit changes to the source directory after any operation that modifies it, such as:
-
-* `chezmoi add`
-* `chezmoi re-add`
-* `chezmoi edit` (if changes were made)
-* `chezmoi remove`
-* `chezmoi chattr`
+With `autoCommit = true`, chezmoi automatically commits whenever a change is made to the source directory, with a commit message generated from the files changed.
+The chezmoi-source-state skill (`references/git-operations.md`) covers autoPush behavior and failure modes.
 
 ### Examples
 
