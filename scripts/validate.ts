@@ -156,12 +156,10 @@ const validateVersionSync = async (): Promise<ValidationResult[]> => {
   const readJson = async (path: string) => JSON.parse(await readFile(path, "utf-8"));
 
   try {
-    const versionTxt = (await readFile("version.txt", "utf-8")).trim();
     const plugin = await readJson(join(claudePluginDir, "plugin.json"));
     const marketplace = await readJson(join(claudePluginDir, "marketplace.json"));
 
     const versions = [
-      { source: "version.txt", version: versionTxt },
       { source: "plugin.json", version: plugin.version },
       ...(marketplace.plugins ?? []).map((p: any, i: number) => ({
         source: `marketplace.json plugins[${i}]`,
@@ -169,12 +167,12 @@ const validateVersionSync = async (): Promise<ValidationResult[]> => {
       })),
     ];
 
-    const mismatched = versions.filter(v => v.version !== versionTxt);
+    const mismatched = versions.filter(v => v.version !== plugin.version);
     if (mismatched.length > 0) {
       const details = versions.map(v => `${v.source}=${v.version}`).join(", ");
       return [{ valid: false, name, details: `Versions out of sync: ${details}` }];
     }
-    return [{ valid: true, name: `${name} (${versionTxt})` }];
+    return [{ valid: true, name: `${name} (${plugin.version})` }];
   } catch (e) {
     return [{ valid: false, name, details: String(e) }];
   }

@@ -10,15 +10,9 @@ Ensure agents only load context when needed to improve efficiency.
 
 ## Commit and PR title conventions
 
-Releases are managed by release-please, which only bumps versions for `feat` and `fix` commits.
-Skill content is the product of this repository, so type changes accordingly:
-
-- `feat`: a new skill, or new content in an existing skill (new sections, new reference files).
-- `fix`: corrections to existing skill content (wrong commands, broken links, inaccurate facts).
-- `docs`: repository documentation only (README, AGENTS.md) — appears in the changelog but does not trigger a release.
-- `ci`, `build`, `chore`, `test`, `refactor`: tooling and maintenance — hidden from the changelog.
-
-PR titles must follow the same convention (enforced by CI) because squash merges use the PR title as the commit message.
+Commits and PR titles follow [conventional commits](https://www.conventionalcommits.org/); PR titles are enforced by CI and become the commit message on squash merge.
+Releases are managed by [release-please](https://github.com/googleapis/release-please) — see `release-please-config.json` for the recognized types and their changelog sections.
+Skill content is the product of this repository: use `feat`/`fix` for skill changes so they trigger releases, and reserve `docs` for repository documentation.
 
 ## Scratch files
 
