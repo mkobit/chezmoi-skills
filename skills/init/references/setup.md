@@ -1,4 +1,4 @@
-# Setup and Installation
+# Setup and installation
 
 ## Setup overview
 
@@ -31,8 +31,6 @@ chezmoi init
 ```
 
 ## Install
-
-The latest version of chezmoi is 2.70.2.
 
 ### One-line binary install
 
@@ -69,28 +67,6 @@ To install the chezmoi binary in a different directory, use the `-b` option:
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin
 ```
 
-### init flags table
+### init flags
 
-| Flag | Type | Default | Description |
-| --- | --- | --- | --- |
-| `-a`, `--apply` | bool | `false` | Run `chezmoi apply` after checking out the repo and creating the config file. |
-| `--branch` | string | `""` | Check out `branch` instead of the default branch. |
-| `-C`, `--config-path` | string | `""` | Write the generated config file to `path` instead of the default location. |
-| `--data` | bool | `true` | Include existing template data when creating the config file. |
-| `-d`, `--depth` | int | `0` | Clone the repo with depth `depth`. |
-| `--git-lfs` | bool | `false` | Run `git lfs pull` after cloning the repo. |
-| `-g`, `--guess-repo-url` | bool | `true` | Guess the repo URL from the repo argument. |
-| `--one-shot` | bool | `false` | Equivalent of `--apply`, `--depth=1`, `--force`, `--purge`, and `--purge-binary`. |
-| `--prompt` | bool | `false` | Force the `prompt*Once` template functions to prompt. |
-| `--promptBool` | string | `""` | Populate the `promptBool` template function with values from pairs. |
-| `--promptChoice` | string | `""` | Populate the `promptChoice` template function with values from pairs. |
-| `--promptDefaults` | bool | `false` | Make all `prompt*` template function calls with a default value return that default value instead of prompting. |
-| `--promptInt` | string | `""` | Populate the `promptInt` template function with values from pairs. |
-| `--promptMultichoice` | string | `""` | Populate the `promptMultichoice` template function with values from pairs. |
-| `--promptString` | string | `""` | Populate the `promptString` template function with values from pairs. |
-| `-p`, `--purge` | bool | `false` | Remove the source and config directories after applying. |
-| `-P`, `--purge-binary` | bool | `false` | Attempt to remove the chezmoi binary after applying. |
-| `--recurse-submodules` | bool | `true` | Recursively clone submodules. |
-| `--ssh` | bool | `false` | Guess an SSH repo URL instead of an HTTPS repo. |
-| `-x`, `--exclude` | string | `""` | Exclude target state entries of specific types. |
-| `-i`, `--include` | string | `""` | Include target state entries of specific types. |
+See the flags table in [commands.md](commands.md).
