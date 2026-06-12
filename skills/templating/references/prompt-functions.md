@@ -2,7 +2,7 @@
 
 These template functions are only available when generating a config file with `chezmoi init`. For testing with `chezmoi execute-template`, pass the `--init` flag to enable them. If the command line flag `--promptDefaults` is set, all prompts return their default values, if available.
 
-## Prompt Functions
+## Prompt functions
 
 | Function Signature | Description |
 | --- | --- |
@@ -22,7 +22,7 @@ These template functions are only available when generating a config file with `
 | `promptMultichoice prompt choices default` | Prompts for multiple choices with default choices |
 | `promptMultichoiceOnce dictionary key prompt choices [default]` | Prompts for multiple choices only if `key` is not already set in `dictionary` |
 
-## Other Init Functions
+## Other init functions
 
 | Function Signature | Description |
 | --- | --- |

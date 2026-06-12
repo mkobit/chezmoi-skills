@@ -18,7 +18,8 @@ Available as `.chezmoi.*` in every template:
 | `.chezmoi.homeDir` | `"/home/alice"` |
 | `.chezmoi.sourceDir` | `"/home/alice/.local/share/chezmoi"` |
 | `.chezmoi.group` | Primary group name |
-| `.chezmoi.kernel.osRelease` | Linux `/etc/os-release` fields (Linux only) |
+| `.chezmoi.osRelease` | `/etc/os-release` fields (Linux only) |
+| `.chezmoi.kernel` | `/proc/sys/kernel` info, e.g. WSL detection (Linux only) |
 
 See [built-in-variables.md](references/built-in-variables.md) for more details.
 
@@ -40,7 +41,7 @@ Add values to `chezmoi.toml` under `[data]`:
 
 Access in templates: `{{ .email }}`, `{{ .workMachine }}`
 
-External data files at `.chezmoidata.toml` or `.chezmoidata.yaml` in the source directory are also merged in.
+External data files at `.chezmoidata.$FORMAT` in the source directory are also merged in.
 
 ## Go template syntax
 
@@ -85,9 +86,9 @@ Common Sprig functions:
 | `splitList` | Split string into list |
 | `join` | Join list into string |
 | `env` | Read environment variable |
-| `include` | Include another template by name |
 
-See [sprig-functions.md](references/sprig-functions.md) for a complete list of Sprig and chezmoi functions.
+chezmoi adds its own functions on top, e.g. `output` (command stdout), `include` (literal file contents), `includeTemplate`, `joinPath`, `lookPath`, and `stat`.
+See [sprig-functions.md](references/sprig-functions.md) for the chezmoi-specific functions.
 
 ## Shared template fragments (`.chezmoitemplates/`)
 
@@ -116,7 +117,7 @@ See [shared-template-fragments.md](references/shared-template-fragments.md) for 
 
 ## Interactive prompts
 
-Use prompt functions in `chezmoi.toml.tmpl` to gather input on init:
+Use prompt functions in the config template (`.chezmoi.toml.tmpl` in the source directory) to gather input on init:
 
 ```gotmpl
 {{- $email := promptString "email" -}}
@@ -151,5 +152,4 @@ chezmoi cat ~/.gitconfig
 | --- | --- | --- |
 | Forgetting to add `.tmpl` suffix | file is copied verbatim, template not rendered | Add `.tmpl` suffix to filename |
 | Using `{{ }}` without whitespace control (`{{-` / `-}}`) | unexpected blank lines in output | Use whitespace control markers |
-| Referencing `.chezmoi.hostname` before calling `chezmoi init` | data is only available after initialization | Call `chezmoi init` first |
-| Using `promptString` outside of `chezmoi.toml.tmpl` | prompts only work in the config template | Move prompt to `chezmoi.toml.tmpl` |
+| Using `promptString` outside of `.chezmoi.toml.tmpl` | prompt functions are only available when generating the config file | Move prompt to the config template, or test with `chezmoi execute-template --init` |
