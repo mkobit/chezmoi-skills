@@ -23,6 +23,8 @@ description: "Look up and run chezmoi commands: add, apply, diff, status, update
 [See references/apply.md](references/apply.md)
 [See references/update.md](references/update.md)
 [See references/verify.md](references/verify.md)
+[See references/edit.md](references/edit.md)
+[See references/misc-core.md](references/misc-core.md) for re-add, forget, destroy, cat, and execute-template
 
 ## Inspection and navigation
 
