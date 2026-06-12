@@ -11,23 +11,30 @@ For more details, see [Script execution and naming](references/script-execution.
 | Prefix | Runs when |
 | --- | --- |
 | `run_` | Every `chezmoi apply` |
-| `run_once_` | Once ever (tracked in state database) |
-| `run_onchange_` | When the script content changes |
-| `run_before_` | Before files are applied |
-| `run_after_` | After files are applied |
+| `run_once_` | Once per unique content (SHA256 tracked in state; re-runs if content changes) |
+| `run_onchange_` | When the script content changes since the last successful run |
+| `run_before_` | Before files are updated |
+| `run_after_` | After files are updated |
 
 Prefixes compose left to right: `run_once_before_install-packages.sh`
 
+For `.tmpl` scripts, content is hashed after template execution.
+A `run_once_` script with content that already ran (even under a different filename) does not run again.
+
 ## Script ordering
 
-Within the same phase (`before`, `after`), scripts run in lexicographic order.
+Scripts are executed in alphabetical order.
+Without `before_`/`after_`, scripts run interleaved with file updates (`run_b.sh` runs after updating `a.txt` and before `c.txt`).
 Use numeric prefixes to control order: `run_once_before_00-setup.sh`, `run_once_before_01-packages.sh`.
 
-## Making scripts executable
+## Execution model
 
-Scripts must be executable in the source state.
-Use the `executable_` prefix when adding a new script manually (e.g. `executable_run_once_before_install.sh`).
-Alternatively, use `chezmoi add --follow` when adding a file that already has the executable bit set on disk.
+Scripts do not need the executable bit in the source directory.
+chezmoi writes the script contents to a temporary directory with the executable bit set and runs it with `exec(3)`, so the script must start with a `#!` line or be an executable binary.
+The working directory is the first existing parent directory in the destination tree.
+Create scripts manually in the source directory (`chezmoi cd`); `chezmoi add` does not create them.
+
+If a `.tmpl` script renders to an empty string or only whitespace, it is not executed — useful for disabling scripts dynamically.
 
 ## Example: install packages once
 
@@ -42,18 +49,24 @@ brew install git curl
 {{ end -}}
 ```
 
-## Example: reload shell config on change
+## Example: re-run when another file changes
+
+Embed a hash of the other file in the script so the script content changes with it:
 
 ```sh
 #!/bin/bash
-# .chezmoiscripts/run_onchange_after_reload-shell.sh
+# .chezmoiscripts/run_onchange_dconf-load.sh.tmpl
+# dconf.ini hash: {{ include "dconf.ini" | sha256sum }}
 
-source ~/.bashrc
+dconf load / < {{ joinPath .chezmoi.sourceDir "dconf.ini" | quote }}
 ```
+
+Add `dconf.ini` to `.chezmoiignore` so chezmoi does not create it in the target.
 
 ## Tracking state
 
-Chezmoi records which `run_once_` scripts have run in `~/.local/share/chezmoi/chezmoistate.boltdb`.
+chezmoi records script state in `chezmoistate.boltdb` in the same directory as its config file (default `~/.config/chezmoi/chezmoistate.boltdb`).
+`run_once_` scripts are tracked in the `scriptState` bucket and `run_onchange_` scripts in the `entryState` bucket.
 For more details, see [Script state management](references/state-management.md).
 
 Inspect the state:
@@ -62,23 +75,17 @@ Inspect the state:
 chezmoi state dump
 ```
 
-Clear all script history (forces re-run of all `run_once_` scripts):
+Force re-run of all `run_once_` scripts:
 
 ```sh
 chezmoi state delete-bucket --bucket=scriptState
 ```
 
-Clear a specific script:
+Force re-run of all `run_onchange_` scripts:
 
 ```sh
-chezmoi state delete --bucket=scriptState --key=<hash>
+chezmoi state delete-bucket --bucket=entryState
 ```
-
-## `run_onchange_` content hashing
-
-chezmoi hashes the script content to detect changes.
-If the script's text changes (including template output), it re-runs.
-For more details, see [Script execution and naming](references/script-execution.md).
 
 ## Skipping scripts
 
@@ -96,8 +103,10 @@ chezmoi apply --include=scripts
 
 ## Debugging scripts
 
-Run with `--verbose` to see which scripts are queued and why:
+In verbose mode, script contents are printed before execution; in dry-run mode, scripts are not executed:
 
 ```sh
 chezmoi apply --verbose --dry-run
 ```
+
+`chezmoi status` lists scripts that would run with status `R`.
