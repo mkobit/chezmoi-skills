@@ -1,6 +1,7 @@
 [Shared template fragments](https://www.chezmoi.io/user-guide/templating/#using-chezmoitemplates) - Official documentation for using the `.chezmoitemplates/` directory.
 
-Files in the `.chezmoitemplates` subdirectory of the source directory are parsed as templates and can be included in other templates. The filename is used as the template name.
+Files in the `.chezmoitemplates` subdirectory of the source directory (including its subdirectories) are parsed as templates and can be included in other templates.
+The template name is the path relative to the `.chezmoitemplates` directory; the filename does not need a `.tmpl` suffix.
 
 ## Invoking a shared template
 
