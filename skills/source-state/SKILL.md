@@ -1,6 +1,6 @@
 ---
 name: chezmoi-source-state
-description: 'Work with the chezmoi source directory: file naming prefixes, adding/removing files, special directories (.chezmoiignore, .chezmoiexternal.toml, .chezmoitemplates/), and git operations.'
+description: 'Work with the chezmoi source directory: file naming prefixes, adding/removing files, externals (.chezmoiexternal for external files, archives, and git repos), special directories (.chezmoiignore, .chezmoitemplates/), and git operations.'
 ---
 
 ## Source directory location
@@ -98,19 +98,20 @@ Supports Go template syntax.
 
 ## `.chezmoiexternal.toml`
 
-Fetch external files or archives into the source state:
+Fetch external files, archives, or git repos into the target as if they were in the source state:
 
 ```toml
-[".local/bin/gh"]
-  type = "file"
-  url = "https://example.com/tool.tar.gz"
-  executable = true
-  stripComponents = 2
+[".oh-my-zsh"]
+  type = "archive"
+  url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
+  exact = true
+  stripComponents = 1
+  refreshPeriod = "168h"
 ```
 
 Note that `stripComponents` trims leading path segments from the archive.
 
-[Read more about special files and directories in references/special-files-directories.md](references/special-files-directories.md)
+[Read more about external types and all fields in references/externals.md](references/externals.md)
 
 ## `.chezmoitemplates/`
 

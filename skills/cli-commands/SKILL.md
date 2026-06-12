@@ -1,6 +1,6 @@
 ---
 name: chezmoi-cli-commands
-description: "Look up and run chezmoi commands: add, apply, diff, status, update, edit, merge, re-add, and other core operations."
+description: "Look up and run chezmoi commands: add, apply, diff, status, update, verify, edit, merge, re-add, state, and other core operations on the target directory."
 ---
 
 ## Core workflow commands
@@ -21,6 +21,10 @@ description: "Look up and run chezmoi commands: add, apply, diff, status, update
 
 [See references/add.md](references/add.md)
 [See references/apply.md](references/apply.md)
+[See references/update.md](references/update.md)
+[See references/verify.md](references/verify.md)
+[See references/edit.md](references/edit.md)
+[See references/misc-core.md](references/misc-core.md) for re-add, forget, destroy, cat, and execute-template
 
 ## Inspection and navigation
 
@@ -44,8 +48,13 @@ Use `chezmoi apply --verbose` for per-file detail.
 
 ## Merging and resolving conflicts
 
-- `chezmoi merge <file>` — three-way merge a file with conflicts
+When a target file has been modified outside chezmoi, `apply` reports it as modified.
+
+- `chezmoi diff <file>` — inspect what changed
+- `chezmoi merge <file>` — three-way merge a file with conflicts (disk vs source vs last apply)
 - `chezmoi merge-all` — merge all files with conflicts at once
+- `chezmoi apply --force <file>` — overwrite with source state
+- `chezmoi re-add <file>` — update the source to match the current disk state
 - Set `merge.command` in config to customize the merge tool
 
 [See references/merging.md](references/merging.md)
