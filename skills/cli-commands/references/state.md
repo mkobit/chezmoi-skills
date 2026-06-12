@@ -2,6 +2,10 @@
 
 [chezmoi state](https://www.chezmoi.io/reference/commands/state/): Manipulate the persistent state.
 
+chezmoi records run-once script state and last-apply checksums in the state database.
+This database is local to each machine and is not committed to the source repo.
+Its location is `~/.local/share/chezmoi/chezmoistate.boltdb`.
+
 ## Subcommands
 
 | Subcommand | Description |
@@ -17,7 +21,7 @@
 
 ## Examples
 
-```bash
+```sh
 chezmoi state data
 chezmoi state delete --bucket=$BUCKET --key=$KEY
 chezmoi state delete-bucket --bucket=$BUCKET

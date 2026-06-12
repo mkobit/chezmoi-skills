@@ -1,27 +1,23 @@
 [chezmoi update](https://www.chezmoi.io/reference/commands/update/): Pull changes from the source repo and apply any changes.
 
-If `update.command` is set, chezmoi will run it with `update.args`. Otherwise, it runs `git pull --autostash --rebase [--recurse-submodules]`.
+If `update.command` is set then chezmoi will run `update.command` with `update.args` in the working tree.
+Otherwise, chezmoi will run `git pull --autostash --rebase [--recurse-submodules]`, using chezmoi's builtin git if `useBuiltinGit` is true or if `git.command` cannot be found in `$PATH`.
 
 ## Flags
 
 | Flag | Description |
 | --- | --- |
-| `-a`, `--apply` | Apply changes after pulling (true by default) |
-| `--recurse-submodules` | Update submodules recursively (true by default) |
-
-## Common flags
-
-| Flag | Description |
-| --- | --- |
+| `-a`, `--apply` | Apply changes after pulling (true by default, disable with `--apply=false`) |
+| `--recurse-submodules` | Update submodules recursively (true by default, disable with `--recurse-submodules=false`) |
 | `-x`, `--exclude types` | Exclude target state entries of specific types |
 | `-i`, `--include types` | Include target state entries of specific types |
-| `--init` | Regenerate and reload the config file from its template |
+| `--init` | Regenerate and reload the config file from its template before computing the target state |
 | `-P`, `--parent-dirs` | Execute the command on target and all its parent directories |
 | `-r`, `--recursive` | Recurse into subdirectories (enabled by default) |
 
 ## Examples
 
-```bash
+```sh
 chezmoi update
 chezmoi update --apply=false
 ```

@@ -13,19 +13,19 @@ The second column indicates the difference between the actual state and the targ
 | `M` | Modified | Entry was modified | Entry will be modified |
 | `R` | Run | Not applicable | Script will be run |
 
-## Common flags
+## Flags
 
 | Flag | Description |
 | --- | --- |
 | `-x`, `--exclude types` | Exclude target state entries of specific types |
 | `-i`, `--include types` | Include target state entries of specific types |
-| `--init` | Regenerate and reload the config file from its template |
+| `--init` | Regenerate and reload the config file from its template before computing the target state |
 | `-P`, `--parent-dirs` | Execute the command on target and all its parent directories |
 | `-p`, `--path-style style` | Print paths in style (`absolute`, `relative`, `source-absolute`, `source-relative`, `all`) |
-| `-r`, `--recursive` | Recurse into subdirectories (enabled by default) |
+| `-r`, `--recursive` | Recurse into subdirectories (enabled by default, disable with `--recursive=false`) |
 
 ## Examples
 
-```bash
+```sh
 chezmoi status
 ```
