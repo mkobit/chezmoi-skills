@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "description": "Agent skills for managing dotfiles with chezmoi, including templates, source directory, targets, and config.",
   "author": {
-    "name": "Chezmoi Agent",
-    "url": "https://chezmoi.io/"
+    "name": "Mike Kobit",
+    "url": "https://github.com/mkobit"
   },
-  "repository": "https://github.com/your-username/chezmoi-skills",
+  "repository": "https://github.com/mkobit/chezmoi-skills",
   "license": "MIT",
   "keywords": [
     "chezmoi",
