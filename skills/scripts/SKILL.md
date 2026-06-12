@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-scripts
 description: Run scripts on apply, once, or on content change — manage run_, run_once_, run_onchange_, run_before_, and run_after_ scripts and their state.
 ---

@@ -11,9 +11,6 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@semantic-release/exec": "7.1.0",
-    "@semantic-release/git": "10.0.1",
-    "markdownlint-cli2": "0.22.1",
-    "semantic-release": "25.0.5"
+    "markdownlint-cli2": "0.22.1"
   }
 }

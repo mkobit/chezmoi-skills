@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-configuration
 description: "Configure chezmoi behavior: source/target dirs, data injection, encryption, editor, diff/merge tools, git auto-commit, and operation hooks."
 ---

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "bootstrap-sha": "4bc88c61f402d46263786be3d97ea523e59adc11",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": ".claude-plugin/marketplace.json",
+          "jsonpath": "$.plugins[0].version"
+        }
+      ],
+      "bump-minor-pre-major": true,
+      "include-v-in-tag": true,
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug fixes" },
+        { "type": "docs", "section": "Documentation" },
+        { "type": "deps", "section": "Dependency updates" },
+        { "type": "perf", "section": "Performance improvements" },
+        { "type": "chore", "section": "Miscellaneous", "hidden": true },
+        { "type": "ci", "section": "Infrastructure", "hidden": true },
+        { "type": "build", "section": "Infrastructure", "hidden": true },
+        { "type": "test", "section": "Tests", "hidden": true },
+        { "type": "refactor", "section": "Refactoring", "hidden": true },
+        { "type": "revert", "section": "Reverts", "hidden": true }
+      ]
+    }
+  }
+}

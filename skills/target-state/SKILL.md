@@ -1,5 +1,4 @@
 ---
-version: 0.0.1
 name: chezmoi-target-state
 description: Preview, apply, verify, and sync the target directory — diff, apply, status, verify, update, and conflict resolution.
 ---
