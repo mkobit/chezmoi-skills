@@ -1,132 +1,33 @@
 ---
 name: chezmoi-source-state
-description: 'Work with the chezmoi source directory: file naming prefixes, adding/removing files, externals (.chezmoiexternal for external files, archives, and git repos), special directories (.chezmoiignore, .chezmoitemplates/), and git operations.'
+description: Work with the chezmoi source directory, file naming prefixes, external dependencies, special directories, and git operations.
 ---
+
+When you need complete attribute prefix tables, external file schemas, or special directory rules, scan the `references/` directory.
 
 ## Source directory location
 
-Default: `~/.local/share/chezmoi`
-Override with `sourceDir` in config or `--source` flag.
-Open a shell in it: `chezmoi cd`
-
-The source directory is a plain git repository.
+The chezmoi source directory defaults to `~/.local/share/chezmoi` and is a plain Git repository.
+Run `chezmoi cd` to open a shell in the source directory.
 
 ## File name prefix system
 
-Multiple prefixes compose left to right.
+chezmoi uses prefixes and suffixes to encode file attributes, permissions, and behavior into source filenames:
 
-### Attribute prefixes
+- Attributes (`dot_`, `private_`, `executable_`, `readonly_`, `empty_`, `encrypted_`, `exact_`, `literal_`, `symlink_`, `modify_`, `create_`).
+- Suffixes (`.tmpl` for templates, `.age`/`.asc` for encrypted files).
 
-| Prefix | Meaning |
-| --- | --- |
-| `dot_` | File/dir name starts with `.` (e.g., `dot_bashrc` → `.bashrc`) |
-| `private_` | File permissions `0600`, directory `0700` |
-| `executable_` | File permissions `0755` |
-| `readonly_` | File permissions are read-only |
-| `empty_` | Create the file even if its content is empty |
-| `encrypted_` | File is encrypted (age or gpg) |
-| `exact_` | Directory: remove target files not present in source |
-| `literal_` | File name is used as-is, no prefix interpretation |
-| `run_` | File is a script, not a dotfile |
-| `symlink_` | Create as a symlink in the target |
-| `modify_` | Script that modifies an existing target file |
-| `create_` | Create file only if it does not already exist |
+Prefixes compose left to right: `private_dot_ssh/encrypted_private_id_ed25519.age`.
 
-### Suffix
+## Reference guides
 
-| Suffix | Meaning |
-| --- | --- |
-| `.tmpl` | File is a Go template; rendered before applying |
-| `.age` | Encrypted with age (added automatically, not manual) |
-| `.asc` | Encrypted with gpg (added automatically, not manual) |
+- [attributes.md](references/attributes.md): Complete list of attribute prefixes, suffixes, and target path mapping examples.
+- [special-files-directories.md](references/special-files-directories.md): Special control files (`.chezmoiignore`, `.chezmoiroot`, `.chezmoitemplates/`, `.chezmoiversion`).
+- [externals.md](references/externals.md): External file, archive, and git repository declarations in `.chezmoiexternal.$FORMAT`.
+- [git-operations.md](references/git-operations.md): Running Git commands on the source directory manually or via `chezmoi git`.
 
-[Read more about attributes in references/attributes.md](references/attributes.md)
+## Related skills
 
-### Examples
-
-| Source name | Target path | Notes |
-| --- | --- | --- |
-| `dot_bashrc` | `~/.bashrc` | Simple dotfile |
-| `private_dot_ssh/` | `~/.ssh/` | Directory with `0700` |
-| `private_dot_ssh/config` | `~/.ssh/config` | File inside private dir |
-| `executable_dot_local/bin/script.sh` | `~/.local/bin/script.sh` | Executable script |
-| `dot_gitconfig.tmpl` | `~/.gitconfig` | Rendered as template |
-| `encrypted_private_dot_netrc.age` | `~/.netrc` | Encrypted, private |
-| `symlink_dot_vim` | `~/.vim` | Symlink |
-| `exact_dot_config/git/` | `~/.config/git/` | Exact dir, removes unlisted files |
-
-## Adding files to source state
-
-```sh
-chezmoi add ~/.bashrc
-chezmoi add --follow ~/.config/nvim   # follow symlinks
-chezmoi add --encrypt ~/.ssh/id_ed25519
-chezmoi add --template ~/.gitconfig   # treat as template
-```
-
-[Read more about attributes in references/attributes.md](references/attributes.md)
-
-## Inspecting the source state
-
-```sh
-chezmoi managed           # list all managed targets
-chezmoi source-path ~/.bashrc   # find source for a target file
-chezmoi cat ~/.bashrc     # print rendered content of a managed file
-chezmoi archive           # tar of the full rendered target state
-```
-
-## Removing files from source state
-
-```sh
-chezmoi forget ~/.bashrc        # remove from source, keep in target
-chezmoi destroy ~/.bashrc       # remove from source AND target
-```
-
-## `.chezmoiignore`
-
-Create `~/.local/share/chezmoi/.chezmoiignore` to exclude patterns from management:
-
-```gitignore
-README.md
-*.swp
-.DS_Store
-```
-
-Supports Go template syntax.
-
-[Read more about special files and directories in references/special-files-directories.md](references/special-files-directories.md)
-
-## `.chezmoiexternal.toml`
-
-Fetch external files, archives, or git repos into the target as if they were in the source state:
-
-```toml
-[".oh-my-zsh"]
-  type = "archive"
-  url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
-  exact = true
-  stripComponents = 1
-  refreshPeriod = "168h"
-```
-
-Note that `stripComponents` trims leading path segments from the archive.
-
-[Read more about external types and all fields in references/externals.md](references/externals.md)
-
-## `.chezmoitemplates/`
-
-Store shared template fragments here.
-Use in other templates: `{{ template "shared-fragment" . }}`
-
-## Git operations on the source directory
-
-```sh
-chezmoi git status
-chezmoi git add .
-chezmoi git commit -- -m "chore: update dotfiles"
-chezmoi git push
-```
-
-Or `cd $(chezmoi source-path)` and use git directly.
-
-[Read more about git operations in references/git-operations.md](references/git-operations.md)
+- Consult `chezmoi-cli-commands` for `chezmoi add`, `chezmoi forget`, and `chezmoi destroy`.
+- Consult `chezmoi-configuration` for configuring `git.autoCommit` and `git.autoPush`.
+- Consult `chezmoi-secrets-management` for encrypted file workflows.

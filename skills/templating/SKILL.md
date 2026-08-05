@@ -1,157 +1,38 @@
 ---
 name: chezmoi-templating
-description: 'Write chezmoi templates: OS/machine conditionals, user-defined data variables, Sprig functions, shared fragments, and interactive prompts.'
+description: Write chezmoi templates using Go text/template syntax, built-in variables, Sprig functions, shared fragments, and prompt functions.
 ---
 
-**Fact:** Any source file with the `.tmpl` suffix is treated as a Go `text/template`.
-chezmoi renders it before writing to the target directory.
-The `.tmpl` extension is stripped from the target filename.
+When you need complete variable tables, prompt signatures, Sprig function lists, or fragment patterns, scan the `references/` directory.
 
-## Built-in chezmoi template data
+## Template fundamentals
 
-Available as `.chezmoi.*` in every template:
-
-| Variable | Example value |
-| --- | --- |
-| `.chezmoi.os` | `"linux"`, `"darwin"`, `"windows"` |
-| `.chezmoi.arch` | `"amd64"`, `"arm64"` |
-| `.chezmoi.hostname` | `"my-laptop"` |
-| `.chezmoi.username` | `"alice"` |
-| `.chezmoi.homeDir` | `"/home/alice"` |
-| `.chezmoi.sourceDir` | `"/home/alice/.local/share/chezmoi"` |
-| `.chezmoi.group` | Primary group name |
-| `.chezmoi.osRelease` | `/etc/os-release` fields (Linux only) |
-| `.chezmoi.kernel` | `/proc/sys/kernel` info, e.g. WSL detection (Linux only) |
-
-See [built-in-variables.md](references/built-in-variables.md) for more details.
-
-Print all available data:
-
-```sh
-chezmoi data
-```
-
-## User-defined data
-
-Add values to `chezmoi.toml` under `[data]`:
-
-```toml
-[data]
-  email = "alice@example.com"
-  workMachine = true
-```
-
-Access in templates: `{{ .email }}`, `{{ .workMachine }}`
-
-External data files at `.chezmoidata.$FORMAT` in the source directory are also merged in.
-
-## Go template syntax
+Source files ending with `.tmpl` are processed using Go `text/template` syntax prior to target application.
+The `.tmpl` extension is stripped from the final target path.
 
 ```gotmpl
 {{ .chezmoi.os }}                         output a value
-{{ if eq .chezmoi.os "darwin" }}...{{ end }}   conditional
-{{ range .myList }}{{ . }}{{ end }}       iteration
+{{ if eq .chezmoi.os "darwin" }}...{{ end }}   conditional evaluation
+{{ range .myList }}{{ . }}{{ end }}       list iteration
 {{- ... -}}                               trim surrounding whitespace
-{{ "value" | upper }}                     pipe into a function
+{{ "value" | upper }}                     pipe through template function
 ```
 
-## Conditionals by OS or machine
+## Previewing and testing templates
 
-```gotmpl
-[core]
-  autocrlf = {{ if eq .chezmoi.os "windows" }}true{{ else }}false{{ end }}
-```
+- Preview rendered output from stdin: `chezmoi execute-template < dot_gitconfig.tmpl`.
+- View rendered target file content: `chezmoi cat ~/.gitconfig`.
+- Inspect all available template variables: `chezmoi data`.
 
-```gotmpl
-{{ if .workMachine -}}
-[user]
-  signingkey = {{ .gpgWorkKey }}
-{{- else -}}
-[user]
-  signingkey = {{ .gpgPersonalKey }}
-{{- end }}
-```
+## Reference guides
 
-## Sprig functions
+- [built-in-variables.md](references/built-in-variables.md): Built-in `.chezmoi.*` variables (OS, architecture, hostname, directories, kernel).
+- [sprig-functions.md](references/sprig-functions.md): Sprig functions and chezmoi-specific functions (`output`, `include`, `joinPath`, `lookPath`).
+- [prompt-functions.md](references/prompt-functions.md): Interactive prompt functions for config templates (`promptString`, `promptBool`, `promptInt`, `promptChoice`).
+- [shared-template-fragments.md](references/shared-template-fragments.md): Reusable template components stored under `.chezmoitemplates/`.
 
-chezmoi includes the [Sprig](http://masterminds.github.io/sprig/) function library.
-Common Sprig functions:
+## Related skills
 
-| Function | Use |
-| --- | --- |
-| `upper` / `lower` | Change case |
-| `trim` / `trimAll` | Strip whitespace or characters |
-| `contains` | Substring check |
-| `default` | Provide a fallback value |
-| `required` | Fail if value is empty |
-| `toJson` / `fromJson` | JSON encode/decode |
-| `splitList` | Split string into list |
-| `join` | Join list into string |
-| `env` | Read environment variable |
-
-chezmoi adds its own functions on top, e.g. `output` (command stdout), `include` (literal file contents), `includeTemplate`, `joinPath`, `lookPath`, and `stat`.
-See [sprig-functions.md](references/sprig-functions.md) for the chezmoi-specific functions.
-
-## Shared template fragments (`.chezmoitemplates/`)
-
-Place reusable fragments in `.chezmoitemplates/` in the source dir:
-
-```text
-.chezmoitemplates/
-  git-identity
-```
-
-`git-identity`:
-
-```gotmpl
-[user]
-  name = {{ .name }}
-  email = {{ .email }}
-```
-
-Use in another template:
-
-```gotmpl
-{{ template "git-identity" . }}
-```
-
-See [shared-template-fragments.md](references/shared-template-fragments.md) for more details.
-
-## Interactive prompts
-
-Use prompt functions in the config template (`.chezmoi.toml.tmpl` in the source directory) to gather input on init:
-
-```gotmpl
-{{- $email := promptString "email" -}}
-[data]
-  email = {{ $email | quote }}
-```
-
-| Function | Behavior |
-| --- | --- |
-| `promptString "label"` | Prompt for a string |
-| `promptString "label" "default"` | Prompt with a default |
-| `promptBool "label"` | Prompt for true/false |
-| `promptInt "label"` | Prompt for an integer |
-| `promptChoice "label" list` | Prompt from a list |
-
-See [prompt-functions.md](references/prompt-functions.md) for more prompt functions.
-
-Prompts only fire on `chezmoi init`, not on subsequent `apply` runs.
-
-## Testing templates
-
-Render a template without applying it:
-
-```sh
-chezmoi execute-template < ~/.local/share/chezmoi/dot_gitconfig.tmpl
-chezmoi cat ~/.gitconfig
-```
-
-## Common mistakes
-
-| Mistake | Symptom | Fix |
-| --- | --- | --- |
-| Forgetting to add `.tmpl` suffix | file is copied verbatim, template not rendered | Add `.tmpl` suffix to filename |
-| Using `{{ }}` without whitespace control (`{{-` / `-}}`) | unexpected blank lines in output | Use whitespace control markers |
-| Using `promptString` outside of `.chezmoi.toml.tmpl` | prompt functions are only available when generating the config file | Move prompt to the config template, or test with `chezmoi execute-template --init` |
+- Consult `chezmoi-machine-config` for OS, WSL, and distribution branching patterns.
+- Consult `chezmoi-secrets-management` for password manager template functions.
+- Consult `chezmoi-configuration` for template data injection via `[data]` or `.chezmoidata`.
