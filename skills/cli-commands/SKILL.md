@@ -1,82 +1,48 @@
 ---
 name: chezmoi-cli-commands
-description: "Look up and run chezmoi commands: add, apply, diff, status, update, verify, edit, merge, re-add, state, and other core operations on the target directory."
+description: Execute and look up chezmoi CLI subcommands for managing target directory files, state, and configuration.
 ---
+
+When you need flags, subcommand options, or usage details, scan the `references/` directory.
 
 ## Core workflow commands
 
-| Command | Purpose |
-| --- | --- |
-| `chezmoi add <file>` | Track a file from the target directory into the source state |
-| `chezmoi apply` | Apply the source state to the target directory |
-| `chezmoi diff` | Show what `apply` would change |
-| `chezmoi status` | Show the state of each managed file |
-| `chezmoi update` | Pull remote changes and apply them |
-| `chezmoi re-add` | Re-add modified target files back to the source state |
-| `chezmoi edit <file>` | Open a managed file in `$EDITOR` inside the source directory |
-| `chezmoi forget <file>` | Stop tracking a file without removing it from the target |
-| `chezmoi cat <file>` | Print the rendered target content of a managed file |
-| `chezmoi verify` | Exit non-zero if any managed file differs from target state |
-| `chezmoi execute-template` | Render a template string or file without applying |
-
-[See references/add.md](references/add.md)
-[See references/apply.md](references/apply.md)
-[See references/update.md](references/update.md)
-[See references/verify.md](references/verify.md)
-[See references/edit.md](references/edit.md)
-[See references/misc-core.md](references/misc-core.md) for re-add, forget, destroy, cat, and execute-template
+- [add.md](references/add.md): Track files from target directory into source state using `chezmoi add`.
+- [apply.md](references/apply.md): Ensure target directory matches source state using `chezmoi apply`.
+- [update.md](references/update.md): Pull remote changes and re-apply using `chezmoi update`.
+- [edit.md](references/edit.md): Edit source files directly in `$EDITOR` using `chezmoi edit`.
+- [verify.md](references/verify.md): Assert that target files match computed target state using `chezmoi verify`.
+- [misc-core.md](references/misc-core.md): Additional core operations including `chezmoi re-add`, `chezmoi forget`, `chezmoi destroy`, `chezmoi cat`, `chezmoi execute-template`, and `chezmoi archive`.
 
 ## Inspection and navigation
 
-- `chezmoi managed` — list all managed files and directories
-- `chezmoi unmanaged` — list files in the target directory not tracked by chezmoi
-- `chezmoi source-path <file>` — print the source path for a target file
-- `chezmoi target-path <file>` — print the target path for a source file
-- `chezmoi cd` — open a shell in the source directory
-- `chezmoi doctor` — verify the installation and report potential issues
-- `chezmoi data` — print available template data as JSON
-
-[See references/inspection.md](references/inspection.md)
-[See references/status.md](references/status.md)
+- [inspection.md](references/inspection.md): Inspect state and paths using `chezmoi managed`, `chezmoi unmanaged`, `chezmoi source-path`, `chezmoi target-path`, `chezmoi cd`, `chezmoi doctor`, and `chezmoi data`.
+- [status.md](references/status.md): Check file status using `chezmoi status`.
 
 ## Making and previewing changes
 
-Use `chezmoi apply --dry-run` to simulate without writing.
-Use `chezmoi apply --verbose` for per-file detail.
-
-[See references/diff.md](references/diff.md)
+- [diff.md](references/diff.md): View diffs between target state and destination using `chezmoi diff`, or simulate changes with `chezmoi apply --dry-run --verbose`.
 
 ## Merging and resolving conflicts
 
-When a target file has been modified outside chezmoi, `apply` reports it as modified.
+- [merging.md](references/merging.md): Perform three-way merges using `chezmoi merge` and `chezmoi merge-all` when external changes conflict with source state.
 
-- `chezmoi diff <file>` — inspect what changed
-- `chezmoi merge <file>` — three-way merge a file with conflicts (disk vs source vs last apply)
-- `chezmoi merge-all` — merge all files with conflicts at once
-- `chezmoi apply --force <file>` — overwrite with source state
-- `chezmoi re-add <file>` — update the source to match the current disk state
-- Set `merge.command` in config to customize the merge tool
+## State database management
 
-[See references/merging.md](references/merging.md)
-
-## Archive and state inspection
-
-- `chezmoi archive` — create a tar archive of the target state
-- `chezmoi state` — inspect the internal bolt database (script run history, etc.)
-- `chezmoi state delete-bucket --bucket=scriptState` — clear script run history
-
-[See references/state.md](references/state.md)
+- [state.md](references/state.md): Inspect and manipulate persistent BoltDB state (script run history, entry checksums) using `chezmoi state`.
 
 ## Flags used across commands
 
-- `--source <dir>` — override the source directory
-- `--destination <dir>` — override the target (home) directory
-- `--config <file>` — use an alternate config file
-- `--no-tty` — disable interactive prompts (useful in CI)
-- `-v` / `--verbose` — increase output verbosity
-- `-n` / `--dry-run` — simulate without making changes
+Global flags supported across multiple subcommands:
+
+- `--source <dir>` — override source directory path.
+- `--destination <dir>` — override destination directory path.
+- `--config <file>` — use alternate configuration file.
+- `--no-tty` — disable interactive prompts in scripts or CI.
+- `-v` / `--verbose` — enable detailed output.
+- `-n` / `--dry-run` — simulate execution without modifying files.
 
 ## Getting help
 
-Run `chezmoi help` for a full command list.
-Run `chezmoi help <command>` for subcommand details.
+Run `chezmoi help` for the full command overview.
+Run `chezmoi help <subcommand>` for specific subcommand flags and options.

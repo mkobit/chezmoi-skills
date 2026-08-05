@@ -15,7 +15,7 @@ If a target has been modified since chezmoi last wrote it then the user will be 
 | `-r`, `--recursive` | Recurse into subdirectories (enabled by default, disable with `--recursive=false`) |
 | `--source-path` | Specify targets by source path, rather than target path (useful for applying changes after editing) |
 
-## Global flags often used with apply
+## Global flags used with apply
 
 | Flag | Description |
 | --- | --- |
