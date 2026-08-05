@@ -26,6 +26,9 @@ jobs:
       - name: Lint markdown
         run: bun run lint:md
 
+      - name: Lint spelling
+        run: bun run lint:spelling
+
       - name: Validate skills and claude configs
         run: bun run validate
 
