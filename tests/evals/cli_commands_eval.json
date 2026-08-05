@@ -1,0 +1,58 @@
+[
+  {
+    "id": "TC-TRIG-001",
+    "name": "Trigger matching for chezmoi add intent",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "I want to track my ~/.bashrc file with chezmoi."
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-TRIG-002",
+    "name": "Negative trigger matching for unrelated git query",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I rebase a local git feature branch?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-SEL-001",
+    "name": "Skill selection among available catalog",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I resolve merge conflicts in my dotfiles after running chezmoi apply?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-cli-commands"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-CMD-001",
+    "name": "Command generation with dry-run and verbose flags",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "Show me what chezmoi apply would change without actually writing any files to disk."
+    },
+    "expected": {
+      "exact_command": "chezmoi apply --dry-run",
+      "command_regex": "^chezmoi apply (?:--dry-run|-n|--verbose|-v|\\s)+$",
+      "required_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 1200
+  }
+]
