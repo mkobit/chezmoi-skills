@@ -3,4 +3,4 @@ node_modules
 .bun-cache
 .claude/settings.local.json
 .scratch
-
+eval_results
