@@ -6,8 +6,10 @@ All files and directories in the source state whose name begins with `.` are ign
 
 All of these files are optional and are evaluated in a specific order:
 
-1. `.chezmoiroot` is read from the root of the source directory before anything other file, setting the source state path. The location of all other files, except `.chezmoiversion`, is relative to the source state path.
-2. `.chezmoi.$FORMAT.tmpl` is used by `chezmoi init` to prepare or update the chezmoi config file. This will be applied prior to any remaining special files or directories.
+1. `.chezmoiroot` is read from the root of the source directory before anything other file, setting the source state path.
+   The location of all other files, except `.chezmoiversion`, is relative to the source state path.
+2. `.chezmoi.$FORMAT.tmpl` is used by `chezmoi init` to prepare or update the chezmoi config file.
+   This will be applied prior to any remaining special files or directories.
 3. Data files (`.chezmoidata.$FORMAT` files or files in `.chezmoidata/` directories) are read before any templates are processed so that data contained within are available to the templates.
 4. `.chezmoitemplates/` directories are made available for use in source templates.
 5. `.chezmoiignore` determines files and directories that should be ignored.

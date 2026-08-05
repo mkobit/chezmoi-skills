@@ -5,7 +5,8 @@ The template name is the path relative to the `.chezmoitemplates` directory; the
 
 ## Invoking a shared template
 
-By default, shared templates are executed with `nil` data context. To access variables like `.chezmoi.os` within the shared template, you must pass the context (`.`).
+By default, shared templates are executed with `nil` data context.
+To access variables like `.chezmoi.os` within the shared template, you must pass the context (`.`).
 
 **Example: `dot_file.tmpl`**
 

@@ -8,7 +8,8 @@ Edit a dotfile with:
 chezmoi edit $FILENAME
 ```
 
-This will edit `$FILENAME`'s source file in your source directory. chezmoi will not make any changes to the actual dotfile until you run `chezmoi apply`.
+This will edit `$FILENAME`'s source file in your source directory.
+chezmoi will not make any changes to the actual dotfile until you run `chezmoi apply`.
 
 To automatically run `chezmoi apply` when you quit your editor, run:
 
@@ -61,7 +62,9 @@ This is distinct from target-file conflicts (a managed file modified outside che
 
 ## Automatically commit and push changes to your repo
 
-chezmoi can automatically commit and push changes to your source directory to your repo. This feature is disabled by default. To enable it, add the following to your config file:
+chezmoi can automatically commit and push changes to your source directory to your repo.
+This feature is disabled by default.
+To enable it, add the following to your config file:
 
 ```toml
 [git]
@@ -69,11 +72,13 @@ chezmoi can automatically commit and push changes to your source directory to yo
     autoPush = true
 ```
 
-Whenever a change is made to your source directory, chezmoi will commit the changes with an automatically-generated commit message (if `autoCommit` is true) and push them to your repo (if `autoPush` is true). `autoPush` implies `autoCommit`; setting only `autoCommit` commits without pushing.
+Whenever a change is made to your source directory, chezmoi will commit the changes with an automatically-generated commit message (if `autoCommit` is true) and push them to your repo (if `autoPush` is true).
+`autoPush` implies `autoCommit`; setting only `autoCommit` commits without pushing.
 
 Caution with `autoPush`: if the dotfiles repo is public and a secret is accidentally added in plain text, it is pushed immediately.
 
-You can override the commit message by setting the `git.commitMessageTemplate` configuration variable. For example, to have chezmoi prompt you for a commit message each time:
+You can override the commit message by setting the `git.commitMessageTemplate` configuration variable.
+For example, to have chezmoi prompt you for a commit message each time:
 
 ```toml
 [git]

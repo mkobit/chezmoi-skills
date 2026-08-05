@@ -5,12 +5,14 @@ How to structure custom data injection and variables in `chezmoi`.
 
 ## Template data
 
-chezmoi provides a variety of template variables. For a full list, run `chezmoi data`.
+chezmoi provides a variety of template variables.
+For a full list, run `chezmoi data`.
 
 These come from a variety of sources (later data overwrite earlier ones):
 
 * Variables populated by chezmoi are in `.chezmoi`, for example `.chezmoi.os`.
-* Variables created by you in `.chezmoidata.$FORMAT` configuration files. The various supported formats (`json`, `jsonc`, `toml`, and `yaml`) are read in alphabetical order.
+* Variables created by you in `.chezmoidata.$FORMAT` configuration files.
+  The various supported formats (`json`, `jsonc`, `toml`, and `yaml`) are read in alphabetical order.
 * Variables created by you in the `data` section of the configuration file.
 
 ### Data section config

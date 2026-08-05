@@ -3,7 +3,9 @@ name: chezmoi-templating
 description: 'Write chezmoi templates: OS/machine conditionals, user-defined data variables, Sprig functions, shared fragments, and interactive prompts.'
 ---
 
-**Fact:** Any source file with the `.tmpl` suffix is treated as a Go `text/template`. chezmoi renders it before writing to the target directory. The `.tmpl` extension is stripped from the target filename.
+**Fact:** Any source file with the `.tmpl` suffix is treated as a Go `text/template`.
+chezmoi renders it before writing to the target directory.
+The `.tmpl` extension is stripped from the target filename.
 
 ## Built-in chezmoi template data
 
