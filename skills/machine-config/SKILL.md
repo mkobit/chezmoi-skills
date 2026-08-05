@@ -33,4 +33,4 @@ Run `chezmoi data` to inspect all variables on the local machine.
 
 - Consult `chezmoi-templating` for template syntax, Sprig functions, and variable references.
 - Consult `chezmoi-configuration` for config file setup and options.
-- Consult `chezmoi-source-state` for source attribute prefixes and special files.
+- Consult `chezmoi-file-attributes` for source attribute prefixes and root control files.

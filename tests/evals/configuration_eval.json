@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TC-CFG-001",
+    "name": "Skill selection for chezmoi configuration options",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I configure git autoCommit and autoPush in my .chezmoi.toml file?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-configuration"
+    },
+    "token_budget": 450
+  }
+]

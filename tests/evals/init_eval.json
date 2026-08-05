@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TC-INIT-001",
+    "name": "Skill selection for repository initialization and bootstrapping",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I initialize chezmoi on a brand new machine using my dotfiles repository URL?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-init"
+    },
+    "token_budget": 450
+  }
+]

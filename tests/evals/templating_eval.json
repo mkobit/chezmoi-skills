@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TC-TPL-001",
+    "name": "Skill selection for Go templates and Sprig functions",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "What template functions and Sprig utilities are built into chezmoi?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-templating"
+    },
+    "token_budget": 450
+  }
+]

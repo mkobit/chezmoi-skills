@@ -1,0 +1,32 @@
+[
+  {
+    "id": "TC-EXT-001",
+    "name": "Skill selection for external dependency declarations",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I configure chezmoi to download external archives or git repositories using .chezmoiexternal.toml?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-EXT-002",
+    "name": "Command generation for refreshing external dependencies",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I force chezmoi to re-download all external archives regardless of refreshPeriod?"
+    },
+    "expected": {
+      "exact_command": "chezmoi apply --refresh-externals",
+      "command_regex": "^chezmoi apply (?:--refresh-externals|-R|\\s)+$",
+      "required_flags": [
+        "--refresh-externals"
+      ]
+    },
+    "token_budget": 500
+  }
+]
