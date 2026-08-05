@@ -5,7 +5,8 @@
     "validate": "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin",
     "test:contracts": "bun run scripts/test-contracts.ts",
     "eval": "npx promptfoo eval",
-    "lint:md": "markdownlint-cli2"
+    "lint:md": "markdownlint-cli2",
+    "lint:spelling": "cspell \"**/*.md\""
   },
   "dependencies": {
     "commander": "15.0.0",
@@ -14,6 +15,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "cspell": "^8.19.4",
     "markdownlint-cli2": "0.22.1"
   }
 }
