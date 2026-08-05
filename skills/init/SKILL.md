@@ -3,116 +3,31 @@ name: chezmoi-init
 description: Bootstrap chezmoi on a new machine, clone an existing dotfiles repo, migrate existing dotfiles, or run one-shot init scripts.
 ---
 
+When you need detailed flag specifications, URL resolution rules, or installation script variants, scan the `references/` directory.
+
 ## First-time initialization
 
-See [`references/setup.md`](references/setup.md) for more details.
+Initialize chezmoi on a fresh machine or clone an existing repository:
 
-```sh
-chezmoi init
-```
+- `chezmoi init`: Create source directory at `~/.local/share/chezmoi` and generate config file from `.chezmoi.$FORMAT.tmpl`.
+- `chezmoi init <repo>`: Clone remote dotfiles repository into source directory and generate config file.
+- `chezmoi init --apply <repo>`: Clone repository and immediately apply dotfiles.
+- `chezmoi init --one-shot <repo>`: Clone, apply, and purge all chezmoi traces (useful for ephemeral container environments).
 
-Creates the source directory at `~/.local/share/chezmoi` as a git repository.
-If the source directory contains a `.chezmoi.$FORMAT.tmpl` file, generates the config file from that template.
-Does not apply any files — run `chezmoi apply` separately.
-Re-running `chezmoi init` with no repo regenerates the config file (e.g. after editing the config template).
+## One-line bootstrap scripts
 
-## Initialize from an existing dotfiles repo
-
-```sh
-chezmoi init https://github.com/user/dotfiles.git
-```
-
-Use `--apply` to clone and apply in one step:
-
-```sh
-chezmoi init --apply https://github.com/user/dotfiles.git
-```
-
-Use `--purge` to remove the source, config, and cache directories after applying (useful for ephemeral environments):
-
-```sh
-chezmoi init --apply --purge https://github.com/user/dotfiles.git
-```
-
-Use `--one-shot` for transitory environments (e.g. containers) — equivalent to `--apply --depth=1 --force --purge --purge-binary`:
-
-```sh
-chezmoi init --one-shot user/dotfiles
-```
-
-## Repo URL guessing
-
-```sh
-chezmoi init user           # https://user@github.com/user/dotfiles.git
-chezmoi init user/myrepo    # https://user@github.com/user/myrepo.git
-chezmoi init gitlab.com/user/myrepo  # https://user@gitlab.com/user/myrepo.git
-```
-
-Pass `--ssh` to guess SSH URLs instead (`git@github.com:user/dotfiles.git`), or `--guess-repo-url=false` to disable guessing.
-See [`references/commands.md`](references/commands.md) for the full pattern table.
-
-## Overriding directories
-
-`--source`, `--destination`, and `--config` are global flags, not init-specific — see the chezmoi-cli-commands skill.
-Init's own `-C`/`--config-path` flag writes the generated config file to a different location.
-
-```sh
-chezmoi init --source ~/.dotfiles
-chezmoi init --config-path /path/to/chezmoi.toml
-```
-
-To persist a custom source directory, set the `sourceDir` config option (see the chezmoi-configuration skill).
-See [`references/commands.md`](references/commands.md) for full init flag details.
-
-## One-line bootstrap on a new machine
-
-Install chezmoi, clone the repo, and apply in a single command:
+Install chezmoi and apply dotfiles in a single command on a new machine:
 
 ```sh
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply user/dotfiles
 ```
 
-For transitory environments, use `--one-shot` to also remove all traces of chezmoi afterwards:
+## Reference guides
 
-```sh
-sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --one-shot user/dotfiles
-```
+- [setup.md](references/setup.md): Complete setup overview, config file auto-generation details, and installation scripts.
+- [commands.md](references/commands.md): Flag reference for `chezmoi init` (`--apply`, `--one-shot`, `--purge`, `--config-path`) and default URL guessing patterns.
 
-## Handling existing files
+## Related skills
 
-If a target file has been modified since chezmoi last wrote it, `chezmoi apply` prompts before overwriting.
-Preview changes with `chezmoi diff`, overwrite without prompting with `chezmoi apply --force`, or merge with `chezmoi merge <file>`.
-
-To incorporate existing dotfiles into chezmoi:
-
-```sh
-chezmoi add ~/.bashrc ~/.gitconfig
-```
-
-## Custom source directory
-
-```sh
-chezmoi init --source ~/.dotfiles
-```
-
-This overrides the source directory for chezmoi commands.
-It does not set up a bare repository.
-Then migrate files using `chezmoi add`.
-
-## Verifying the initialized state
-
-```sh
-chezmoi doctor         # check for problems
-chezmoi data           # confirm template data loaded
-chezmoi diff           # preview what would be applied
-chezmoi managed        # list managed files
-```
-
-## Re-initialization
-
-To reset and start over (destructive):
-
-```sh
-chezmoi purge --binary  # removes source dir, config, and chezmoi binary
-chezmoi init            # start fresh
-```
+- Consult `chezmoi-cli-commands` for global flags (`--source`, `--destination`) and post-init operations (`apply`, `diff`, `doctor`, `managed`).
+- Consult `chezmoi-configuration` for configuring `sourceDir` and top-level options.

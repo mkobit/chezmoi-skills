@@ -1,4 +1,4 @@
-# Git Integration Configuration
+# Git integration configuration
 
 Reference: <https://www.chezmoi.io/reference/configuration-file/variables/#git>
 Configure how chezmoi interacts with git in the source directory.

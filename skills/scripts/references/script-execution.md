@@ -50,3 +50,15 @@ brew install ripgrep
 ```
 
 If the template renders to empty or whitespace-only output, the script is not executed.
+
+## Re-running scripts when external files change
+
+Embed a SHA256 hash of another file using `include` so the script content changes whenever the external file changes:
+
+```sh
+#!/bin/bash
+# .chezmoiscripts/run_onchange_dconf-load.sh.tmpl
+# dconf.ini hash: {{ include "dconf.ini" | sha256sum }}
+
+dconf load / < {{ joinPath .chezmoi.sourceDir "dconf.ini" | quote }}
+```

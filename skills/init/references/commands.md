@@ -13,7 +13,7 @@ This is done in the following order:
 4. If the `--purge` flag is provided, chezmoi will remove the source, config, and cache directories.
 5. If the `--purge-binary` is passed, chezmoi will attempt to remove its own binary.
 
-### Default URL Guessing (`--guess-repo-url`)
+### Default URL guessing (`--guess-repo-url`)
 
 By default, if `repo` is given, chezmoi will guess the full git repo URL, using HTTPS by default, or SSH if the `--ssh` option is specified, according to the following patterns:
 

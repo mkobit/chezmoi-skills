@@ -1,4 +1,4 @@
-# Editor, Diff, and Merge Tools
+# Editor, diff, and merge tools
 
 Reference: <https://www.chezmoi.io/reference/configuration-file/variables/>
 Configure the tools used for editing, diffing, and merging files.
