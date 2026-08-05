@@ -1,6 +1,9 @@
 # Source state attributes
 
-chezmoi stores the source state of files, symbolic links, and directories in regular files and directories in the source directory (`~/.local/share/chezmoi` by default). Directory targets are represented as directories in the source state. All other target types are represented as files in the source state. Some state is encoded in the source file names.
+chezmoi stores the source state of files, symbolic links, and directories in regular files and directories in the source directory (`~/.local/share/chezmoi` by default).
+Directory targets are represented as directories in the source state.
+All other target types are represented as files in the source state.
+Some state is encoded in the source file names.
 
 Attributes can be changed by renaming the file in the source state or with the `chattr` command.
 
@@ -14,7 +17,7 @@ The following prefixes and suffixes are special, and are collectively referred t
 | `before_` | Run script before updating the destination |
 | `create_` | Ensure that the file exists, and create it with contents if it does not |
 | `dot_` | Rename to use a leading dot, e.g. `dot_foo` becomes `.foo` |
-| `empty_` | Ensure the file exists, even if is empty. By default, empty files are removed |
+| `empty_` | Ensure the file exists even if empty (by default empty files are removed) |
 | `encrypted_` | Encrypt the file in the source state |
 | `external_` | Ignore attributes in child entries |
 | `exact_` | Remove anything not managed by chezmoi |
@@ -40,7 +43,7 @@ In addition, if the source file is encrypted, the suffix `.age` (when age encryp
 
 ## Target types
 
-Different target types allow different prefixes and suffixes. The order of prefixes is important. Multiple prefixes compose left to right.
+Different target types allow different prefixes and suffixes (order is important, composing left to right).
 
 Note that some prefixes are mutually exclusive, for example `once_` and `onchange_`, `before_` and `after_`, or `private_` and `readonly_`.
 
@@ -54,4 +57,5 @@ Note that some prefixes are mutually exclusive, for example `once_` and `onchang
 | Script | File | `run_`, `once_` or `onchange_`, `before_` or `after_` | `.tmpl` |
 | Symbolic link | File | `symlink_`, `dot_` | `.tmpl` |
 
-The `literal_` prefix and `.literal` suffix can appear anywhere and stop attribute parsing. This permits filenames that would otherwise conflict with chezmoi's attributes to be represented.
+The `literal_` prefix and `.literal` suffix can appear anywhere and stop attribute parsing.
+This permits filenames that would otherwise conflict with chezmoi's attributes to be represented.

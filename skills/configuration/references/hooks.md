@@ -1,7 +1,9 @@
 # Hooks
 
 Reference: <https://www.chezmoi.io/reference/configuration-file/hooks/>
-Hook commands are executed before and after events. Unlike scripts, hooks are always run, even if `--dry-run` is specified. Hooks should be fast and idempotent.
+Hook commands are executed before and after events.
+Unlike scripts, hooks are always run, even if `--dry-run` is specified.
+Hooks should be fast and idempotent.
 
 ## Supported hook events
 

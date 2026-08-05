@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
-import { readdir, stat, readFile } from "fs/promises";
-import { join } from "path";
+import { readdir, readFile, stat } from "fs/promises";
+import { join, dirname } from "path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { Command } from "commander";
@@ -16,8 +16,8 @@ const options = program.opts();
 const claudePluginDir = options.claudePluginDir;
 
 const skillSchema = z.object({
-  name: z.string(),
-  description: z.string(),
+  name: z.string().max(64, "name must be 64 characters or less"),
+  description: z.string().max(1024, "description must be 1024 characters or less"),
 });
 
 type ValidationResult =
@@ -60,25 +60,178 @@ const getSkillsDirectories = async (): Promise<string[]> => {
   });
 };
 
-const validateSkillDir = async (skillsDir: string, dir: string): Promise<ValidationResult> => {
+const getMarkdownFiles = async (dirPath: string): Promise<string[]> => {
+  const entries = await readdir(dirPath, { withFileTypes: true }).catch(() => []);
+  const filesPromises = entries.map(async (entry) => {
+    const fullPath = join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      return getMarkdownFiles(fullPath);
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      return [fullPath];
+    }
+    return [];
+  });
+  const results = await Promise.all(filesPromises);
+  return results.flat();
+};
+
+const checkSingleSentencePerLine = (content: string): string[] => {
+  const lines = content.split("\n");
+  const errors: string[] = [];
+
+  let inFrontmatter = false;
+  let inCodeBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (i === 0 && trimmed === "---") {
+      inFrontmatter = true;
+      continue;
+    }
+    if (inFrontmatter) {
+      if (trimmed === "---") {
+        inFrontmatter = false;
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) {
+      continue;
+    }
+
+    if (!trimmed) {
+      continue;
+    }
+
+    const snippets = trimmed.includes("|")
+      ? trimmed.split("|").map(cell => cell.trim()).filter(Boolean)
+      : [trimmed];
+
+    for (const snippet of snippets) {
+      let clean = snippet
+        .replace(/^#+\s*/, "")
+        .replace(/^>\s*/, "")
+        .replace(/^[-*+]\s+/, "")
+        .replace(/^\d+\.\s+/, "");
+
+      clean = clean.replace(/`[^`]+`/g, " ");
+      clean = clean.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+      clean = clean.replace(/https?:\/\/\S+/g, " ");
+      clean = clean.replace(/\b(e\.g\.|i\.e\.|etc\.|vs\.|v\d+(\.\d+)*|no\.|dr\.|mr\.|ms\.|inc\.|corp\.|ltd\.|st\.|fig\.|approx\.|dept\.)/gi, " ");
+      clean = clean.replace(/\d+\.\d+/g, " ");
+      clean = clean.replace(/\.\.\./g, " ").replace(/\.\./g, " ");
+
+      if (/[.!?][)'"\]`]*\s+\S/.test(clean)) {
+        errors.push(`Line ${i + 1}: Multiple sentences found on a single line: "${line}"`);
+        break;
+      }
+    }
+  }
+
+  return errors;
+};
+
+const checkInternalLinks = (content: string, filePath: string): string[] => {
+  const lines = content.split("\n");
+  const errors: string[] = [];
+
+  let inCodeBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) {
+      continue;
+    }
+
+    const linkRegex = /\[(?:[^\]]|\\\])*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = linkRegex.exec(line)) !== null) {
+      const rawTarget = match[1];
+      if (
+        rawTarget.startsWith("http://") ||
+        rawTarget.startsWith("https://") ||
+        rawTarget.startsWith("mailto:") ||
+        rawTarget.startsWith("ftp://") ||
+        rawTarget.startsWith("#")
+      ) {
+        continue;
+      }
+
+      const targetPathWithoutAnchor = rawTarget.split("#")[0];
+      if (!targetPathWithoutAnchor) {
+        continue;
+      }
+
+      const absoluteTarget = join(dirname(filePath), targetPathWithoutAnchor);
+      if (!existsSync(absoluteTarget)) {
+        errors.push(`Line ${i + 1}: Referenced link target "${rawTarget}" does not exist (${absoluteTarget})`);
+      }
+    }
+  }
+
+  return errors;
+};
+
+const validateSkillDir = async (skillsDir: string, dir: string): Promise<ValidationResult[]> => {
+  const results: ValidationResult[] = [];
   const skillMdPath = join(skillsDir, dir, "SKILL.md");
   if (!existsSync(skillMdPath)) {
-    return { valid: false, name: dir, details: "Missing SKILL.md" };
+    return [{ valid: false, name: dir, details: "Missing SKILL.md" }];
   }
 
   const contentResult = await readFile(skillMdPath, "utf-8").catch(e => e);
   if (contentResult instanceof Error) {
-    return { valid: false, name: dir, details: String(contentResult) };
+    return [{ valid: false, name: dir, details: String(contentResult) }];
   }
 
   const { data } = matter(contentResult);
   const parsed = skillSchema.safeParse(data);
 
   if (!parsed.success) {
-    return { valid: false, name: dir, details: parsed.error.errors };
+    results.push({ valid: false, name: `${dir}/SKILL.md frontmatter`, details: parsed.error.errors });
+  } else {
+    results.push({ valid: true, name: `${dir}/SKILL.md frontmatter` });
   }
 
-  return { valid: true, name: dir };
+  const mdFiles = await getMarkdownFiles(join(skillsDir, dir));
+
+  for (const file of mdFiles) {
+    const relPath = file.substring(skillsDir.length + 1);
+    const fileContent = await readFile(file, "utf-8").catch(() => null);
+    if (fileContent === null) {
+      results.push({ valid: false, name: relPath, details: "Failed to read file" });
+      continue;
+    }
+
+    const proseErrors = checkSingleSentencePerLine(fileContent);
+    if (proseErrors.length > 0) {
+      results.push({ valid: false, name: `${relPath} prose rule`, details: proseErrors.join("; ") });
+    } else {
+      results.push({ valid: true, name: `${relPath} prose rule` });
+    }
+
+    const linkErrors = checkInternalLinks(fileContent, file);
+    if (linkErrors.length > 0) {
+      results.push({ valid: false, name: `${relPath} internal links`, details: linkErrors.join("; ") });
+    } else {
+      results.push({ valid: true, name: `${relPath} internal links` });
+    }
+  }
+
+  return results;
 };
 
 const validateSkills = async (): Promise<ValidationResult[]> => {
@@ -107,7 +260,8 @@ const validateSkills = async (): Promise<ValidationResult[]> => {
     }
 
     const dirResultsPromises = R.map(dirs, (dir) => validateSkillDir(skillsDir, dir));
-    return Promise.all(dirResultsPromises);
+    const nestedResults = await Promise.all(dirResultsPromises);
+    return nestedResults.flat();
   });
 
   const resolvedArrayOfArrays = await Promise.all(allResultsPromises);
@@ -174,7 +328,7 @@ const validateVersionSync = async (): Promise<ValidationResult[]> => {
     }
     return [{ valid: true, name: `${name} (${plugin.version})` }];
   } catch (e) {
-    return [{ valid: false, name, details: String(e) }];
+    return [{ valid: false, name: `${name}`, details: String(e) }];
   }
 };
 

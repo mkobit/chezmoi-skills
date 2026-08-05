@@ -1,6 +1,7 @@
 [chezmoi edit](https://www.chezmoi.io/reference/commands/edit/): Edit the source state of targets, which must be files or symlinks.
 
-If no targets are given then the working tree of the source directory is opened. Encrypted files are decrypted to a temporary directory for editing, then re-encrypted upon save.
+If no targets are given then the working tree of the source directory is opened.
+Encrypted files are decrypted to a temporary directory for editing, then re-encrypted upon save.
 
 ## Flags
 

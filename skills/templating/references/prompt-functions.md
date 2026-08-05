@@ -1,6 +1,8 @@
 [Init functions](https://www.chezmoi.io/reference/templates/init-functions/) - Official documentation for interactive prompt functions used during chezmoi init.
 
-These template functions are only available when generating a config file with `chezmoi init`. For testing with `chezmoi execute-template`, pass the `--init` flag to enable them. If the command line flag `--promptDefaults` is set, all prompts return their default values, if available.
+These template functions are only available when generating a config file with `chezmoi init`.
+For testing with `chezmoi execute-template`, pass the `--init` flag to enable them.
+If the command line flag `--promptDefaults` is set, all prompts return their default values, if available.
 
 ## Prompt functions
 

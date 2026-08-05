@@ -95,7 +95,8 @@ chezmoi add ~/.bashrc ~/.gitconfig
 chezmoi init --source ~/.dotfiles
 ```
 
-This overrides the source directory for chezmoi commands. It does not set up a bare repository.
+This overrides the source directory for chezmoi commands.
+It does not set up a bare repository.
 Then migrate files using `chezmoi add`.
 
 ## Verifying the initialized state
