@@ -1,0 +1,32 @@
+name: Live LLM Benchmark Evaluation
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  eval-live:
+    name: Run Promptfoo Live Evals
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Run Promptfoo Live Evaluation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: bun run eval
+
+      - name: Upload Benchmark Results Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptfoo-results
+          path: output.json
+          if-no-files-found: ignore

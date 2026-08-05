@@ -1,0 +1,30 @@
+[
+  {
+    "id": "TC-ATTR-001",
+    "name": "Target entry file attribute mapping for hidden private executable file",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "What should the source filename be for a private executable hidden file named script in my home directory?"
+    },
+    "expected": {
+      "exact_command": "executable_private_dot_script",
+      "command_regex": "^(?:executable_private_dot_|private_executable_dot_)script$",
+      "required_flags": []
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-002",
+    "name": "Skill selection for source file naming attributes",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do dot_ and private_ prefix attributes compose in chezmoi source state filenames?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-file-attributes"
+    },
+    "token_budget": 400
+  }
+]

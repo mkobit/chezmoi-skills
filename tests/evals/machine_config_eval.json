@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TC-MACH-001",
+    "name": "Skill selection for per-machine data and OS conditionals",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I ignore specific dotfiles on macOS machines using .chezmoiignore?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-machine-config"
+    },
+    "token_budget": 450
+  }
+]

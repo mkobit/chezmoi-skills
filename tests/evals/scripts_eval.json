@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TC-SCR-001",
+    "name": "Skill selection for lifecycle execution scripts",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do run_once_ and run_onchange_ script prefixes work in chezmoi?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-scripts"
+    },
+    "token_budget": 450
+  }
+]

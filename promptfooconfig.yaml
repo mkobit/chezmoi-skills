@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-description: Chezmoi skills evaluation benchmark suite
+description: Chezmoi skills evaluation benchmark suite across 9 skills
 
 prompts:
   - "System: You are an AI assistant helping with chezmoi dotfiles.\nUser: {{user_prompt}}"
@@ -16,10 +16,37 @@ tests:
     assert:
       - type: icontains
         value: "chezmoi"
+      - type: icontains
+        value: "add"
 
   - description: Command generation with dry-run flag
     vars:
       user_prompt: "Show me what chezmoi apply would change without actually writing any files to disk."
     assert:
       - type: icontains
+        value: "chezmoi apply"
+      - type: icontains
         value: "--dry-run"
+
+  - description: Target entry file attribute mapping
+    vars:
+      user_prompt: "What should the source filename be for a private executable hidden file named script in my home directory?"
+    assert:
+      - type: regex
+        value: "(?:executable_private_dot_|private_executable_dot_)script"
+
+  - description: External dependency refresh command
+    vars:
+      user_prompt: "How do I force chezmoi to re-download all external archives regardless of refreshPeriod?"
+    assert:
+      - type: icontains
+        value: "--refresh-externals"
+
+  - description: Git integration configuration
+    vars:
+      user_prompt: "How do I configure git autoCommit and autoPush in my .chezmoi.toml file?"
+    assert:
+      - type: icontains
+        value: "autoCommit"
+      - type: icontains
+        value: "autoPush"
