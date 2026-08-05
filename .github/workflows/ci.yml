@@ -28,3 +28,6 @@ jobs:
 
       - name: Validate skills and claude configs
         run: bun run validate
+
+      - name: Run Tier 2 deterministic mock contract tests
+        run: bun run test:contracts

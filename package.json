@@ -1,8 +1,10 @@
 {
   "name": "chezmoi-skills",
+  "version": "0.0.1",
   "scripts": {
     "validate": "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin",
-    "eval": "bun run scripts/eval.ts",
+    "test:contracts": "bun run scripts/test-contracts.ts",
+    "eval": "npx promptfoo eval",
     "lint:md": "markdownlint-cli2"
   },
   "dependencies": {

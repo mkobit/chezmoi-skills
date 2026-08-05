@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Chezmoi skills evaluation benchmark suite
+
+prompts:
+  - "System: You are an AI assistant helping with chezmoi dotfiles.\nUser: {{user_prompt}}"
+
+providers:
+  - id: google:gemini-2.5-flash
+    config:
+      temperature: 0
+
+tests:
+  - description: Trigger matching for chezmoi add intent
+    vars:
+      user_prompt: "I want to track my ~/.bashrc file with chezmoi."
+    assert:
+      - type: icontains
+        value: "chezmoi"
+
+  - description: Command generation with dry-run flag
+    vars:
+      user_prompt: "Show me what chezmoi apply would change without actually writing any files to disk."
+    assert:
+      - type: icontains
+        value: "--dry-run"
