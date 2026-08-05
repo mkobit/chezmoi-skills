@@ -18,7 +18,7 @@ Configure how chezmoi interacts with git in the source directory.
 ### Auto-commit behavior
 
 With `autoCommit = true`, chezmoi automatically commits whenever a change is made to the source directory, with a commit message generated from the files changed.
-The chezmoi-source-state skill (`references/git-operations.md`) covers autoPush behavior and failure modes.
+The chezmoi-cli-commands skill (`references/update.md`) covers update workflows and failure modes.
 
 ### Examples
 
