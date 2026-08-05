@@ -268,6 +268,31 @@ const validateSkills = async (): Promise<ValidationResult[]> => {
   return resolvedArrayOfArrays.flat();
 };
 
+const pluginJsonSchema = z.object({
+  name: z.string().min(1, "name is required"),
+  version: z.string().min(1, "version is required"),
+  description: z.string().optional(),
+  author: z.union([
+    z.string(),
+    z.object({ name: z.string(), url: z.string().optional() })
+  ]).optional(),
+  repository: z.string().optional(),
+  license: z.string().optional(),
+  keywords: z.array(z.string()).optional(),
+}).passthrough();
+
+const marketplaceJsonSchema = z.object({
+  name: z.string().min(1, "name is required"),
+  plugins: z.array(
+    z.object({
+      name: z.string().min(1, "plugin name is required"),
+      source: z.string().min(1, "plugin source is required"),
+      description: z.string().optional(),
+      version: z.string().min(1, "plugin version is required"),
+    }).passthrough()
+  ).min(1, "at least one plugin entry is required"),
+}).passthrough();
+
 const validatePluginFile = async (filePath: string, file: string): Promise<ValidationResult> => {
   const contentResult = await readFile(filePath, "utf-8").catch(e => e);
   if (contentResult instanceof Error) {
@@ -281,7 +306,13 @@ const validatePluginFile = async (filePath: string, file: string): Promise<Valid
     return { valid: false, name: file, details: "Invalid JSON format" };
   }
 
-  const schemaResult = z.record(z.string(), z.any()).safeParse(parsedJson);
+  const schema = file === "plugin.json"
+    ? pluginJsonSchema
+    : file === "marketplace.json"
+    ? marketplaceJsonSchema
+    : z.record(z.string(), z.any());
+
+  const schemaResult = schema.safeParse(parsedJson);
   if (!schemaResult.success) {
     return { valid: false, name: file, details: schemaResult.error.errors };
   }
@@ -312,21 +343,27 @@ const validateVersionSync = async (): Promise<ValidationResult[]> => {
   try {
     const plugin = await readJson(join(claudePluginDir, "plugin.json"));
     const marketplace = await readJson(join(claudePluginDir, "marketplace.json"));
+    const releaseManifest = await readJson(".release-please-manifest.json");
+    const pkg = await readJson("package.json");
+
+    const rootVersion = releaseManifest["."] ?? plugin.version;
 
     const versions = [
+      { source: ".release-please-manifest.json", version: releaseManifest["."] },
       { source: "plugin.json", version: plugin.version },
+      { source: "package.json", version: pkg.version },
       ...(marketplace.plugins ?? []).map((p: any, i: number) => ({
         source: `marketplace.json plugins[${i}]`,
         version: p.version,
       })),
     ];
 
-    const mismatched = versions.filter(v => v.version !== plugin.version);
+    const mismatched = versions.filter(v => v.version !== rootVersion);
     if (mismatched.length > 0) {
       const details = versions.map(v => `${v.source}=${v.version}`).join(", ");
       return [{ valid: false, name, details: `Versions out of sync: ${details}` }];
     }
-    return [{ valid: true, name: `${name} (${plugin.version})` }];
+    return [{ valid: true, name: `${name} (${rootVersion})` }];
   } catch (e) {
     return [{ valid: false, name: `${name}`, details: String(e) }];
   }
