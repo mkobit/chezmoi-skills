@@ -14,6 +14,6 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "markdownlint-cli2": "0.22.1"
+    "markdownlint-cli2": "0.23.1"
   }
 }
