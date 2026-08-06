@@ -92,5 +92,69 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-INIT-CMD-003",
+    "name": "Command generation for one-line curl bootstrap installation",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "What is the single command to install chezmoi and apply my dotfiles repo username/dotfiles using curl?"
+    },
+    "expected": {
+      "exact_command": "sh -c \"$(curl -fsLS https://get.chezmoi.io)\" -- init --apply username",
+      "command_regex": "^sh -c \".*get\\.chezmoi\\.io.*\" -- init --apply [^\\s]+$",
+      "required_flags": []
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-INIT-CMD-004",
+    "name": "Command generation for SSH repository URL initialization",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I initialize chezmoi using SSH URL resolution for my GitHub username?"
+    },
+    "expected": {
+      "exact_command": "chezmoi init --ssh username",
+      "command_regex": "^chezmoi init --ssh [^\\s]+$",
+      "required_flags": [
+        "--ssh"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-INIT-CMD-005",
+    "name": "Command generation for re-generating machine configuration file",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I re-execute .chezmoi.toml.tmpl to re-generate my configuration file without cloning again?"
+    },
+    "expected": {
+      "exact_command": "chezmoi init",
+      "command_regex": "^chezmoi init$",
+      "required_flags": []
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-INIT-CMD-006",
+    "name": "Command generation for branch selection during init",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I clone and apply a specific git branch during chezmoi init?"
+    },
+    "expected": {
+      "exact_command": "chezmoi init --branch main --apply username",
+      "command_regex": "^chezmoi init --branch [^\\s]+ --apply [^\\s]+$",
+      "required_flags": [
+        "--branch"
+      ]
+    },
+    "token_budget": 500
   }
 ]

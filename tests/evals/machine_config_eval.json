@@ -86,5 +86,61 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-MACH-CMD-003",
+    "name": "Command generation for listing ignored targets",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I list all files ignored by chezmoi on the current machine?"
+    },
+    "expected": {
+      "exact_command": "chezmoi ignored",
+      "command_regex": "^chezmoi ignored$",
+      "required_flags": []
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-MACH-CMD-004",
+    "name": "Command generation for dumping merged template data",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I view all active merged template data variables on this host?"
+    },
+    "expected": {
+      "exact_command": "chezmoi data",
+      "command_regex": "^chezmoi data$",
+      "required_flags": []
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-MACH-SEL-002",
+    "name": "Skill selection for WSL environment detection",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I detect WSL environments in chezmoi templates using kernel release strings?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-machine-config"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-MACH-SEL-003",
+    "name": "Skill selection for Linux distribution conditionals",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I branch on Linux distributions like Debian or Fedora using .chezmoi.osRelease.id?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-machine-config"
+    },
+    "token_budget": 450
   }
 ]

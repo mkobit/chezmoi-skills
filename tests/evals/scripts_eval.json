@@ -88,5 +88,69 @@
       ]
     },
     "token_budget": 400
+  },
+  {
+    "id": "TC-SCR-CMD-003",
+    "name": "Command generation for script-only apply execution",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I execute all pending setup scripts without modifying regular target files?"
+    },
+    "expected": {
+      "exact_command": "chezmoi apply --include=scripts",
+      "command_regex": "^chezmoi apply --include=scripts$",
+      "required_flags": [
+        "--include=scripts"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-SCR-CMD-004",
+    "name": "Command generation for excluding scripts during apply",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I update target files while skipping all script execution?"
+    },
+    "expected": {
+      "exact_command": "chezmoi apply --exclude=scripts",
+      "command_regex": "^chezmoi apply --exclude=scripts$",
+      "required_flags": [
+        "--exclude=scripts"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-SCR-CMD-005",
+    "name": "Command generation for clearing run_onchange script state bucket",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I clear the persistent state bucket tracking run_onchange scripts?"
+    },
+    "expected": {
+      "exact_command": "chezmoi state delete-bucket --bucket=entryState",
+      "command_regex": "^chezmoi state delete-bucket --bucket=entryState$",
+      "required_flags": [
+        "--bucket=entryState"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-SCR-SEL-002",
+    "name": "Skill selection for triggering onchange scripts on external file updates",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I force a run_onchange script to re-run when an external file changes using sha256sum?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-scripts"
+    },
+    "token_budget": 450
   }
 ]
