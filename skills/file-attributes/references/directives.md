@@ -39,3 +39,25 @@ If the installed chezmoi version is older than the version declared in `.chezmoi
 ```
 
 Use `.chezmoiversion` when utilizing recently introduced chezmoi features, template functions, or configuration directives.
+
+## `.chezmoiignore`
+
+The `.chezmoiignore` file defines pattern rules for entries in the source directory that chezmoi should ignore when computing target state.
+It is evaluated as a template and supports glob pattern matching relative to the target directory.
+
+```gotmpl
+.git/
+.DS_Store
+{{ if eq .chezmoi.os "windows" }}
+.bashrc
+{{ end }}
+```
+
+## Special `.chezmoi` directories
+
+chezmoi reserves several root subdirectories for specific management features:
+
+- `.chezmoiscripts/`: contains scripts executed during `chezmoi apply`.
+- `.chezmoidata/`: contains modular template data files (`.json`, `.toml`, `.yaml`).
+- `.chezmoiexternals/`: contains modular external dependency definitions.
+- `.chezmoitemplates/`: contains reusable template fragments loaded via `template`.

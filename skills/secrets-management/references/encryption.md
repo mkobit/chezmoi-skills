@@ -76,6 +76,20 @@ Encrypted files in the source directory use the `encrypted_` prefix:
 
 The `.age` or `.asc` extension is stripped at apply time.
 
+## Encrypted files with rage
+
+chezmoi supports Rust `rage` as an alternative age implementation:
+
+```toml
+# chezmoi.toml
+encryption = "age"
+
+[age]
+  command = "rage"
+  identity = "~/.config/chezmoi/key.txt"
+  recipient = "age1..."
+```
+
 ## Upstream documentation links
 
 - [Encryption overview](https://www.chezmoi.io/user-guide/encryption/): Overview of how chezmoi encrypts and stores files using various backends.

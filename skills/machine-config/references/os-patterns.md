@@ -14,6 +14,7 @@ Patterns for branching on operating system, distribution, architecture, hostname
 
 `.chezmoi.os` values come from Go's `runtime.GOOS`: `linux`, `darwin`, `windows`, `freebsd`, etc.
 `.chezmoi.arch` comes from `runtime.GOARCH`: `amd64`, `arm64`, etc.
+On Windows systems, `.chezmoi.windowsVersion` provides build and version numbers (e.g., `10.0.19045`).
 
 ## Linux distribution conditionals
 

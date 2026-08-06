@@ -53,6 +53,26 @@ Command functions execute every time the template is executed — commands must 
 | `deleteValueAtPath path dict` | Delete the value at a `.`-separated path in a dict |
 | `pruneEmptyDicts dict` | Remove nested empty dicts, bottom up |
 
+## GitHub API functions
+
+| Function | Description |
+| --- | --- |
+| `gitHubKeys username` | Fetch SSH public keys for a GitHub user |
+| `gitHubLatestRelease repo` | Fetch the latest release object for a GitHub repository (`owner/repo`) |
+| `gitHubLatestTag repo` | Fetch the latest tag string for a GitHub repository (`owner/repo`) |
+| `gitHubReleases repo` | Fetch all release objects for a GitHub repository (`owner/repo`) |
+| `gitHubTags repo` | Fetch all tag objects for a GitHub repository (`owner/repo`) |
+
+## `chezmoi:template:` inline directives
+
+Control template parsing directly inside template files using top-line comment directives:
+
+```gotmpl
+# chezmoi:template:left-delimiter=[[ right-delimiter=]] encoding=utf-8-bom format-indent=2
+```
+
+Supported options: `left-delimiter`, `right-delimiter`, `encoding` (`utf-8`, `utf-8-bom`, `utf-16le`), and `format-indent`.
+
 ## Secret manager functions
 
 Functions for password managers (`bitwarden`, `onepassword`, `pass`, `vault`, `keepassxc`, etc.) are owned by the chezmoi-secrets-management skill.

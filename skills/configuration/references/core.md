@@ -15,6 +15,7 @@ A list of all top-level configuration options available in `chezmoi.toml` / `che
 | `env` | `object` | `none` | Extra environment variables for scripts and commands. |
 | `format` | `string` | `"json"` | Format for data output, either `json` or `yaml`. |
 | `interactive` | `bool` | `false` | Prompt for all changes. |
+| `interpreters` | `object` | `none` | Custom interpreter commands mapping file extension to command and args. |
 | `mode` | `string` | `"file"` | Mode in target dir, either `file` or `symlink`. |
 | `pager` | `string` | `$PAGER` | Default pager CLI command. |
 | `pagerArgs` | `[]string` | `none` | Extra args to the pager command. |
@@ -24,6 +25,7 @@ A list of all top-level configuration options available in `chezmoi.toml` / `che
 | `scriptTempDir` | `string` | `none` | Temporary directory for scripts. |
 | `sourceDir` | `string` | `$XDG_SHARE_HOME/chezmoi` | Source directory. |
 | `tempDir` | `string` | from system | Temporary directory. |
+| `textconv` | `[]object` | `none` | Text conversion rules for diffing binary or encrypted files. |
 | `umask` | `int` | from system | Umask. |
 | `useBuiltinAge` | `string` | `"auto"` | Use builtin age if age command is not found in `$PATH`. |
 | `useBuiltinGit` | `string` | `"auto"` | Use builtin git if git command is not found in `$PATH`. |
