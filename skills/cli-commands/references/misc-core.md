@@ -6,6 +6,13 @@
 - [chezmoi archive](https://www.chezmoi.io/reference/commands/archive/): Generate an archive (tar, zip, etc.) of the target state.
 - [chezmoi execute-template](https://www.chezmoi.io/reference/commands/execute-template/): Execute templates (useful for testing or calling from other scripts).
 - [chezmoi cat](https://www.chezmoi.io/reference/commands/cat/): Write the target contents of files, scripts, or symlinks to stdout.
+- [chezmoi git](https://www.chezmoi.io/reference/commands/git/): Run git command in the working tree directory.
+- [chezmoi ignored](https://www.chezmoi.io/reference/commands/ignored/): List ignored targets in the target directory.
+- [chezmoi secret](https://www.chezmoi.io/reference/commands/secret/): Run a secret manager command with chezmoi secret environment.
+- [chezmoi dump-config](https://www.chezmoi.io/reference/commands/dump-config/): Output configuration file settings to stdout.
+- [chezmoi edit-config](https://www.chezmoi.io/reference/commands/edit-config/): Edit configuration file in default editor.
+- [chezmoi edit-config-template](https://www.chezmoi.io/reference/commands/edit-config-template/): Edit configuration template file.
+- [chezmoi purge](https://www.chezmoi.io/reference/commands/purge/): Remove chezmoi source state and internal state.
 - chezmoi verify: see [verify.md](verify.md).
 
 ## Flags

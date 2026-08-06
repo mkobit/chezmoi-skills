@@ -11,8 +11,10 @@ If a target has been modified since chezmoi last wrote it then the user will be 
 | `-x`, `--exclude types` | Exclude target state entries of specific types |
 | `-i`, `--include types` | Include target state entries of specific types |
 | `--init` | Regenerate and reload the config file from its template before computing the target state |
+| `--mode mode` | Set mode for target entries (`file`, `symlink`, or `dir`) |
 | `-P`, `--parent-dirs` | Execute the command on target and all its parent directories |
 | `-r`, `--recursive` | Recurse into subdirectories (enabled by default, disable with `--recursive=false`) |
+| `--refresh-externals value` | Control when external dependencies are refreshed (`always`, `never`, or `auto`) |
 | `--source-path` | Specify targets by source path, rather than target path (useful for applying changes after editing) |
 
 ## Global flags used with apply
