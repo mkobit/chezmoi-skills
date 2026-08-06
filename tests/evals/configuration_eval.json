@@ -86,5 +86,69 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-CFG-SEL-002",
+    "name": "Skill selection for git autoCommit and autoPush configuration",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I configure git autoCommit and autoPush settings in chezmoi.toml?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-configuration"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-CFG-TRIG-003",
+    "name": "Positive trigger matching for custom diff and merge editor tool configuration",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I set diff.command and merge.command in .chezmoi.toml?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-CFG-CMD-003",
+    "name": "Command generation for printing computed source directory path",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I print the active source directory path configured in chezmoi?"
+    },
+    "expected": {
+      "exact_command": "chezmoi source-path",
+      "command_regex": "^chezmoi source-path$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--apply"
+      ]
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-CFG-CMD-004",
+    "name": "Command generation for interactive prompt initialization",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I generate a new configuration file interactively with chezmoi init?"
+    },
+    "expected": {
+      "exact_command": "chezmoi init --prompt",
+      "command_regex": "^chezmoi init --prompt$",
+      "required_flags": [
+        "--prompt"
+      ],
+      "forbidden_flags": [
+        "--purge"
+      ]
+    },
+    "token_budget": 450
   }
 ]
