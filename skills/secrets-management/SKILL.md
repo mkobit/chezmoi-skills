@@ -28,5 +28,6 @@ Password manager functions can be used directly in `chezmoi.toml.tmpl`:
 
 - Store the `age` identity or `gpg` private key outside the source repository.
 - Rotate secrets in the password manager rather than modifying chezmoi templates.
-- Consult [password-managers.md](references/password-managers.md) for template function signatures and examples.
+- Consult [password-managers.md](references/password-managers.md) for 1Password, Bitwarden, Vault, and KeePassXC function signatures and examples.
+- Consult [secret-providers.md](references/secret-providers.md) for pass, gopass, OS keyring, generic CLI tools, and cloud secret functions.
 - Consult [encryption.md](references/encryption.md) for `age` and `gpg` setup guides and naming patterns.
