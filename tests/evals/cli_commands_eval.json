@@ -133,5 +133,89 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-CLI-SAFETY-001",
+    "name": "Non-destructive apply preview assertion",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I preview chezmoi apply changes safely without modifying my system?"
+    },
+    "expected": {
+      "exact_command": "chezmoi apply --dry-run",
+      "command_regex": "^chezmoi apply --dry-run$",
+      "required_flags": [
+        "--dry-run"
+      ],
+      "forbidden_flags": [
+        "--force",
+        "-f"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-CLI-SAFETY-002",
+    "name": "Safe purge state check",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "Show me what chezmoi purge would delete without executing the purge"
+    },
+    "expected": {
+      "exact_command": "chezmoi purge --dry-run",
+      "command_regex": "^chezmoi purge --dry-run$",
+      "required_flags": [
+        "--dry-run"
+      ],
+      "forbidden_flags": [
+        "--force",
+        "-f"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-CLI-SAFETY-003",
+    "name": "Safe destroy source state dry run",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "Perform a dry-run check of chezmoi destroy to verify destination removal"
+    },
+    "expected": {
+      "exact_command": "chezmoi destroy --dry-run",
+      "command_regex": "^chezmoi destroy --dry-run$",
+      "required_flags": [
+        "--dry-run"
+      ],
+      "forbidden_flags": [
+        "--force",
+        "-f"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-CLI-SAFETY-004",
+    "name": "Safe state reset inspection",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "Show me state reset commands without wiping state data"
+    },
+    "expected": {
+      "exact_command": "chezmoi state reset --dry-run",
+      "command_regex": "^chezmoi state reset --dry-run$",
+      "required_flags": [
+        "--dry-run"
+      ],
+      "forbidden_flags": [
+        "--force",
+        "-f"
+      ]
+    },
+    "token_budget": 500
   }
 ]

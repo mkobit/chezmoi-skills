@@ -1,10 +1,11 @@
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { readdir, readFile, stat } from "fs/promises";
 import { join, dirname } from "path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { Command } from "commander";
 import * as R from "remeda";
+import { encode } from "gpt-tokenizer";
 
 const program = new Command();
 
@@ -137,6 +138,37 @@ const checkSingleSentencePerLine = (content: string): string[] => {
   return errors;
 };
 
+const toSlug = (heading: string): string => {
+  return heading
+    .trim()
+    .replace(/^#+\s*/, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+};
+
+const extractHeadings = (fileContent: string): Set<string> => {
+  const lines = fileContent.split("\n");
+  const slugs = new Set<string>();
+  let inCodeBlock = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+    if (trimmed.startsWith("#")) {
+      slugs.add(toSlug(trimmed));
+    }
+  }
+  return slugs;
+};
+
 const checkInternalLinks = (content: string, filePath: string): string[] => {
   const lines = content.split("\n");
   const errors: string[] = [];
@@ -164,20 +196,30 @@ const checkInternalLinks = (content: string, filePath: string): string[] => {
         rawTarget.startsWith("http://") ||
         rawTarget.startsWith("https://") ||
         rawTarget.startsWith("mailto:") ||
-        rawTarget.startsWith("ftp://") ||
-        rawTarget.startsWith("#")
+        rawTarget.startsWith("ftp://")
       ) {
         continue;
       }
 
-      const targetPathWithoutAnchor = rawTarget.split("#")[0];
-      if (!targetPathWithoutAnchor) {
-        continue;
+      const parts = rawTarget.split("#");
+      const targetPathWithoutAnchor = parts[0];
+      const anchor = parts[1];
+
+      let targetFilePath = filePath;
+      if (targetPathWithoutAnchor) {
+        targetFilePath = join(dirname(filePath), targetPathWithoutAnchor);
+        if (!existsSync(targetFilePath)) {
+          errors.push(`Line ${i + 1}: Referenced link target "${rawTarget}" does not exist (${targetFilePath})`);
+          continue;
+        }
       }
 
-      const absoluteTarget = join(dirname(filePath), targetPathWithoutAnchor);
-      if (!existsSync(absoluteTarget)) {
-        errors.push(`Line ${i + 1}: Referenced link target "${rawTarget}" does not exist (${absoluteTarget})`);
+      if (anchor) {
+        const targetContent = targetFilePath === filePath ? content : (readFileSync(targetFilePath, "utf-8"));
+        const slugs = extractHeadings(targetContent);
+        if (!slugs.has(anchor.toLowerCase())) {
+          errors.push(`Line ${i + 1}: Referenced anchor "#${anchor}" not found in target file (${targetFilePath})`);
+        }
       }
     }
   }
@@ -229,6 +271,31 @@ const validateSkillDir = async (skillsDir: string, dir: string): Promise<Validat
     } else {
       results.push({ valid: true, name: `${relPath} internal links` });
     }
+
+    const { content: bodyContent } = matter(fileContent);
+    const bodyTokens = encode(bodyContent).length;
+    const isSkillMd = file.endsWith("SKILL.md");
+
+    if (isSkillMd) {
+      const descTokens = encode(data.description || "").length;
+      if (descTokens > 100) {
+        results.push({ valid: false, name: `${relPath} description token budget`, details: `Description token count (${descTokens}) exceeds max budget of 100 tokens` });
+      } else {
+        results.push({ valid: true, name: `${relPath} description token budget (${descTokens} <= 100)` });
+      }
+
+      if (bodyTokens > 600) {
+        results.push({ valid: false, name: `${relPath} body token budget`, details: `SKILL.md body token count (${bodyTokens}) exceeds max budget of 600 tokens` });
+      } else {
+        results.push({ valid: true, name: `${relPath} body token budget (${bodyTokens} <= 600)` });
+      }
+    } else {
+      if (bodyTokens > 1500) {
+        results.push({ valid: false, name: `${relPath} L3 reference token budget`, details: `L3 reference file token count (${bodyTokens}) exceeds max budget of 1500 tokens` });
+      } else {
+        results.push({ valid: true, name: `${relPath} L3 reference token budget (${bodyTokens} <= 1500)` });
+      }
+    }
   }
 
   return results;
@@ -276,7 +343,10 @@ interface SkillTokenStats {
   fileCount: number;
 }
 
-const estimateTokens = (text: string): number => Math.ceil(text.length / 4);
+const countTokens = (text: string): number => {
+  const { content } = matter(text);
+  return encode(content).length;
+};
 
 const reportTokenEfficiency = async (): Promise<SkillTokenStats[]> => {
   const allSkillsDirs = await getSkillsDirectories();
@@ -296,7 +366,7 @@ const reportTokenEfficiency = async (): Promise<SkillTokenStats[]> => {
       let l1l2Tokens = 0;
       if (existsSync(skillMdPath)) {
         const content = await readFile(skillMdPath, "utf-8").catch(() => "");
-        l1l2Tokens = estimateTokens(content);
+        l1l2Tokens = countTokens(content);
       }
 
       const mdFiles = await getMarkdownFiles(join(skillsDir, dir));
@@ -305,7 +375,7 @@ const reportTokenEfficiency = async (): Promise<SkillTokenStats[]> => {
       for (const file of mdFiles) {
         if (file !== skillMdPath) {
           const content = await readFile(file, "utf-8").catch(() => "");
-          l3Tokens += estimateTokens(content);
+          l3Tokens += countTokens(content);
         }
       }
 
