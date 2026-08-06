@@ -11,5 +11,86 @@
       "selected_skill": "chezmoi-init"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-INIT-TRIG-001",
+    "name": "Positive trigger matching for repository init and clone",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I clone and apply my dotfiles repository using chezmoi init?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-INIT-TRIG-002",
+    "name": "Negative trigger matching for npm package initialization",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I initialize a new npm package with package.json?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-INIT-SEL-001",
+    "name": "Skill selection for container one-shot bootstrapping",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I set up dotfiles on a temporary container using chezmoi init --one-shot?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-init"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-INIT-CMD-001",
+    "name": "Command generation for repository clone with apply flag",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I initialize chezmoi and apply dotfiles immediately from GitHub?"
+    },
+    "expected": {
+      "exact_command": "chezmoi init --apply https://github.com/username/dotfiles.git",
+      "command_regex": "^chezmoi init --apply https://github\\.com/[^/]+/dotfiles\\.git$",
+      "required_flags": [
+        "--apply"
+      ],
+      "forbidden_flags": [
+        "--purge",
+        "--one-shot"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-INIT-CMD-002",
+    "name": "Command generation for ephemeral container one-shot initialization",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-init",
+    "input": {
+      "user_prompt": "How do I run a one-shot chezmoi initialization that purges state afterwards?"
+    },
+    "expected": {
+      "exact_command": "chezmoi init --one-shot --purge https://github.com/username/dotfiles.git",
+      "command_regex": "^chezmoi init --one-shot --purge .+$",
+      "required_flags": [
+        "--one-shot",
+        "--purge"
+      ],
+      "forbidden_flags": [
+        "--promptBool"
+      ]
+    },
+    "token_budget": 500
   }
 ]

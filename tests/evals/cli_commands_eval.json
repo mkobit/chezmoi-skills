@@ -26,12 +26,51 @@
     "token_budget": 300
   },
   {
+    "id": "TC-CLI-TRIG-001",
+    "name": "Trigger matching for chezmoi diff and status inspection",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I view pending changes between source state and target files using chezmoi diff?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-CLI-TRIG-002",
+    "name": "Negative trigger matching for system administration package management",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I update installed system packages using apt update?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
     "id": "TC-SEL-001",
     "name": "Skill selection among available catalog",
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-cli-commands",
     "input": {
       "user_prompt": "How do I resolve merge conflicts in my dotfiles after running chezmoi apply?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-cli-commands"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-CLI-SEL-001",
+    "name": "Skill selection for editing managed dotfiles in default editor",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I open a managed dotfile in my default editor using chezmoi edit?"
     },
     "expected": {
       "selected_skill": "chezmoi-cli-commands"
@@ -54,5 +93,45 @@
       ]
     },
     "token_budget": 1200
+  },
+  {
+    "id": "TC-CLI-CMD-001",
+    "name": "Command generation for diffing changes with exclusion flag",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I diff chezmoi changes excluding script execution?"
+    },
+    "expected": {
+      "exact_command": "chezmoi diff --exclude scripts",
+      "command_regex": "^chezmoi diff --exclude scripts$",
+      "required_flags": [
+        "--exclude"
+      ],
+      "forbidden_flags": [
+        "--force"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-CLI-CMD-002",
+    "name": "Command generation for adding private SSH key with encryption",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "How do I add an SSH key file to chezmoi encrypted?"
+    },
+    "expected": {
+      "exact_command": "chezmoi add --encrypt ~/.ssh/id_rsa",
+      "command_regex": "^chezmoi add --encrypt ~/.+$",
+      "required_flags": [
+        "--encrypt"
+      ],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 500
   }
 ]

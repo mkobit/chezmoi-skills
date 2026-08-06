@@ -11,5 +11,80 @@
       "selected_skill": "chezmoi-configuration"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-CFG-TRIG-001",
+    "name": "Positive trigger matching for chezmoi configuration options",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I set the source directory path in chezmoi configuration file?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-CFG-TRIG-002",
+    "name": "Negative trigger matching for global git config editing",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I edit my global git config user.name setting?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-CFG-SEL-001",
+    "name": "Skill selection for configuring hook directives in .chezmoi.toml",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I configure post-apply hooks in .chezmoi.toml to format code automatically?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-configuration"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-CFG-CMD-001",
+    "name": "Command generation for checking active configuration diagnostic report",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I check active chezmoi configuration file paths and settings diagnostics?"
+    },
+    "expected": {
+      "exact_command": "chezmoi doctor",
+      "command_regex": "^chezmoi doctor$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--apply"
+      ]
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-CFG-CMD-002",
+    "name": "Command generation for evaluating computed config object template",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I dump computed configuration data in chezmoi?"
+    },
+    "expected": {
+      "exact_command": "chezmoi execute-template \"{{ .chezmoi.config }}\"",
+      "command_regex": "^chezmoi execute-template \".*\"$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 500
   }
 ]

@@ -11,5 +11,80 @@
       "selected_skill": "chezmoi-machine-config"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-MACH-TRIG-001",
+    "name": "Positive trigger matching for OS conditional dotfile management",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I manage multi-machine dotfiles for Linux vs Darwin in chezmoi?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-MACH-TRIG-002",
+    "name": "Negative trigger matching for checking architecture via uname",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I check system CPU architecture using uname -m in bash?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-MACH-SEL-001",
+    "name": "Skill selection for per-machine data declarations in .chezmoidata.json",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I define custom machine variables in .chezmoidata.json?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-machine-config"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-MACH-CMD-001",
+    "name": "Command generation for evaluating OS and architecture template variables",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I test built-in OS and architecture variables in chezmoi?"
+    },
+    "expected": {
+      "exact_command": "chezmoi execute-template \"{{ .chezmoi.os }}/{{ .chezmoi.arch }}\"",
+      "command_regex": "^chezmoi execute-template \".*\"$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-MACH-CMD-002",
+    "name": "Command generation for viewing ignore file contents",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "How do I view active ignore rules in chezmoi source directory?"
+    },
+    "expected": {
+      "exact_command": "chezmoi cat ~/.chezmoiignore",
+      "command_regex": "^chezmoi cat .*$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--force"
+      ]
+    },
+    "token_budget": 500
   }
 ]

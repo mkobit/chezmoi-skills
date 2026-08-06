@@ -26,5 +26,80 @@
       "selected_skill": "chezmoi-file-attributes"
     },
     "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-TRIG-001",
+    "name": "Positive trigger matching for file attribute prefixes",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I mark dotfile source entries as exact directories in chezmoi?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-ATTR-TRIG-002",
+    "name": "Negative trigger matching for shell chmod permission command",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I set file permissions to 600 using chmod in bash?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-ATTR-SEL-001",
+    "name": "Skill selection for root control file directives",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do .chezmoiroot and .chezmoiremove direct target paths in chezmoi?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-file-attributes"
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-CMD-001",
+    "name": "Command generation for exact private hidden directory name",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "What is the source state path for an exact private hidden config directory?"
+    },
+    "expected": {
+      "exact_command": "exact_private_dot_config",
+      "command_regex": "^exact_private_dot_config$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--force"
+      ]
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-CMD-002",
+    "name": "Command generation for empty hidden file attribute name",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "What source path creates an empty file named .hushlogin?"
+    },
+    "expected": {
+      "exact_command": "empty_dot_hushlogin",
+      "command_regex": "^empty_dot_hushlogin$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 400
   }
 ]

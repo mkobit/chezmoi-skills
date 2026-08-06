@@ -11,5 +11,83 @@
       "selected_skill": "chezmoi-templating"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-TPL-TRIG-001",
+    "name": "Positive trigger matching for template prompt functions",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do promptBool and promptString functions work in chezmoi dotfile templates?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-TPL-TRIG-002",
+    "name": "Negative trigger matching for Jinja2 template engine query",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do Jinja2 template filters work in Ansible playbooks?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-TPL-SEL-001",
+    "name": "Skill selection for shared template fragment inclusion",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I include partial templates from .chezmoitemplates in chezmoi?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-templating"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-TPL-CMD-001",
+    "name": "Command generation for evaluating interactive prompt template",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I test chezmoi template execution with simulated promptBool input?"
+    },
+    "expected": {
+      "exact_command": "chezmoi execute-template --init --promptBool=useGpg=true \"{{ .useGpg }}\"",
+      "command_regex": "^chezmoi execute-template --init --promptBool=useGpg=true \\\".*\\\"$",
+      "required_flags": [
+        "--init",
+        "--promptBool=useGpg=true"
+      ],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-TPL-CMD-002",
+    "name": "Command generation for evaluating include fragment template",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I evaluate a template containing an included fragment with chezmoi execute-template?"
+    },
+    "expected": {
+      "exact_command": "chezmoi execute-template \"{{ include \\\".chezmoitemplates/header\\\" }}\"",
+      "command_regex": "^chezmoi execute-template \\\".*\\\"$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--purge"
+      ]
+    },
+    "token_budget": 500
   }
 ]

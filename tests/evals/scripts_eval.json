@@ -11,5 +11,82 @@
       "selected_skill": "chezmoi-scripts"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-SCR-TRIG-001",
+    "name": "Positive trigger matching for lifecycle script execution",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I execute post-apply setup scripts for tracked dotfiles in chezmoi?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-SCR-TRIG-002",
+    "name": "Negative trigger matching for system cron configuration",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I write a crontab entry for daily automated backups?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-SCR-SEL-001",
+    "name": "Skill selection for script state reset management",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I reset state for a run_once_ script in chezmoi state manager?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-scripts"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-SCR-CMD-001",
+    "name": "Command generation for clearing script state bucket",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I reset run_once script state in chezmoi?"
+    },
+    "expected": {
+      "exact_command": "chezmoi state delete-bucket --bucket=scriptState",
+      "command_regex": "^chezmoi state delete-bucket --bucket=scriptState$",
+      "required_flags": [
+        "--bucket=scriptState"
+      ],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-SCR-CMD-002",
+    "name": "Command generation for script file name prefix pattern",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "What is the filename for an on-change script running after target files are applied?"
+    },
+    "expected": {
+      "exact_command": "run_onchange_after_00_install_packages.sh.tmpl",
+      "command_regex": "^run_onchange_after_[0-9]+_.*\\.sh\\.tmpl$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--force"
+      ]
+    },
+    "token_budget": 400
   }
 ]

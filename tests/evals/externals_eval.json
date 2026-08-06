@@ -13,6 +13,45 @@
     "token_budget": 450
   },
   {
+    "id": "TC-EXT-TRIG-001",
+    "name": "Positive trigger matching for external dependencies declaration",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I pull external archives using chezmoi external declarations?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-EXT-TRIG-002",
+    "name": "Negative trigger matching for standard git clone operation",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I clone a git repository into my workspace directory?"
+    },
+    "expected": {
+      "should_trigger": false
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-EXT-SEL-001",
+    "name": "Skill selection for git-repo external type configuration",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I declare external git repositories in .chezmoiexternal.yaml?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
+  },
+  {
     "id": "TC-EXT-002",
     "name": "Command generation for refreshing external dependencies",
     "eval_type": "command_correctness",
@@ -25,6 +64,26 @@
       "command_regex": "^chezmoi apply (?:--refresh-externals|-R|\\s)+$",
       "required_flags": [
         "--refresh-externals"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-EXT-CMD-001",
+    "name": "Command generation for listing managed external entries",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I list all external files managed by chezmoi?"
+    },
+    "expected": {
+      "exact_command": "chezmoi managed --include externals",
+      "command_regex": "^chezmoi managed --include externals$",
+      "required_flags": [
+        "--include"
+      ],
+      "forbidden_flags": [
+        "--purge"
       ]
     },
     "token_budget": 500
