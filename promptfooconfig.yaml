@@ -2,10 +2,16 @@
 description: Chezmoi skills evaluation benchmark suite across 9 skills
 
 prompts:
-  - "System: You are an AI assistant helping with chezmoi dotfiles.\nUser: {{user_prompt}}"
+  - "System: You are an AI assistant helping with chezmoi dotfile management.\nUser: {{user_prompt}}"
 
 providers:
   - id: google:gemini-2.5-flash
+    config:
+      temperature: 0
+  - id: openai:gpt-4o-mini
+    config:
+      temperature: 0
+  - id: anthropic:claude-3-5-haiku-20241022
     config:
       temperature: 0
 
@@ -50,3 +56,40 @@ tests:
         value: "autoCommit"
       - type: icontains
         value: "autoPush"
+
+  - description: Repository initialization and cloning
+    vars:
+      user_prompt: "How do I initialize chezmoi from my dotfiles repository at git@github.com:user/dotfiles.git and apply immediately?"
+    assert:
+      - type: icontains
+        value: "chezmoi init"
+      - type: icontains
+        value: "--apply"
+
+  - description: Machine config data template variable inspection
+    vars:
+      user_prompt: "How do I check the value of chezmoi.os and chezmoi.arch in my current environment?"
+    assert:
+      - type: icontains
+        value: "chezmoi data"
+
+  - description: Lifecycle execution script state management
+    vars:
+      user_prompt: "How do I clear the run-once script execution history in chezmoi?"
+    assert:
+      - type: icontains
+        value: "chezmoi state delete-bucket"
+
+  - description: Secret manager integration query
+    vars:
+      user_prompt: "How do I decrypt an age-encrypted file in my chezmoi source state?"
+    assert:
+      - type: icontains
+        value: "chezmoi decrypt"
+
+  - description: Template prompt function usage
+    vars:
+      user_prompt: "How do I interactively prompt for an email address in a chezmoi template file?"
+    assert:
+      - type: icontains
+        value: "promptString"
