@@ -89,5 +89,88 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-TPL-SEL-002",
+    "name": "Skill selection for Sprig string manipulation and path join functions",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I join paths and use replaceAllRegex in chezmoi templates?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-templating"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-TPL-TRIG-003",
+    "name": "Positive trigger matching for GitHub API release tag queries in templates",
+    "eval_type": "trigger_matching",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I fetch gitHubLatestRelease in chezmoi dotfile templates?"
+    },
+    "expected": {
+      "should_trigger": true
+    },
+    "token_budget": 300
+  },
+  {
+    "id": "TC-TPL-CMD-003",
+    "name": "Command generation for evaluating template with promptString flag",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I test chezmoi template execution with simulated promptString input?"
+    },
+    "expected": {
+      "exact_command": "chezmoi execute-template --init --promptString=username=alice \"{{ .username }}\"",
+      "command_regex": "^chezmoi execute-template --init --promptString=username=alice \\\".*\\\"$",
+      "required_flags": [
+        "--init",
+        "--promptString=username=alice"
+      ],
+      "forbidden_flags": [
+        "--dry-run"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-TPL-CMD-004",
+    "name": "Command generation for evaluating template path join function",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I evaluate a template containing joinPath with chezmoi execute-template?"
+    },
+    "expected": {
+      "exact_command": "chezmoi execute-template \"{{ joinPath .chezmoi.homeDir \\\".config\\\" }}\"",
+      "command_regex": "^chezmoi execute-template \\\".*\\\"$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--purge"
+      ]
+    },
+    "token_budget": 500
+  },
+  {
+    "id": "TC-TPL-CMD-005",
+    "name": "Command generation for inspecting template data",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "How do I inspect all available template variables in chezmoi?"
+    },
+    "expected": {
+      "exact_command": "chezmoi data",
+      "command_regex": "^chezmoi data$",
+      "required_flags": [],
+      "forbidden_flags": [
+        "--apply"
+      ]
+    },
+    "token_budget": 400
   }
 ]
