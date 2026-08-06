@@ -8,9 +8,12 @@ If a target has been modified since chezmoi last wrote it then the user will be 
 
 | Flag | Description |
 | --- | --- |
+| `--error-on-conflict` | Exit with error if target file has changed since chezmoi last wrote it |
 | `-x`, `--exclude types` | Exclude target state entries of specific types |
 | `-i`, `--include types` | Include target state entries of specific types |
 | `--init` | Regenerate and reload the config file from its template before computing the target state |
+| `--interactive` | Interactively prompt for confirmation before making changes |
+| `--less-interactive` | Prompt for confirmation only when target file has changed since last write |
 | `--mode mode` | Set mode for target entries (`file`, `symlink`, or `dir`) |
 | `-P`, `--parent-dirs` | Execute the command on target and all its parent directories |
 | `-r`, `--recursive` | Recurse into subdirectories (enabled by default, disable with `--recursive=false`) |

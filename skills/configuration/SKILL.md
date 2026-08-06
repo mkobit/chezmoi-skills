@@ -17,6 +17,8 @@ Use `chezmoi doctor` to confirm the active configuration path.
 - [tools.md](references/tools.md): Tool integration for editing (`[edit]`), diffing (`[diff]`), and three-way merging (`[merge]`).
 - [hooks.md](references/hooks.md): Operation lifecycle hooks (`.pre` and `.post`) for commands and git events.
 - [git.md](references/git.md): Git integration options (`autoCommit`, `autoPush`, `commitMessageTemplate`).
+- [interpreters.md](references/interpreters.md): Custom script interpreter mappings and extension rules.
+- [pinentry-textconv-warnings.md](references/pinentry-textconv-warnings.md): GnuPG pinentry settings, textconv diff transformers, and warning suppression.
 
 ## Related skills
 

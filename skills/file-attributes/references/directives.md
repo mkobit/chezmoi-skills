@@ -61,3 +61,16 @@ chezmoi reserves several root subdirectories for specific management features:
 - `.chezmoidata/`: contains modular template data files (`.json`, `.toml`, `.yaml`).
 - `.chezmoiexternals/`: contains modular external dependency definitions.
 - `.chezmoitemplates/`: contains reusable template fragments loaded via `template`.
+
+## `.chezmoi.$FORMAT.tmpl` vs target templates
+
+Config templates (`.chezmoi.toml.tmpl`, `.chezmoi.yaml.tmpl`) are evaluated before reading source state.
+As a result, config templates operate under different feature capabilities than standard target `.tmpl` files.
+
+| Feature capability | `.chezmoi.$FORMAT.tmpl` | Target `.tmpl` file |
+| --- | --- | --- |
+| Access `.chezmoi.*` variables | Yes | Yes |
+| Access `promptStringOnce` / `promptBoolOnce` | Yes | No |
+| Access `.chezmoidata` / `.chezmoidata/` | No | Yes |
+| Access `.chezmoitemplates/` | No | Yes |
+| Access user `[data]` settings | No | Yes |

@@ -72,6 +72,19 @@ To install the chezmoi binary in a different directory, use the `-b` option:
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin
 ```
 
+### Password manager pre-installation hook
+
+To install a password manager or prerequisite tools before chezmoi evaluates source state during `init`, use a `read-source-state.pre` hook in `.chezmoi.$FORMAT.tmpl`.
+
+```toml
+[hooks.read-source-state.pre]
+command = ".install-password-manager.sh"
+```
+
+### Non-Git VCS repositories
+
+When using non-Git version control systems (such as Mercurial or Jujutsu), create an empty `.git` directory in the source location (`mkdir -p ~/.local/share/chezmoi/.git`) to bypass automatic Git clone behavior during initialization.
+
 ### init flags
 
 See the flags table in [commands.md](commands.md).
