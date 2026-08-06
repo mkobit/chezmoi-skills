@@ -1,15 +1,17 @@
 # Password manager functions
 
-chezmoi provides template functions to retrieve secrets dynamically from various password managers and secret stores at apply time.
+chezmoi provides template functions to retrieve secrets dynamically from primary password managers at apply time.
 
 ## 1Password
 
-| Function | Signature |
-| --- | --- |
-| `onepasswordRead` | `onepasswordRead url [account]` |
-| `onepassword` | `onepassword uuid [vault [account]]` |
-| `onepasswordDetailsFields` | `onepasswordDetailsFields uuid [vault [account]]` |
-| `onepasswordDocument` | `onepasswordDocument uuid [vault [account]]` |
+1Password integration uses the official `op` CLI to retrieve secrets, item fields, and documents.
+
+| Function | Signature | Output format |
+| --- | --- | --- |
+| `onepasswordRead` | `onepasswordRead url [account]` | String |
+| `onepassword` | `onepassword uuid [vault [account]]` | Map object |
+| `onepasswordDetailsFields` | `onepasswordDetailsFields uuid [vault [account]]` | Map object |
+| `onepasswordDocument` | `onepasswordDocument uuid [vault [account]]` | Raw string |
 
 ```gotmpl
 {{ onepasswordRead "op://vault/item/field" }}
@@ -18,11 +20,20 @@ chezmoi provides template functions to retrieve secrets dynamically from various
 {{- onepasswordDocument "$UUID" -}}
 ```
 
-`onepassword` and `onepasswordDetailsFields` return structured data parsed from `op` JSON output.
-Requires the `op` CLI.
-chezmoi prompts to sign in if there is no valid session.
+`onepasswordRead` accepts Secret Reference URIs in the format `op://vault/item/field` or `op://vault/item/section/field`.
+`onepassword` returns structured data from `op item get --format=json`.
+`onepasswordDetailsFields` maps fields by label name for simplified lookup.
+If `op` is locked, chezmoi prompts interactively to sign in unless `op` desktop app integration is active.
 
 ## Bitwarden
+
+Bitwarden integration uses the `bw` CLI to access logins, fields, and attachments.
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| `bitwarden` | `bitwarden "item" "$ITEMID"` | Returns parsed item JSON object |
+| `bitwardenFields` | `bitwardenFields "item" "$ITEMID"` | Returns map of custom fields indexed by name |
+| `bitwardenAttachment` | `bitwardenAttachment "$FILENAME" "$ITEMID"` | Returns raw attachment content as string |
 
 ```gotmpl
 {{ (bitwarden "item" "$ITEMID").login.password }}
@@ -30,22 +41,49 @@ chezmoi prompts to sign in if there is no valid session.
 {{- bitwardenAttachment "$FILENAME" "$ITEMID" -}}
 ```
 
-`bitwarden` and `bitwardenFields` pass arguments to `bw get` unchanged and parse the JSON output.
-`bitwardenFields` indexes the `fields` array by field `name`.
-Requires `bw` CLI and `BW_SESSION` env var, or set `bitwarden.unlock = "auto"` in config to run `bw unlock --raw` automatically.
+### Bitwarden session management
 
-## pass and gopass
+chezmoi requires a valid `BW_SESSION` environment variable or automated unlock configuration in `.chezmoi.toml`.
 
-```gotmpl
-{{ pass "path/to/secret" }}
-{{ (passFields "path/to/secret").password }}
-{{ gopass "path/to/secret" }}
+```toml
+[bitwarden]
+    unlock = "auto"
 ```
 
-`pass` and `gopass` return only the first line of output.
-`passRaw` and `gopassRaw` return the full output.
+Setting `unlock = "auto"` causes chezmoi to invoke `bw unlock --raw` automatically when a Bitwarden session is inactive.
+
+## HashiCorp Vault
+
+HashiCorp Vault integration fetches secret keys via `vault kv get` or Vault API endpoints.
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| `vault` | `vault "$KEY"` | Parses `vault kv get -format=json $KEY` output |
+
+```gotmpl
+{{ (vault "secret/data/myapp").data.data.password }}
+```
+
+### Vault configuration and environment variables
+
+Specify the Vault server address and authentication token in `.chezmoi.toml` or environment variables:
+
+```toml
+[vault]
+    address = "https://vault.example.com:8200"
+```
+
+Environment variables `VAULT_ADDR` and `VAULT_TOKEN` override `.chezmoi.toml` settings.
 
 ## KeePassXC
+
+KeePassXC integration retrieves passwords, entry attributes, and file attachments from `.kdbx` databases using `keepassxc-cli`.
+
+| Function | Signature | Description |
+| --- | --- | --- |
+| `keepassxc` | `keepassxc "Entry Name"` | Returns entry object with `.UserName`, `.Password`, and `.URL` |
+| `keepassxcAttribute` | `keepassxcAttribute "Entry Name" "attribute"` | Returns specific attribute string |
+| `keepassxcAttachment` | `keepassxcAttachment "Entry Name" "filename"` | Returns raw attachment content |
 
 ```gotmpl
 {{ (keepassxc "Entry Name").Password }}
@@ -53,57 +91,14 @@ Requires `bw` CLI and `BW_SESSION` env var, or set `bitwarden.unlock = "auto"` i
 {{- keepassxcAttachment "Entry Name" "filename" -}}
 ```
 
-Requires `keepassxc-cli` and `keepassxc.database` set in config.
+### KeePassXC database configuration
 
-## OS keyring
-
-Retrieves passwords from macOS Keychain, GNOME Keyring, or Windows Credentials Manager.
-
-```gotmpl
-{{ keyring "service" "user" }}
-```
-
-Set values with:
-
-```sh
-chezmoi secret keyring set --service=$SERVICE --user=$USER
-```
-
-## HashiCorp Vault
-
-```gotmpl
-{{ (vault "$KEY").data.data.password }}
-```
-
-`vault` takes a single key, passes it to `vault kv get -format=json $KEY`, and returns the parsed JSON.
-
-## Generic CLI secret tools
+Configure the database file path in `.chezmoi.toml`:
 
 ```toml
-[secret]
-    command = "vault"
+[keepassxc]
+    database = "/path/to/passwords.kdbx"
 ```
-
-```gotmpl
-{{ secret "arg" }}
-{{ secretJSON "kv" "get" "-format=json" "$ID" }}
-```
-
-`secret` returns raw command output with whitespace trimmed.
-`secretJSON` parses the output as JSON.
-
-## Additional secret providers
-
-| Provider | Template functions / Usage |
-| --- | --- |
-| AWS Secrets Manager | `{{ awsSecretsManager "secret-id" }}` / `{{ awsSecretsManagerRaw "secret-id" }}` |
-| Azure Key Vault | `{{ azureKeyVault "vaultName" "secretName" }}` |
-| Doppler | `{{ doppler "project" "config" "secret" }}` / `{{ dopplerProjectJson "project" "config" }}` |
-| Dashlane | `{{ dashlanePassword "item" }}` / `{{ dashlaneNote "item" }}` |
-| ejson | `{{ ejsonDecrypt "path/to/key" "path/to/ejson" }}` |
-| Keeper | `{{ keeper "record-title" }}` / `{{ keeperDataFields "record-title" }}` |
-| LastPass | `{{ lastpass "name" }}` |
-| Proton Pass | `{{ protonpass "item-name" }}` |
 
 ## Upstream documentation links
 
@@ -111,7 +106,3 @@ chezmoi secret keyring set --service=$SERVICE --user=$USER
 - [Bitwarden functions](https://www.chezmoi.io/reference/templates/bitwarden-functions/): Template functions for accessing secrets, fields, and attachments from Bitwarden.
 - [KeePassXC functions](https://www.chezmoi.io/reference/templates/keepassxc-functions/): Template functions for retrieving attributes and attachments from KeePassXC.
 - [Vault functions](https://www.chezmoi.io/reference/templates/vault-functions/vault/): Template function for fetching secrets from HashiCorp Vault.
-- [pass functions](https://www.chezmoi.io/reference/templates/pass-functions/): Template functions for retrieving passwords and fields using Unix pass.
-- [gopass functions](https://www.chezmoi.io/reference/templates/gopass-functions/): Template functions for the gopass password manager.
-- [Keychain functions](https://www.chezmoi.io/reference/templates/keyring-functions/keyring/): Template function for retrieving passwords from OS keyrings.
-- [Generic secret functions](https://www.chezmoi.io/reference/templates/secret-functions/): Generic functions for executing external commands to retrieve secrets.
