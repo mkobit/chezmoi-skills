@@ -268,6 +268,76 @@ const validateSkills = async (): Promise<ValidationResult[]> => {
   return resolvedArrayOfArrays.flat();
 };
 
+interface SkillTokenStats {
+  skillName: string;
+  l1l2Tokens: number;
+  l3Tokens: number;
+  totalTokens: number;
+  fileCount: number;
+}
+
+const estimateTokens = (text: string): number => Math.ceil(text.length / 4);
+
+const reportTokenEfficiency = async (): Promise<SkillTokenStats[]> => {
+  const allSkillsDirs = await getSkillsDirectories();
+  const allStats: SkillTokenStats[] = [];
+
+  for (const skillsDir of allSkillsDirs) {
+    if (!existsSync(skillsDir)) continue;
+    const files = await readdir(skillsDir).catch(() => []);
+    const dirsPromises = R.map(files, async (file) => {
+      const isDir = await stat(join(skillsDir, file)).then((s) => s.isDirectory()).catch(() => false);
+      return isDir ? file : null;
+    });
+    const dirs = (await Promise.all(dirsPromises)).filter(Boolean) as string[];
+
+    for (const dir of dirs) {
+      const skillMdPath = join(skillsDir, dir, "SKILL.md");
+      let l1l2Tokens = 0;
+      if (existsSync(skillMdPath)) {
+        const content = await readFile(skillMdPath, "utf-8").catch(() => "");
+        l1l2Tokens = estimateTokens(content);
+      }
+
+      const mdFiles = await getMarkdownFiles(join(skillsDir, dir));
+      let l3Tokens = 0;
+
+      for (const file of mdFiles) {
+        if (file !== skillMdPath) {
+          const content = await readFile(file, "utf-8").catch(() => "");
+          l3Tokens += estimateTokens(content);
+        }
+      }
+
+      allStats.push({
+        skillName: dir,
+        l1l2Tokens,
+        l3Tokens,
+        totalTokens: l1l2Tokens + l3Tokens,
+        fileCount: mdFiles.length,
+      });
+    }
+  }
+
+  if (allStats.length > 0) {
+    console.log("\n📊 Skill token efficiency benchmark report:");
+    console.log("┌───────────────────────┬───────────────┬───────────────┬───────────────┬───────────┐");
+    console.log("│ Skill Name            │ L1/L2 (SKILL) │ L3 (Refs)     │ Total Tokens  │ MD Files  │");
+    console.log("├───────────────────────┼───────────────┼───────────────┼───────────────┼───────────┤");
+    for (const s of allStats) {
+      const nameCol = s.skillName.padEnd(21);
+      const l1l2Col = String(s.l1l2Tokens).padStart(13);
+      const l3Col = String(s.l3Tokens).padStart(13);
+      const totalCol = String(s.totalTokens).padStart(13);
+      const filesCol = String(s.fileCount).padStart(9);
+      console.log(`│ ${nameCol} │ ${l1l2Col} │ ${l3Col} │ ${totalCol} │ ${filesCol} │`);
+    }
+    console.log("└───────────────────────┴───────────────┴───────────────┴───────────────┴───────────┘\n");
+  }
+
+  return allStats;
+};
+
 const pluginJsonSchema = z.object({
   name: z.string().min(1, "name is required"),
   version: z.string().min(1, "version is required"),
@@ -392,6 +462,7 @@ const run = async () => {
   if (failed) {
     process.exit(1);
   } else {
+    await reportTokenEfficiency();
     console.log("All validations passed!");
   }
 };
