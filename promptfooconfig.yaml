@@ -2,7 +2,10 @@
 description: Chezmoi skills evaluation benchmark suite across 9 skills
 
 prompts:
-  - "System: You are an AI assistant helping with chezmoi dotfile management.\nUser: {{user_prompt}}"
+  - label: "baseline (no skill)"
+    raw: "System: You are an AI assistant helping with chezmoi dotfile management.\nUser: {{user_prompt}}"
+  - label: "skill-enhanced (with skill catalog)"
+    raw: "System: You are an AI assistant helping with chezmoi dotfile management.\nAvailable skills:\n- chezmoi-cli-commands: Manage chezmoi CLI commands, flags, diff, and status inspection\n- chezmoi-configuration: Manage chezmoi configuration options and hook directives\n- chezmoi-externals: Manage external dependencies and git-repo external sources\n- chezmoi-file-attributes: Manage target file attributes and source file naming prefixes\n- chezmoi-init: Initialize and clone chezmoi dotfile repositories\n- chezmoi-machine-config: Manage per-machine configuration, OS conditionals, and chezmoidata\n- chezmoi-scripts: Manage lifecycle execution scripts and script state buckets\n- chezmoi-secrets-management: Manage secrets, age/gpg encryption, and keyrings\n- chezmoi-templating: Manage Go template syntax and Sprig functions\nUser: {{user_prompt}}"
 
 providers:
   - id: google:gemini-2.5-flash
