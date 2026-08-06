@@ -76,3 +76,14 @@ Prefixes compose left to right from the outer scope to the inner file name.
 ### Exact directory cleanup
 
 `exact_dot_config/helix/` ensures `~/.config/helix/` contains only files explicitly managed by chezmoi in that directory.
+
+## Source directory leading dot rule
+
+Files and directories starting with `.` in the source root directory are ignored by chezmoi.
+Only root entries starting with `.chezmoi` (such as `.chezmoiignore`, `.chezmoi.toml.tmpl`, `.chezmoidata/`) are recognized as special control files or directories.
+
+## `modify_` script mechanics
+
+A file with the `modify_` attribute is executed as a script during `chezmoi apply`.
+The script receives the current target file path as an argument (or target file contents on standard input).
+The script writes modified file contents to standard output, which chezmoi then updates in the target state.

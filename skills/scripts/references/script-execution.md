@@ -62,3 +62,26 @@ Embed a SHA256 hash of another file using `include` so the script content change
 
 dconf load / < {{ joinPath .chezmoi.sourceDir "dconf.ini" | quote }}
 ```
+
+## `.chezmoiscripts/` special directory
+
+Scripts placed in the `.chezmoiscripts/` directory at the source root are executed during `chezmoi apply` without creating target state directories.
+This prevents cluttering target directories with lifecycle script files.
+
+## Working directory resolution and execution mechanics
+
+chezmoi sets the script working directory to the first existing parent directory in the destination tree.
+Scripts are written to a temporary file in the system temp directory, given executable permissions, and invoked via `exec(3)`.
+Scripts must start with a valid `#!` shebang line or be compiled binary executables.
+
+## Suppressing script diffs and status output
+
+Suppress script diffs or `R` status output by setting `exclude` in `chezmoi.toml`:
+
+```toml
+[diff]
+    exclude = ["scripts"]
+
+[status]
+    exclude = ["scripts"]
+```

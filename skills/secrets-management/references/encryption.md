@@ -90,6 +90,21 @@ encryption = "age"
   recipient = "age1..."
 ```
 
+## Transparent repository encryption
+
+chezmoi supports `transparent` mode when using repository-level encryption filters (`transcrypt` or `git-crypt`).
+
+```toml
+# chezmoi.toml
+encryption = "transparent"
+```
+
+Configure `.gitattributes` inside the chezmoi source directory to encrypt matching source files:
+
+```text
+encrypted_* filter=crypt diff=crypt merge=crypt
+```
+
 ## Upstream documentation links
 
 - [Encryption overview](https://www.chezmoi.io/user-guide/encryption/): Overview of how chezmoi encrypts and stores files using various backends.

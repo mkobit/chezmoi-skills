@@ -62,7 +62,9 @@ The `secret` and `secretJSON` template functions execute custom secret helper bi
 | ejson | `{{ ejsonDecrypt "path/to/key" "path/to/ejson" }}` |
 | Keeper | `{{ keeper "record-title" }}` / `{{ keeperDataFields "record-title" }}` |
 | LastPass | `{{ lastpass "name" }}` |
+| passhole | `{{ passhole "path" }}` |
 | Proton Pass | `{{ protonpass "item-name" }}` |
+| GitHub SSH Keys | `{{ gitHubKeys "username" }}` (retrieves public SSH keys for user; beware key removal policies) |
 
 ## Upstream documentation links
 

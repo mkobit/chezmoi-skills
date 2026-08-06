@@ -143,4 +143,25 @@ Example: chassis type (laptop vs desktop):
 
 [data]
     chassisType = {{ $chassisType | quote }}
+
+## GitHub Codespaces and Remote Containers
+
+Detect Codespaces environment using `env "CODESPACES"` in `.chezmoi.$FORMAT.tmpl`.
+Skip interactive prompts when running inside container environments to ensure non-interactive initialization.
+
+```gotmpl
+{{- $codespaces := env "CODESPACES" | quote | bool -}}
+
+[data]
+    codespaces = {{ $codespaces }}
 ```
+
+## Windows elevation and symlink permissions
+
+On Windows, running scripts with elevated privileges requires self-elevating PowerShell commands:
+
+```powershell
+Start-Process -Wait -FilePath pwsh.exe -Verb RunAs -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "script.ps1"
+```
+
+Creating symlinks on Windows requires `Developer Mode` enabled or the `SeCreateSymbolicLinkPrivilege` user right.

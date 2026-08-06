@@ -49,7 +49,9 @@ To disable git repo URL guessing, pass the `--guess-repo-url=false` option.
 | `-p`, `--purge` | bool | `false` | Remove the source and config directories after applying. |
 | `-P`, `--purge-binary` | bool | `false` | Attempt to remove the chezmoi binary after applying. |
 | `--recurse-submodules` | bool | `true` | Recursively clone submodules (defaults to true). |
+| `--revision` | string | `""` | Check out specific commit SHA during repository initialization. |
 | `--ssh` | bool | `false` | Guess an SSH repo URL instead of an HTTPS repo. |
+| `--tag` | string | `""` | Check out specific git tag during repository initialization. |
 | `-x`, `--exclude` | string | `""` | Exclude target state entries of specific types (default none, include types with `--include`). |
 | `-i`, `--include` | string | `""` | Include target state entries of specific types (default all, exclude types with `--exclude`). |
 
