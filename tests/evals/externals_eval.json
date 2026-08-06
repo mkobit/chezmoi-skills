@@ -87,5 +87,57 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-EXT-SEL-002",
+    "name": "Skill selection for archive-file single member extraction",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I extract a single binary file from a tarball archive using archive-file in .chezmoiexternal.toml?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-EXT-SEL-003",
+    "name": "Skill selection for archive include and exclude glob filtering",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I exclude specific subdirectories when extracting an external archive in chezmoi?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-EXT-SEL-004",
+    "name": "Skill selection for git-repo pull args configuration",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I configure .chezmoiexternal.toml to pass --ff-only to git pull for external repositories?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-EXT-SEL-005",
+    "name": "Skill selection for external payload checksum validation",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I enforce SHA-256 checksum verification for external file downloads in chezmoi?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
   }
 ]

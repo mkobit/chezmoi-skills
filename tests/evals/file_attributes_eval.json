@@ -101,5 +101,63 @@
       ]
     },
     "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-CMD-003",
+    "name": "Command generation for create file attribute prefix",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "What source path prefix creates a file if absent without overwriting existing target changes?"
+    },
+    "expected": {
+      "exact_command": "create_dot_config",
+      "command_regex": "^create_dot_.*$",
+      "required_flags": []
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-CMD-004",
+    "name": "Command generation for modify file attribute prefix",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "What source filename attribute indicates a script that modifies an existing target file in place?"
+    },
+    "expected": {
+      "exact_command": "modify_dot_gitconfig",
+      "command_regex": "^modify_.*$",
+      "required_flags": []
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-CMD-005",
+    "name": "Command generation for literal attribute prefix escaping",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I name a source file so chezmoi treats dot_ as a literal filename prefix rather than an attribute?"
+    },
+    "expected": {
+      "exact_command": "literal_dot_foo",
+      "command_regex": "^literal_dot_.*$",
+      "required_flags": []
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-SEL-002",
+    "name": "Skill selection for minimum version directive .chezmoiversion",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I enforce a minimum required chezmoi version for my source repository using .chezmoiversion?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-file-attributes"
+    },
+    "token_budget": 400
   }
 ]
