@@ -15,7 +15,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "cspell": "^8.19.4",
-    "markdownlint-cli2": "0.22.1"
+    "cspell": "^10.0.1",
+    "markdownlint-cli2": "0.23.1"
   }
 }
