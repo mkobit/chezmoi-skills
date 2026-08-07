@@ -25,12 +25,30 @@ tests:
       - type: regex
         value: "chezmoi\\s+add"
 
+  - description: Negative trigger matching for unrelated git query
+    vars:
+      user_prompt: "How do I rebase a local git feature branch?"
+    assert:
+      - type: not-icontains
+        value: "chezmoi"
+
   - description: Command generation with dry-run flag
     vars:
       user_prompt: "Show me what chezmoi apply would change without actually writing any files to disk."
     assert:
       - type: regex
         value: "chezmoi\\s+apply.*(?:--dry-run|-n)"
+      - type: not-icontains
+        value: "--force"
+
+  - description: Non-destructive safe apply preview assertion
+    vars:
+      user_prompt: "Safely preview dotfile updates before applying changes to target files."
+    assert:
+      - type: icontains
+        value: "chezmoi"
+      - type: icontains
+        value: "diff"
       - type: not-icontains
         value: "--force"
 
@@ -49,6 +67,15 @@ tests:
         value: "--refresh-externals"
       - type: icontains
         value: "chezmoi"
+
+  - description: Git-repo external dependency type configuration
+    vars:
+      user_prompt: "How do I declare an external git repository dependency in .chezmoiexternal.toml?"
+    assert:
+      - type: icontains
+        value: "type = \"git-repo\""
+      - type: icontains
+        value: "url ="
 
   - description: Git integration configuration
     vars:
@@ -87,9 +114,30 @@ tests:
       - type: icontains
         value: "chezmoi decrypt"
 
+  - description: 1Password item payload inspection
+    vars:
+      user_prompt: "How do I execute 1Password secret query via chezmoi secret subcommand?"
+    assert:
+      - type: regex
+        value: "chezmoi\\s+secret\\s+onepassword.*"
+
+  - description: Secret manager template function query
+    vars:
+      user_prompt: "How do I fetch passwords from Bitwarden or 1Password inside my chezmoi templates?"
+    assert:
+      - type: regex
+        value: "(?:bitwarden|onepassword)"
+
   - description: Template prompt function usage
     vars:
       user_prompt: "How do I interactively prompt for an email address in a chezmoi template file?"
     assert:
       - type: regex
         value: "promptString(?:Once)?"
+
+  - description: Sprig path join function usage in templates
+    vars:
+      user_prompt: "How do I join file path components safely inside a chezmoi template?"
+    assert:
+      - type: icontains
+        value: "joinPath"
