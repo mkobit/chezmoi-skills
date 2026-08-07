@@ -29,6 +29,9 @@ jobs:
       - name: Lint spelling
         run: bun run lint:spelling
 
+      - name: Lint JSON and YAML
+        run: bun run lint:eslint
+
       - name: Validate skills and claude configs
         run: bun run validate
 

@@ -6,7 +6,10 @@
     "test:contracts": "bun run scripts/test-contracts.ts",
     "eval": "NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" bunx promptfoo eval -o output.json",
     "lint:md": "markdownlint-cli2",
-    "lint:spelling": "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\""
+    "lint:spelling": "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\"",
+    "lint:eslint": "eslint .",
+    "lint:json": "eslint \"**/*.json\" \"**/*.jsonc\"",
+    "lint:yaml": "eslint \"**/*.yaml\" \"**/*.yml\""
   },
   "dependencies": {
     "commander": "15.0.0",
@@ -16,6 +19,9 @@
   },
   "devDependencies": {
     "cspell": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-plugin-jsonc": "^3.3.0",
+    "eslint-plugin-yml": "^3.6.0",
     "gpt-tokenizer": "^3.4.0",
     "markdownlint-cli2": "0.23.1"
   }
