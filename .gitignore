@@ -4,6 +4,5 @@ node_modules
 .claude/settings.local.json
 .scratch
 eval_results
-.env
 .env.local
 .env.*.local
