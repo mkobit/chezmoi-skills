@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: Chezmoi skills evaluation benchmark suite across 9 skills
 
-outputPath: output.json
+outputPath: eval_results/results.json
 
 prompts:
   - label: "baseline (no skill)"
