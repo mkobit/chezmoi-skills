@@ -37,3 +37,7 @@ jobs:
 
       - name: Run Tier 2 deterministic mock contract tests
         run: bun run test:contracts
+
+      - name: Run unit tests
+        run: bun run test
+

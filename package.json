@@ -4,6 +4,8 @@
   "scripts": {
     "validate": "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin",
     "test:contracts": "bun run scripts/test-contracts.ts",
+    "test": "bun test",
+    "extract:evals": "bun run scripts/extract-transcript-evals.ts",
     "eval": "NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" bunx promptfoo eval -o output.json",
     "lint:md": "markdownlint-cli2",
     "lint:spelling": "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\"",
