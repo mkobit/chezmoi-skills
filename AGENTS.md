@@ -13,7 +13,7 @@ Ensure agents only load context when needed to improve efficiency.
 Commits and PR titles follow [conventional commits](https://www.conventionalcommits.org/); PR titles are enforced by CI and become the commit message on squash merge.
 Releases are managed by [release-please](https://github.com/googleapis/release-please) — see `release-please-config.json` for the recognized types and their changelog sections.
 Skill content is the product of this repository: use `feat`/`fix` for skill changes so they trigger releases, and reserve `docs` for repository documentation.
-Direct pushes to `main` are restricted by repository rules; always push changes to a feature branch and merge via pull request using `gh pr create` and `gh pr merge`.
+Direct pushes to `main` are restricted by repository rules; always push changes to a feature branch, create a pull request using `gh pr create`, watch CI checks pass with `gh pr checks --watch`, and merge via `gh pr merge`.
 
 ## Scratch files
 
