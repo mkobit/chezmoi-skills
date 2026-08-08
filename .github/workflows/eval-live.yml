@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
@@ -28,6 +28,38 @@ jobs:
           PROMPTFOO_DISABLE_TELEMETRY: "1"
           CI: "true"
         run: bun run eval
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: gh-pages
+          path: gh-pages
+        continue-on-error: true
+
+      - name: Record benchmark metrics
+        run: |
+          mkdir -p gh-pages
+          bun run record:benchmark --target-dir gh-pages --commit-sha ${{ github.sha }}
+
+      - name: Generate benchmark history index
+        run: |
+          bun run generate:history --target-dir gh-pages
+
+      - name: Publish benchmark history to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ ! -d .git ]; then
+            git init
+            git checkout -b gh-pages
+            git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          fi
+          git add .
+          git commit -m "chore: record benchmark history for ${{ github.sha }} [skip ci]" || echo "No changes to commit"
+          git push origin gh-pages
 
       - name: Upload Benchmark Results Artifact
         uses: actions/upload-artifact@v7
