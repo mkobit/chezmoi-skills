@@ -1,6 +1,6 @@
 {
   "name": "chezmoi-skills",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "scripts": {
     "validate": "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin",
     "test:contracts": "bun run scripts/test-contracts.ts",
