@@ -33,14 +33,105 @@ export function parseHistoryJsonl(content: string): BenchmarkMetricRecord[] {
   return records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
+export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
+  if (records.length === 0) {
+    return "";
+  }
+
+  // Reverse so chronological order goes left to right
+  const points = [...records].reverse();
+  const width = 800;
+  const height = 180;
+  const marginTop = 20;
+  const marginBottom = 30;
+  const marginLeft = 45;
+  const marginRight = 25;
+
+  const chartWidth = width - marginLeft - marginRight;
+  const chartHeight = height - marginTop - marginBottom;
+
+  const getX = (index: number) => {
+    if (points.length === 1) return marginLeft + chartWidth / 2;
+    return marginLeft + (index / (points.length - 1)) * chartWidth;
+  };
+
+  const getY = (rate: number) => {
+    return marginTop + chartHeight - rate * chartHeight;
+  };
+
+  const gridYValues = [1.0, 0.8, 0.5, 0.0];
+  const gridLinesHtml = gridYValues
+    .map((val) => {
+      const y = getY(val);
+      const percentLabel = `${Math.round(val * 100)}%`;
+      return `<line x1="${marginLeft}" y1="${y}" x2="${width - marginRight}" y2="${y}" stroke="#334155" stroke-dasharray="3,3" stroke-width="1" />
+      <text x="${marginLeft - 8}" y="${y + 4}" fill="#94a3b8" font-size="11" text-anchor="end">${percentLabel}</text>`;
+    })
+    .join("\n");
+
+  const svgPoints = points.map((p, i) => `${getX(i).toFixed(1)},${getY(p.pass_rate).toFixed(1)}`).join(" ");
+
+  const pointsHtml = points
+    .map((p, i) => {
+      const cx = getX(i).toFixed(1);
+      const cy = getY(p.pass_rate).toFixed(1);
+      let fillColor = "#34d399";
+      if (p.pass_rate < 0.8) {
+        fillColor = "#f87171";
+      } else if (p.pass_rate < 0.95) {
+        fillColor = "#fbbf24";
+      }
+      const label = `${p.timestamp.slice(0, 10)} (${p.commit_sha}): ${(p.pass_rate * 100).toFixed(1)}%`;
+      return `<circle cx="${cx}" cy="${cy}" r="4" fill="${fillColor}" stroke="#0f172a" stroke-width="2">
+        <title>${label}</title>
+      </circle>`;
+    })
+    .join("\n");
+
+  return `<div class="chart-container">
+    <div class="chart-title">Pass rate trend over time</div>
+    <svg viewBox="0 0 ${width} ${height}" class="trend-chart">
+      ${gridLinesHtml}
+      ${points.length > 1 ? `<polyline fill="none" stroke="#38bdf8" stroke-width="2" points="${svgPoints}" />` : ""}
+      ${pointsHtml}
+    </svg>
+  </div>`;
+}
+
 export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
   const totalRuns = records.length;
   const latestRun = records[0];
+  const previousRun = records[1];
+
+  const latestPassRateVal = latestRun ? latestRun.pass_rate : 0;
   const latestPassRate = latestRun ? `${(latestRun.pass_rate * 100).toFixed(1)}%` : "N/A";
   const latestDate = latestRun ? latestRun.timestamp.slice(0, 10) : "N/A";
 
+  let deltaHtml = "";
+  if (latestRun && previousRun) {
+    const diff = (latestRun.pass_rate - previousRun.pass_rate) * 100;
+    if (diff > 0) {
+      deltaHtml = ` <span class="trend-up">+${diff.toFixed(1)}%</span>`;
+    } else if (diff < 0) {
+      deltaHtml = ` <span class="trend-down">${diff.toFixed(1)}%</span>`;
+    } else {
+      deltaHtml = ` <span class="trend-neutral">0.0%</span>`;
+    }
+  }
+
+  const avgPassRateVal =
+    totalRuns > 0 ? (records.reduce((acc, r) => acc + r.pass_rate, 0) / totalRuns) * 100 : 0;
+  const avgPassRate = totalRuns > 0 ? `${avgPassRateVal.toFixed(1)}%` : "N/A";
+
+  const totalTokens = records.reduce(
+    (acc, r) => acc + r.total_prompt_tokens + r.total_completion_tokens,
+    0
+  );
+
+  const svgChartHtml = generateSvgChart(records);
+
   const rowsHtml = records
-    .map((r) => {
+    .map((r, index) => {
       const passPercentage = (r.pass_rate * 100).toFixed(1);
       let badgeClass = "badge-pass";
       if (r.pass_rate < 0.8) {
@@ -49,10 +140,25 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
         badgeClass = "badge-warn";
       }
 
+      const nextOlderRun = records[index + 1];
+      let rowDelta = "";
+      if (nextOlderRun) {
+        const diff = (r.pass_rate - nextOlderRun.pass_rate) * 100;
+        if (diff > 0) {
+          rowDelta = `<span class="trend-up">+${diff.toFixed(1)}%</span>`;
+        } else if (diff < 0) {
+          rowDelta = `<span class="trend-down">${diff.toFixed(1)}%</span>`;
+        } else {
+          rowDelta = `<span class="trend-neutral">=</span>`;
+        }
+      } else {
+        rowDelta = `<span class="text-muted">-</span>`;
+      }
+
       return `        <tr>
           <td>${r.timestamp.replace("T", " ").slice(0, 16)} UTC</td>
           <td><code>${r.commit_sha}</code></td>
-          <td><span class="badge ${badgeClass}">${passPercentage}%</span></td>
+          <td><span class="badge ${badgeClass}">${passPercentage}%</span> ${rowDelta}</td>
           <td>${r.passed} / ${r.total_tests}</td>
           <td>${r.total_prompt_tokens.toLocaleString()} / ${r.total_completion_tokens.toLocaleString()}</td>
           <td class="links">
@@ -147,6 +253,46 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
       color: var(--primary-color);
     }
 
+    .chart-container {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .trend-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .trend-up {
+      color: var(--pass-text);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .trend-down {
+      color: var(--fail-text);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .trend-neutral {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
     .table-container {
       background-color: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -220,6 +366,10 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
       text-decoration: underline;
     }
 
+    .text-muted {
+      color: var(--text-muted);
+    }
+
     .empty-state {
       padding: 3rem;
       text-align: center;
@@ -241,13 +391,19 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
       </div>
       <div class="stat-card">
         <div class="stat-label">Latest pass rate</div>
-        <div class="stat-value">${latestPassRate}</div>
+        <div class="stat-value">${latestPassRate}${deltaHtml}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Latest run date</div>
-        <div class="stat-value">${latestDate}</div>
+        <div class="stat-label">Average pass rate</div>
+        <div class="stat-value">${avgPassRate}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total tokens evaluated</div>
+        <div class="stat-value">${totalTokens.toLocaleString()}</div>
       </div>
     </div>
+
+    ${svgChartHtml}
 
     <div class="table-container">
       ${

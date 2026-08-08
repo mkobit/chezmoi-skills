@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { extractMetrics, recordMetrics } from "../scripts/record-benchmark-metrics";
-import { parseHistoryJsonl, generateHistoryHtml, generateHistoryIndex } from "../scripts/generate-history-index";
+import { parseHistoryJsonl, generateHistoryHtml, generateHistoryIndex, generateSvgChart } from "../scripts/generate-history-index";
 
 describe("record-benchmark-metrics", () => {
   it("extracts metrics from benchmark_run structure", () => {
@@ -129,7 +129,7 @@ describe("generate-history-index", () => {
     expect(records[1].commit_sha).toBe("sha1111");
   });
 
-  it("generates history html index containing summary metrics and run links", () => {
+  it("generates history html index containing summary metrics, SVG chart, and run links", () => {
     const records = [
       {
         timestamp: "2026-08-07T10:00:00.000Z",
@@ -142,13 +142,63 @@ describe("generate-history-index", () => {
         total_completion_tokens: 120,
         run_dir: "runs/2026-08-07_sha2222",
       },
+      {
+        timestamp: "2026-08-06T10:00:00.000Z",
+        commit_sha: "sha1111",
+        total_tests: 10,
+        passed: 8,
+        failed: 2,
+        pass_rate: 0.8,
+        total_prompt_tokens: 1000,
+        total_completion_tokens: 100,
+        run_dir: "runs/2026-08-06_sha1111",
+      },
     ];
 
     const html = generateHistoryHtml(records);
     expect(html).toContain("Benchmark history");
     expect(html).toContain("<code>sha2222</code>");
     expect(html).toContain("100.0%");
+    expect(html).toContain("trend-up");
+    expect(html).toContain("+20.0%");
+    expect(html).toContain("trend-chart");
     expect(html).toContain("runs/2026-08-07_sha2222/index.html");
+  });
+
+  it("generates svg trend chart for records", () => {
+    const records = [
+      {
+        timestamp: "2026-08-07T10:00:00.000Z",
+        commit_sha: "sha2222",
+        total_tests: 10,
+        passed: 10,
+        failed: 0,
+        pass_rate: 1.0,
+        total_prompt_tokens: 1200,
+        total_completion_tokens: 120,
+        run_dir: "runs/2026-08-07_sha2222",
+      },
+      {
+        timestamp: "2026-08-06T10:00:00.000Z",
+        commit_sha: "sha1111",
+        total_tests: 10,
+        passed: 8,
+        failed: 2,
+        pass_rate: 0.8,
+        total_prompt_tokens: 1000,
+        total_completion_tokens: 100,
+        run_dir: "runs/2026-08-06_sha1111",
+      },
+    ];
+
+    const svg = generateSvgChart(records);
+    expect(svg).toContain("trend-chart");
+    expect(svg).toContain("<polyline");
+    expect(svg).toContain("<circle");
+  });
+
+  it("returns empty string when generating SVG chart with no records", () => {
+    expect(generateSvgChart([])).toBe("");
   });
 
   it("creates index.html file from target directory history", () => {
