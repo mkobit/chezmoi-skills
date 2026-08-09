@@ -159,5 +159,18 @@
       "selected_skill": "chezmoi-file-attributes"
     },
     "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-SEL-003",
+    "name": "Skill selection for declaring target files to remove using .chezmoiremove",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I configure chezmoi to delete obsolete target files on apply using .chezmoiremove patterns?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-file-attributes"
+    },
+    "token_budget": 400
   }
 ]
