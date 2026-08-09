@@ -5,7 +5,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "What template functions and Sprig utilities are built into chezmoi?"
+      "user_prompt": "how do i manipulate strings and render values dynamically in my chezmoi templates"
     },
     "expected": {
       "selected_skill": "chezmoi-templating"
@@ -18,7 +18,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do promptBool and promptString functions work in chezmoi dotfile templates?"
+      "user_prompt": "how do i prompt for input when generating my chezmoi dotfile templates"
     },
     "expected": {
       "should_trigger": true
@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do Jinja2 template filters work in Ansible playbooks?"
+      "user_prompt": "how do Jinja2 template filters work in Ansible playbooks"
     },
     "expected": {
       "should_trigger": false
@@ -44,7 +44,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I include partial templates from .chezmoitemplates in chezmoi?"
+      "user_prompt": "how do i include shared configuration fragments across multiple dotfiles"
     },
     "expected": {
       "selected_skill": "chezmoi-templating"
@@ -57,7 +57,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I test chezmoi template execution with simulated promptBool input?"
+      "user_prompt": "how do i test my template with boolean prompt inputs"
     },
     "expected": {
       "exact_command": "chezmoi execute-template --init --promptBool=useGpg=true \"{{ .useGpg }}\"",
@@ -78,7 +78,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I evaluate a template containing an included fragment with chezmoi execute-template?"
+      "user_prompt": "how do i test rendering a template with included partials"
     },
     "expected": {
       "exact_command": "chezmoi execute-template \"{{ include \\\".chezmoitemplates/header\\\" }}\"",
@@ -96,7 +96,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I join paths and use replaceAllRegex in chezmoi templates?"
+      "user_prompt": "how do i format file paths and perform string replacements inside chezmoi templates"
     },
     "expected": {
       "selected_skill": "chezmoi-templating"
@@ -109,7 +109,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I fetch gitHubLatestRelease in chezmoi dotfile templates?"
+      "user_prompt": "how do i fetch the latest GitHub release tag inside a chezmoi dotfile template"
     },
     "expected": {
       "should_trigger": true
@@ -122,7 +122,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I test chezmoi template execution with simulated promptString input?"
+      "user_prompt": "how do i test my template with string prompt inputs"
     },
     "expected": {
       "exact_command": "chezmoi execute-template --init --promptString=username=alice \"{{ .username }}\"",
@@ -143,7 +143,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I evaluate a template containing joinPath with chezmoi execute-template?"
+      "user_prompt": "how do i test a template that combines paths under my home directory"
     },
     "expected": {
       "exact_command": "chezmoi execute-template \"{{ joinPath .chezmoi.homeDir \\\".config\\\" }}\"",
@@ -161,7 +161,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-templating",
     "input": {
-      "user_prompt": "How do I inspect all available template variables in chezmoi?"
+      "user_prompt": "how do i view all available variables and data in my template environment"
     },
     "expected": {
       "exact_command": "chezmoi data",

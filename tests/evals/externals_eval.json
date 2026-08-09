@@ -5,7 +5,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I configure chezmoi to download external archives or git repositories using .chezmoiexternal.toml?"
+      "user_prompt": "How do I manage external dependencies like tarballs or git repos with chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-externals"
@@ -18,7 +18,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I pull external archives using chezmoi external declarations?"
+      "user_prompt": "How do I automatically download external archives or repositories into my dotfiles using chezmoi?"
     },
     "expected": {
       "should_trigger": true
@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I clone a git repository into my workspace directory?"
+      "user_prompt": "How do I clone a Git repository to my local machine?"
     },
     "expected": {
       "should_trigger": false
@@ -44,7 +44,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I declare external git repositories in .chezmoiexternal.yaml?"
+      "user_prompt": "How do I configure chezmoi to download and manage external GitHub repositories?"
     },
     "expected": {
       "selected_skill": "chezmoi-externals"
@@ -57,7 +57,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I force chezmoi to re-download all external archives regardless of refreshPeriod?"
+      "user_prompt": "How do I force chezmoi to re-download and update all external dependencies when applying changes?"
     },
     "expected": {
       "exact_command": "chezmoi apply --refresh-externals",
@@ -74,7 +74,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I list all external files managed by chezmoi?"
+      "user_prompt": "How can I list only the external files and archives that chezmoi is managing?"
     },
     "expected": {
       "exact_command": "chezmoi managed --include externals",
@@ -94,7 +94,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I extract a single binary file from a tarball archive using archive-file in .chezmoiexternal.toml?"
+      "user_prompt": "How do I extract a single binary file from a downloaded external archive in chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-externals"
@@ -107,7 +107,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I exclude specific subdirectories when extracting an external archive in chezmoi?"
+      "user_prompt": "How do I exclude specific folders when unpacking an external zip or tar archive in chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-externals"
@@ -120,7 +120,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I configure .chezmoiexternal.toml to pass --ff-only to git pull for external repositories?"
+      "user_prompt": "How do I pass custom flags to git pull when chezmoi updates an external repository?"
     },
     "expected": {
       "selected_skill": "chezmoi-externals"
@@ -133,7 +133,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-externals",
     "input": {
-      "user_prompt": "How do I enforce SHA-256 checksum verification for external file downloads in chezmoi?"
+      "user_prompt": "How do I verify checksums when downloading external archives in chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-externals"

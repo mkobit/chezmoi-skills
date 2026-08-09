@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "How do I view pending changes between source state and target files using chezmoi diff?"
+      "user_prompt": "How do I preview pending changes to my dotfiles before applying them with chezmoi?"
     },
     "expected": {
       "should_trigger": true
@@ -70,7 +70,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "How do I open a managed dotfile in my default editor using chezmoi edit?"
+      "user_prompt": "How do I open a tracked dotfile directly in my default editor with chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-cli-commands"
@@ -83,7 +83,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "Show me what chezmoi apply would change without actually writing any files to disk."
+      "user_prompt": "How do I preview what changes chezmoi apply would make without writing files to disk?"
     },
     "expected": {
       "exact_command": "chezmoi apply --dry-run",
@@ -100,7 +100,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "How do I diff chezmoi changes excluding script execution?"
+      "user_prompt": "How do I view diffs between my chezmoi source state and destination files without running scripts?"
     },
     "expected": {
       "exact_command": "chezmoi diff --exclude scripts",
@@ -120,7 +120,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "How do I add an SSH key file to chezmoi encrypted?"
+      "user_prompt": "How do I add my private SSH key ~/.ssh/id_rsa to chezmoi with encryption enabled?"
     },
     "expected": {
       "exact_command": "chezmoi add --encrypt ~/.ssh/id_rsa",
@@ -140,7 +140,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "How do I preview chezmoi apply changes safely without modifying my system?"
+      "user_prompt": "How can I safely preview dotfile updates before chezmoi applies them to my system?"
     },
     "expected": {
       "exact_command": "chezmoi apply --dry-run",
@@ -161,7 +161,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "Show me what chezmoi purge would delete without executing the purge"
+      "user_prompt": "How can I see what files chezmoi purge would delete without actually purging them?"
     },
     "expected": {
       "exact_command": "chezmoi purge --dry-run",
@@ -182,7 +182,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "Perform a dry-run check of chezmoi destroy to verify destination removal"
+      "user_prompt": "How do I safely test destroying my target dotfiles with chezmoi without removing files?"
     },
     "expected": {
       "exact_command": "chezmoi destroy --dry-run",
@@ -203,7 +203,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
     "input": {
-      "user_prompt": "Show me state reset commands without wiping state data"
+      "user_prompt": "How can I preview resetting the chezmoi state without actually wiping the state history?"
     },
     "expected": {
       "exact_command": "chezmoi state reset --dry-run",

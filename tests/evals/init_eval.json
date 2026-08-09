@@ -5,7 +5,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I initialize chezmoi on a brand new machine using my dotfiles repository URL?"
+      "user_prompt": "I'm setting up a new workstation and need to clone and bootstrap my dotfiles repository using chezmoi."
     },
     "expected": {
       "selected_skill": "chezmoi-init"
@@ -18,7 +18,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I clone and apply my dotfiles repository using chezmoi init?"
+      "user_prompt": "How do I initialize chezmoi from GitHub and apply my dotfiles in one command?"
     },
     "expected": {
       "should_trigger": true
@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I initialize a new npm package with package.json?"
+      "user_prompt": "How do I initialize a new npm package for a TypeScript project?"
     },
     "expected": {
       "should_trigger": false
@@ -44,7 +44,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I set up dotfiles on a temporary container using chezmoi init --one-shot?"
+      "user_prompt": "I want to set up an ephemeral dev container by applying my dotfiles once and purging all chezmoi state when done."
     },
     "expected": {
       "selected_skill": "chezmoi-init"
@@ -57,7 +57,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I initialize chezmoi and apply dotfiles immediately from GitHub?"
+      "user_prompt": "How do I clone my dotfiles repository from GitHub and apply all configurations immediately in a single step?"
     },
     "expected": {
       "exact_command": "chezmoi init --apply https://github.com/username/dotfiles.git",
@@ -78,7 +78,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I run a one-shot chezmoi initialization that purges state afterwards?"
+      "user_prompt": "I'm bootstrapping a CI build runner. How do I run a one-shot dotfiles setup and purge all chezmoi repository data when finished?"
     },
     "expected": {
       "exact_command": "chezmoi init --one-shot --purge https://github.com/username/dotfiles.git",
@@ -99,7 +99,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "What is the single command to install chezmoi and apply my dotfiles repo username/dotfiles using curl?"
+      "user_prompt": "I'm on a fresh server without chezmoi installed. How do I install chezmoi and apply dotfiles for my GitHub username in a single command?"
     },
     "expected": {
       "exact_command": "sh -c \"$(curl -fsLS https://get.chezmoi.io)\" -- init --apply username",
@@ -114,7 +114,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I initialize chezmoi using SSH URL resolution for my GitHub username?"
+      "user_prompt": "How do I tell chezmoi to clone my dotfiles repository over SSH rather than HTTPS when initializing?"
     },
     "expected": {
       "exact_command": "chezmoi init --ssh username",
@@ -131,7 +131,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I re-execute .chezmoi.toml.tmpl to re-generate my configuration file without cloning again?"
+      "user_prompt": "I modified my configuration template file. How do I rerun the initialization prompts to regenerate my local config file?"
     },
     "expected": {
       "exact_command": "chezmoi init",
@@ -146,7 +146,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-init",
     "input": {
-      "user_prompt": "How do I clone and apply a specific git branch during chezmoi init?"
+      "user_prompt": "How do I bootstrap my dotfiles environment using a feature branch instead of the default branch?"
     },
     "expected": {
       "exact_command": "chezmoi init --branch main --apply username",

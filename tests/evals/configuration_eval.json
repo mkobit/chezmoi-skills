@@ -5,7 +5,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I configure git autoCommit and autoPush in my .chezmoi.toml file?"
+      "user_prompt": "How do I set up chezmoi to automatically commit and push changes to git whenever I save dotfiles?"
     },
     "expected": {
       "selected_skill": "chezmoi-configuration"
@@ -18,7 +18,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I set the source directory path in chezmoi configuration file?"
+      "user_prompt": "How do I change where chezmoi stores my source dotfiles repository?"
     },
     "expected": {
       "should_trigger": true
@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I edit my global git config user.name setting?"
+      "user_prompt": "How do I update my Git committer name and email globally?"
     },
     "expected": {
       "should_trigger": false
@@ -44,7 +44,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I configure post-apply hooks in .chezmoi.toml to format code automatically?"
+      "user_prompt": "Can chezmoi automatically run a script or formatter after updating dotfiles on my machine?"
     },
     "expected": {
       "selected_skill": "chezmoi-configuration"
@@ -57,7 +57,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I check active chezmoi configuration file paths and settings diagnostics?"
+      "user_prompt": "How do I troubleshoot my chezmoi setup to see if all tools and configuration paths are working?"
     },
     "expected": {
       "exact_command": "chezmoi doctor",
@@ -75,7 +75,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I dump computed configuration data in chezmoi?"
+      "user_prompt": "How can I inspect the full active chezmoi configuration settings in my terminal?"
     },
     "expected": {
       "exact_command": "chezmoi execute-template \"{{ .chezmoi.config }}\"",
@@ -93,7 +93,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I configure git autoCommit and autoPush settings in chezmoi.toml?"
+      "user_prompt": "I want chezmoi to automatically create git commits whenever I make changes to my managed files."
     },
     "expected": {
       "selected_skill": "chezmoi-configuration"
@@ -106,7 +106,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I set diff.command and merge.command in .chezmoi.toml?"
+      "user_prompt": "How do I tell chezmoi to use Neovim or Meld when comparing or merging file conflicts?"
     },
     "expected": {
       "should_trigger": true
@@ -119,7 +119,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I print the active source directory path configured in chezmoi?"
+      "user_prompt": "Where on disk is my chezmoi source folder located?"
     },
     "expected": {
       "exact_command": "chezmoi source-path",
@@ -137,7 +137,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-configuration",
     "input": {
-      "user_prompt": "How do I generate a new configuration file interactively with chezmoi init?"
+      "user_prompt": "How do I rerun the interactive questions to recreate my chezmoi configuration?"
     },
     "expected": {
       "exact_command": "chezmoi init --prompt",
