@@ -5,7 +5,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I ignore specific dotfiles on macOS machines using .chezmoiignore?"
+      "user_prompt": "I share my repository across operating systems. How do I skip applying specific dotfiles on my Mac while keeping them on Linux?"
     },
     "expected": {
       "selected_skill": "chezmoi-machine-config"
@@ -18,7 +18,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I manage multi-machine dotfiles for Linux vs Darwin in chezmoi?"
+      "user_prompt": "How do I manage different dotfile configurations between Linux and macOS machines using chezmoi?"
     },
     "expected": {
       "should_trigger": true
@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I check system CPU architecture using uname -m in bash?"
+      "user_prompt": "How do I check CPU architecture and OS release details in a shell script?"
     },
     "expected": {
       "should_trigger": false
@@ -44,7 +44,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I define custom machine variables in .chezmoidata.json?"
+      "user_prompt": "How does variable precedence work when overriding shared static template data with machine-specific variables in chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-machine-config"
@@ -57,7 +57,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I test built-in OS and architecture variables in chezmoi?"
+      "user_prompt": "How do I test and print the OS and CPU architecture template variables in chezmoi to verify my conditional logic?"
     },
     "expected": {
       "exact_command": "chezmoi execute-template \"{{ .chezmoi.os }}/{{ .chezmoi.arch }}\"",
@@ -75,7 +75,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I view active ignore rules in chezmoi source directory?"
+      "user_prompt": "How do I inspect the contents of the ignore patterns file in my chezmoi source repository?"
     },
     "expected": {
       "exact_command": "chezmoi cat ~/.chezmoiignore",
@@ -93,7 +93,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I list all files ignored by chezmoi on the current machine?"
+      "user_prompt": "How do I view all target files currently skipped by ignore rules on this machine in chezmoi?"
     },
     "expected": {
       "exact_command": "chezmoi ignored",
@@ -108,7 +108,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I view all active merged template data variables on this host?"
+      "user_prompt": "How do I dump and inspect all computed template variables and data available to chezmoi on this machine?"
     },
     "expected": {
       "exact_command": "chezmoi data",
@@ -123,7 +123,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I detect WSL environments in chezmoi templates using kernel release strings?"
+      "user_prompt": "How do I write conditional template logic in chezmoi to apply specific settings when running inside Windows Subsystem for Linux?"
     },
     "expected": {
       "selected_skill": "chezmoi-machine-config"
@@ -136,7 +136,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-machine-config",
     "input": {
-      "user_prompt": "How do I branch on Linux distributions like Debian or Fedora using .chezmoi.osRelease.id?"
+      "user_prompt": "How do I configure distribution-specific dotfiles by checking OS release variables for Ubuntu vs Fedora in chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-machine-config"

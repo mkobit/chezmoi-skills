@@ -5,7 +5,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do run_once_ and run_onchange_ script prefixes work in chezmoi?"
+      "user_prompt": "how do setup scripts work in chezmoi to run before or after applying dotfiles, or when configs change"
     },
     "expected": {
       "selected_skill": "chezmoi-scripts"
@@ -18,7 +18,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I execute post-apply setup scripts for tracked dotfiles in chezmoi?"
+      "user_prompt": "how do i run a setup script right after chezmoi finishes applying my dotfiles"
     },
     "expected": {
       "should_trigger": true
@@ -31,7 +31,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I write a crontab entry for daily automated backups?"
+      "user_prompt": "how do i write a crontab entry for daily backups"
     },
     "expected": {
       "should_trigger": false
@@ -44,7 +44,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I reset state for a run_once_ script in chezmoi state manager?"
+      "user_prompt": "how do i force a run-once setup script to run again by resetting its state"
     },
     "expected": {
       "selected_skill": "chezmoi-scripts"
@@ -57,7 +57,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I reset run_once script state in chezmoi?"
+      "user_prompt": "how do i reset state to re-run my run-once setup scripts?"
     },
     "expected": {
       "exact_command": "chezmoi state delete-bucket --bucket=scriptState",
@@ -77,7 +77,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "What is the filename for an on-change script running after target files are applied?"
+      "user_prompt": "how do i name a script so it runs after dotfiles update in numerical sequence whenever its content changes"
     },
     "expected": {
       "exact_command": "run_onchange_after_00_install_packages.sh.tmpl",
@@ -95,7 +95,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I execute all pending setup scripts without modifying regular target files?"
+      "user_prompt": "how do i run only my setup scripts in chezmoi without updating any other dotfiles"
     },
     "expected": {
       "exact_command": "chezmoi apply --include=scripts",
@@ -112,7 +112,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I update target files while skipping all script execution?"
+      "user_prompt": "how do i apply my dotfiles while skipping execution of setup scripts"
     },
     "expected": {
       "exact_command": "chezmoi apply --exclude=scripts",
@@ -129,7 +129,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I clear the persistent state bucket tracking run_onchange scripts?"
+      "user_prompt": "how do i clear entry state in chezmoi so onchange scripts run again"
     },
     "expected": {
       "exact_command": "chezmoi state delete-bucket --bucket=entryState",
@@ -146,7 +146,20 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-scripts",
     "input": {
-      "user_prompt": "How do I force a run_onchange script to re-run when an external file changes using sha256sum?"
+      "user_prompt": "how do i trigger an onchange script before applying dotfiles when an external file changes"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-scripts"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-SCR-SEL-003",
+    "name": "Skill selection for script execution ordering and sequence prefixes",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "how do i control setup script execution order using before, after, and numerical sequence prefixes"
     },
     "expected": {
       "selected_skill": "chezmoi-scripts"

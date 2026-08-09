@@ -5,7 +5,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "What should the source filename be for a private executable hidden file named script in my home directory?"
+      "user_prompt": "I have a script with API credentials that needs executable permissions and private access only. How do I track it in my dotfiles?"
     },
     "expected": {
       "exact_command": "executable_private_dot_script",
@@ -20,7 +20,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do dot_ and private_ prefix attributes compose in chezmoi source state filenames?"
+      "user_prompt": "What are the prefix ordering and precedence rules when combining attributes like private, executable, and dot on a managed file in chezmoi?"
     },
     "expected": {
       "selected_skill": "chezmoi-file-attributes"
@@ -33,7 +33,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do I mark dotfile source entries as exact directories in chezmoi?"
+      "user_prompt": "How do I configure chezmoi so only tracked files exist in a directory and unmanaged extra files are wiped?"
     },
     "expected": {
       "should_trigger": true
@@ -46,7 +46,7 @@
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do I set file permissions to 600 using chmod in bash?"
+      "user_prompt": "How do I set file permissions to 600 for a private key in bash?"
     },
     "expected": {
       "should_trigger": false
@@ -59,7 +59,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do .chezmoiroot and .chezmoiremove direct target paths in chezmoi?"
+      "user_prompt": "How do I configure root directory target overrides or specify files for deletion in my chezmoi source repository?"
     },
     "expected": {
       "selected_skill": "chezmoi-file-attributes"
@@ -72,7 +72,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "What is the source state path for an exact private hidden config directory?"
+      "user_prompt": "How do I manage my config directory so only exact repository files are kept with secret private permissions, deleting any extra files?"
     },
     "expected": {
       "exact_command": "exact_private_dot_config",
@@ -90,7 +90,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "What source path creates an empty file named .hushlogin?"
+      "user_prompt": "I need a zero byte empty file placed at ~/.hushlogin on my system. How do I define that in my dotfiles?"
     },
     "expected": {
       "exact_command": "empty_dot_hushlogin",
@@ -108,7 +108,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "What source path prefix creates a file if absent without overwriting existing target changes?"
+      "user_prompt": "How do I seed default configuration settings on a new machine without overwriting existing local changes if the file already exists?"
     },
     "expected": {
       "exact_command": "create_dot_config",
@@ -123,7 +123,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "What source filename attribute indicates a script that modifies an existing target file in place?"
+      "user_prompt": "How do I patch in place or append to an existing config file instead of replacing it entirely?"
     },
     "expected": {
       "exact_command": "modify_dot_gitconfig",
@@ -138,7 +138,7 @@
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do I name a source file so chezmoi treats dot_ as a literal filename prefix rather than an attribute?"
+      "user_prompt": "How do I preserve literal dot_ prefixes in file names without chezmoi parsing them as attribute modifiers?"
     },
     "expected": {
       "exact_command": "literal_dot_foo",
@@ -153,7 +153,7 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do I enforce a minimum required chezmoi version for my source repository using .chezmoiversion?"
+      "user_prompt": "How do I require a minimum version of chezmoi across all systems applying my dotfiles repository?"
     },
     "expected": {
       "selected_skill": "chezmoi-file-attributes"
@@ -166,10 +166,38 @@
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-file-attributes",
     "input": {
-      "user_prompt": "How do I configure chezmoi to delete obsolete target files on apply using .chezmoiremove patterns?"
+      "user_prompt": "How do I declare obsolete or old target files so chezmoi automatically removes them during apply?"
     },
     "expected": {
       "selected_skill": "chezmoi-file-attributes"
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-SEL-004",
+    "name": "Skill selection for exact directory matching with only or precisely phrasing",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I enforce that precisely and only the files in my repository exist inside ~/.config/nvim, removing all unmanaged entries?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-file-attributes"
+    },
+    "token_budget": 400
+  },
+  {
+    "id": "TC-ATTR-CMD-006",
+    "name": "Command generation for symlink target entry prefix",
+    "eval_type": "command_correctness",
+    "target_skill": "chezmoi-file-attributes",
+    "input": {
+      "user_prompt": "How do I create a soft link target in chezmoi that points to another file location?"
+    },
+    "expected": {
+      "exact_command": "symlink_dot_zshrc",
+      "command_regex": "^symlink_.*$",
+      "required_flags": []
     },
     "token_budget": 400
   }
