@@ -7,12 +7,28 @@ import type { BenchmarkMetricRecord } from "./record-benchmark-metrics";
 const metricRecordSchema = z.object({
   timestamp: z.string(),
   commit_sha: z.string(),
+  release_tag: z.string().optional(),
+  branch: z.string().optional(),
+  trigger_event: z.string().optional(),
+  eval_suite_version: z.string().optional(),
+  models: z.array(z.string()).optional(),
   total_tests: z.number(),
   passed: z.number(),
   failed: z.number(),
   pass_rate: z.number(),
   total_prompt_tokens: z.number(),
   total_completion_tokens: z.number(),
+  skill_metrics: z
+    .record(
+      z.string(),
+      z.object({
+        total_tests: z.number(),
+        passed: z.number(),
+        failed: z.number(),
+        pass_rate: z.number(),
+      })
+    )
+    .optional(),
   run_dir: z.string(),
 });
 
@@ -24,7 +40,7 @@ export function parseHistoryJsonl(content: string): BenchmarkMetricRecord[] {
     try {
       const parsed = JSON.parse(line);
       const validated = metricRecordSchema.parse(parsed);
-      records.push(validated);
+      records.push(validated as BenchmarkMetricRecord);
     } catch {
       // Ignore invalid or corrupted lines
     }
@@ -42,7 +58,7 @@ export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
   const points = [...records].reverse();
   const width = 800;
   const height = 180;
-  const marginTop = 20;
+  const marginTop = 25;
   const marginBottom = 30;
   const marginLeft = 45;
   const marginRight = 25;
@@ -71,18 +87,45 @@ export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
 
   const svgPoints = points.map((p, i) => `${getX(i).toFixed(1)},${getY(p.pass_rate).toFixed(1)}`).join(" ");
 
+  const releaseLinesHtml = points
+    .map((p, i) => {
+      if (!p.release_tag) return "";
+      const x = getX(i).toFixed(1);
+      const y = getY(p.pass_rate).toFixed(1);
+      return `<line x1="${x}" y1="${marginTop}" x2="${x}" y2="${height - marginBottom}" stroke="#a855f7" stroke-dasharray="3,3" stroke-width="1.5" />
+      <text x="${x}" y="${marginTop - 8}" fill="#c084fc" font-size="11" font-weight="700" text-anchor="middle">${p.release_tag}</text>`;
+    })
+    .filter(Boolean)
+    .join("\n");
+
   const pointsHtml = points
     .map((p, i) => {
-      const cx = getX(i).toFixed(1);
-      const cy = getY(p.pass_rate).toFixed(1);
+      const cx = getX(i);
+      const cy = getY(p.pass_rate);
+      const cxStr = cx.toFixed(1);
+      const cyStr = cy.toFixed(1);
+
       let fillColor = "#34d399";
       if (p.pass_rate < 0.8) {
         fillColor = "#f87171";
       } else if (p.pass_rate < 0.95) {
         fillColor = "#fbbf24";
       }
-      const label = `${p.timestamp.slice(0, 10)} (${p.commit_sha}): ${(p.pass_rate * 100).toFixed(1)}%`;
-      return `<circle cx="${cx}" cy="${cy}" r="4" fill="${fillColor}" stroke="#0f172a" stroke-width="2">
+
+      const releaseInfo = p.release_tag ? ` [Release: ${p.release_tag}]` : "";
+      const branchInfo = p.branch ? ` (${p.branch})` : "";
+      const label = `${p.timestamp.slice(0, 10)}${branchInfo}${releaseInfo} - ${p.commit_sha}: ${(p.pass_rate * 100).toFixed(1)}%`;
+
+      if (p.release_tag) {
+        // Render diamond shape for releases
+        const r = 6;
+        const polyPoints = `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
+        return `<polygon points="${polyPoints}" fill="#c084fc" stroke="#581c87" stroke-width="2">
+          <title>${label}</title>
+        </polygon>`;
+      }
+
+      return `<circle cx="${cxStr}" cy="${cyStr}" r="4" fill="${fillColor}" stroke="#0f172a" stroke-width="2">
         <title>${label}</title>
       </circle>`;
     })
@@ -92,6 +135,7 @@ export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
     <div class="chart-title">Pass rate trend over time</div>
     <svg viewBox="0 0 ${width} ${height}" class="trend-chart">
       ${gridLinesHtml}
+      ${releaseLinesHtml}
       ${points.length > 1 ? `<polyline fill="none" stroke="#38bdf8" stroke-width="2" points="${svgPoints}" />` : ""}
       ${pointsHtml}
     </svg>
@@ -155,11 +199,19 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
         rowDelta = `<span class="text-muted">-</span>`;
       }
 
+      const releaseBadge = r.release_tag
+        ? `<span class="badge badge-release">${r.release_tag}</span> `
+        : "";
+      const branchLabel = r.branch ? `<code>${r.branch}</code>` : `<span class="text-muted">-</span>`;
+      const modelsList = r.models && r.models.length > 0 ? r.models.join(", ") : "N/A";
+
       return `        <tr>
           <td>${r.timestamp.replace("T", " ").slice(0, 16)} UTC</td>
-          <td><code>${r.commit_sha}</code></td>
+          <td>${releaseBadge}<code>${r.commit_sha}</code></td>
+          <td>${branchLabel}</td>
           <td><span class="badge ${badgeClass}">${passPercentage}%</span> ${rowDelta}</td>
           <td>${r.passed} / ${r.total_tests}</td>
+          <td>${modelsList}</td>
           <td>${r.total_prompt_tokens.toLocaleString()} / ${r.total_completion_tokens.toLocaleString()}</td>
           <td class="links">
             <a href="${r.run_dir}/index.html">Report</a>
@@ -190,6 +242,8 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
       --warn-text: #fbbf24;
       --fail-bg: #7f1d1d;
       --fail-text: #f87171;
+      --release-bg: #581c87;
+      --release-text: #e9d5ff;
     }
 
     * {
@@ -356,6 +410,12 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
       color: var(--fail-text);
     }
 
+    .badge-release {
+      background-color: var(--release-bg);
+      color: var(--release-text);
+      border: 1px solid #a855f7;
+    }
+
     .links a {
       color: var(--primary-color);
       text-decoration: none;
@@ -413,9 +473,11 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
         <thead>
           <tr>
             <th>Date & time</th>
-            <th>Commit</th>
+            <th>Commit / release</th>
+            <th>Branch</th>
             <th>Pass rate</th>
             <th>Passed / total</th>
+            <th>Models</th>
             <th>Prompt / completion tokens</th>
             <th>Artifacts</th>
           </tr>
