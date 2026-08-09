@@ -54,6 +54,57 @@ describe("record-benchmark-metrics", () => {
     expect(record.run_dir).toBe("runs/2026-08-07_1234567");
   });
 
+  it("extracts models, skill metrics, release tag, and branch metadata", () => {
+    const jsonContent = JSON.stringify({
+      config: {
+        providers: ["google:gemini-3.5-flash", "anthropic:claude-5-sonnet"],
+      },
+      results: [
+        {
+          target_skill: "chezmoi-cli-commands",
+          status: "PASS",
+          provider: "google:gemini-3.5-flash",
+          tokens: { prompt_tokens: 100, completion_tokens: 10 },
+        },
+        {
+          target_skill: "chezmoi-cli-commands",
+          status: "FAIL",
+          provider: "google:gemini-3.5-flash",
+          tokens: { prompt_tokens: 100, completion_tokens: 10 },
+        },
+        {
+          target_skill: "chezmoi-templating",
+          status: "PASS",
+          provider: "anthropic:claude-5-sonnet",
+          tokens: { prompt_tokens: 200, completion_tokens: 20 },
+        },
+      ],
+    });
+
+    const record = extractMetrics(jsonContent, "123456789", "2026-08-07T12:00:00.000Z", {
+      releaseTag: "v0.1.0",
+      branch: "main",
+      triggerEvent: "release",
+    });
+
+    expect(record.release_tag).toBe("v0.1.0");
+    expect(record.branch).toBe("main");
+    expect(record.trigger_event).toBe("release");
+    expect(record.models).toEqual(["google:gemini-3.5-flash", "anthropic:claude-5-sonnet"]);
+    expect(record.skill_metrics?.["chezmoi-cli-commands"]).toEqual({
+      total_tests: 2,
+      passed: 1,
+      failed: 1,
+      pass_rate: 0.5,
+    });
+    expect(record.skill_metrics?.["chezmoi-templating"]).toEqual({
+      total_tests: 1,
+      passed: 1,
+      failed: 0,
+      pass_rate: 1,
+    });
+  });
+
   it("records metrics and copies run files to target directory", () => {
     const tempDir = mkdtempSync(join(tmpdir(), "benchmark-test-"));
     const resultsFile = join(tempDir, "source_results.json");
