@@ -18,15 +18,15 @@
   "dependencies": {
     "commander": "15.0.0",
     "gray-matter": "4.0.3",
-    "remeda": "2.39.0",
+    "remeda": "2.45.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "cspell": "^10.0.1",
-    "eslint": "^10.8.1",
-    "eslint-plugin-jsonc": "^3.4.1",
+    "cspell": "^10.1.1",
+    "eslint": "^10.9.1",
+    "eslint-plugin-jsonc": "^3.4.2",
     "eslint-plugin-yml": "^3.8.1",
-    "gpt-tokenizer": "^3.4.0",
+    "gpt-tokenizer": "^4.0.0",
     "markdownlint-cli2": "0.23.2"
   }
 }
