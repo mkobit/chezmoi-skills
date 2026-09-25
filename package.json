@@ -15,18 +15,15 @@
     "lint:json": "eslint \"**/*.json\" \"**/*.jsonc\"",
     "lint:yaml": "eslint \"**/*.yaml\" \"**/*.yml\""
   },
-  "dependencies": {
-    "commander": "15.0.0",
-    "gray-matter": "4.0.3",
-    "remeda": "2.45.0",
-    "zod": "4.5.4"
-  },
   "devDependencies": {
+    "commander": "15.0.0",
     "cspell": "^10.2.1",
     "eslint": "^10.9.1",
     "eslint-plugin-jsonc": "^3.4.2",
     "eslint-plugin-yml": "^3.8.1",
     "gpt-tokenizer": "^4.0.0",
-    "markdownlint-cli2": "0.23.2"
+    "gray-matter": "4.0.3",
+    "markdownlint-cli2": "0.23.2",
+    "zod": "4.5.4"
   }
 }
