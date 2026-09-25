@@ -7,7 +7,7 @@ http_retries = 5
 
 [tasks.validate]
 description = "Validate skills schema and Claude plugin configurations"
-run = "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin"
+run = "bun run scripts/validate/index.ts --claude-plugin-dir=.claude-plugin"
 
 [tasks."test:contracts"]
 description = "Run Tier 2 deterministic mock contract tests"
