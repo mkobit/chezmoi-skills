@@ -7,7 +7,7 @@ http_retries = 5
 
 [tasks.validate]
 description = "Validate skills schema and Claude plugin configurations"
-run = "bun run scripts/validate.ts --claude-plugin-dir=.claude-plugin"
+run = "bun run scripts/validate/index.ts --claude-plugin-dir=.claude-plugin"
 
 [tasks."test:contracts"]
 description = "Run Tier 2 deterministic mock contract tests"
@@ -20,7 +20,7 @@ depends = ["test:contracts"]
 
 [tasks."lint:md"]
 description = "Lint markdown files"
-run = "markdownlint-cli2"
+run = "bun run markdownlint-cli2"
 
 [tasks."lint:spelling"]
 description = "Lint spelling across markdown files"
@@ -28,7 +28,7 @@ run = "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\""
 
 [tasks."lint:eslint"]
 description = "Lint JavaScript, TypeScript, and JSON files with ESLint"
-run = "eslint ."
+run = "bun run eslint ."
 
 [tasks.lint]
 description = "Run all linters"
