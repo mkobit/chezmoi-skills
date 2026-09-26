@@ -1,0 +1,31 @@
+schemaVersion: "2"
+kind: mixin
+name: chezmoi-skills-toolchain
+version: "0.1.0"
+description: Bootstrap mise and bun 1.4.2 toolchain for chezmoi-skills
+
+permissions:
+  network:
+    allow:
+      - mise.run
+      - mise.jdx.dev
+      - github.com
+      - api.github.com
+      - "*.githubusercontent.com"
+      - registry.npmjs.org
+      - bun.sh
+
+environment:
+  variables:
+    MISE_YES: "1"
+
+setup:
+  install:
+    - command: |
+        curl -fsSL https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
+        printf '%s\n' 'export PATH="/home/agent/.local/share/mise/shims:/home/agent/.local/bin:$PATH"' > /etc/profile.d/mise.sh
+        printf '%s\n' 'export PATH="/home/agent/.local/share/mise/shims:/home/agent/.local/bin:$PATH"' >> /etc/sandbox-persistent.sh
+      description: "Install mise into /usr/local/bin and configure shell paths"
+    - command: "mise use -g bun@1.4.2"
+      user: "1000"
+      description: "Install bun 1.4.2 for agent"

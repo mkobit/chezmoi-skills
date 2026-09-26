@@ -1,0 +1,8 @@
+schemaVersion: "1"
+name: "chezmoi-skills-claude"
+agent: claude
+workspace:
+  path: ..
+  clone: false
+kits:
+  - ./kit
