@@ -23,13 +23,33 @@ exports.routerMatches = (output, context) => {
     const text = String(output).trim();
     const fenced = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
     const actual = JSON.parse(fenced ? fenced[1].trim() : text);
-    return (
-      actual !== null &&
-      !Array.isArray(actual) &&
-      actual.trigger === context.config?.trigger &&
-      actual.selected_skill === context.config?.selectedSkill
-    );
+    if (actual === null || Array.isArray(actual) || actual.trigger !== context.config?.trigger) return false;
+    if (typeof actual.needs_clarification !== "boolean") return false;
+    if (context.config?.trigger === false) {
+      return actual.selected_skill === null && actual.needs_clarification === false;
+    }
+
+    const selectedSkills = context.config?.selectedSkills ??
+      (context.config?.selectedSkill === undefined ? [] : [context.config.selectedSkill]);
+    const isClarification = actual.needs_clarification === true && actual.selected_skill === null;
+    if (context.config?.allowClarification === true && isClarification) return true;
+
+    return actual.needs_clarification === false && selectedSkills.includes(actual.selected_skill);
   } catch {
     return false;
   }
+};
+
+exports.answerQualityMatches = (output, context) => {
+  const text = String(output).toLowerCase();
+  const config = context.config ?? {};
+  const includesAll = (phrases) => phrases.every((phrase) => text.includes(String(phrase).toLowerCase()));
+  const includesNone = (phrases) => phrases.every((phrase) => !text.includes(String(phrase).toLowerCase()));
+
+  if (!includesAll(config.requiredConcepts ?? [])) return false;
+  if (!includesNone(config.forbiddenClaims ?? [])) return false;
+  if (!includesAll(config.safetyExpectations ?? [])) return false;
+  if (config.clarification === "required" && !text.includes("?")) return false;
+  if (config.clarification === "forbidden" && text.includes("?")) return false;
+  return true;
 };

@@ -5,10 +5,26 @@ import matter from "gray-matter";
 import { Command } from "commander";
 import { z } from "zod";
 
+const AnswerQualitySchema = z
+  .object({
+    required_concepts: z.array(z.string()).min(1).optional(),
+    forbidden_claims: z.array(z.string()).min(1).optional(),
+    clarification: z.enum(["required", "forbidden"]).optional(),
+    safety_expectations: z.array(z.string()).min(1).optional(),
+  })
+  .refine(
+    (expectation) =>
+      expectation.required_concepts !== undefined ||
+      expectation.forbidden_claims !== undefined ||
+      expectation.clarification !== undefined ||
+      expectation.safety_expectations !== undefined,
+    "Answer quality expectations must include at least one assertion."
+  );
+
 const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness"]),
+  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness", "answer_quality"]),
   target_skill: z.string(),
   input: z.object({
     user_prompt: z.string(),
@@ -16,10 +32,13 @@ const TestCaseSchema = z.object({
   expected: z.object({
     should_trigger: z.boolean().optional(),
     selected_skill: z.string().optional(),
+    selected_skills: z.array(z.string()).min(1).optional(),
+    allow_clarification: z.boolean().optional(),
     exact_command: z.string().optional(),
     command_regex: z.string().optional(),
     required_flags: z.array(z.string()).optional(),
     forbidden_flags: z.array(z.string()).optional(),
+    answer_quality: AnswerQualitySchema.optional(),
   }),
 });
 
@@ -147,6 +166,8 @@ const selectReference = (testCase: EvaluationCase, skill: SkillSource): SkillRef
         testCase.input.user_prompt,
         testCase.expected.exact_command,
         ...(testCase.expected.required_flags ?? []),
+        ...(testCase.expected.answer_quality?.required_concepts ?? []),
+        ...(testCase.expected.answer_quality?.safety_expectations ?? []),
       ]
         .filter(Boolean)
         .join(" ")
@@ -197,6 +218,16 @@ const answerAssertions = (testCase: EvaluationCase): string[] => {
   for (const flag of testCase.expected.forbidden_flags ?? []) {
     assertions.push(`      - type: not-icontains\n        value: ${yamlString(flag)}`);
   }
+  if (testCase.expected.answer_quality) {
+    const expectation = testCase.expected.answer_quality;
+    assertions.push(`      - type: javascript
+        value: file://scripts/eval-assertions.cjs:answerQualityMatches
+        config:
+          requiredConcepts: ${JSON.stringify(expectation.required_concepts ?? [])}
+          forbiddenClaims: ${JSON.stringify(expectation.forbidden_claims ?? [])}
+          clarification: ${expectation.clarification ? yamlString(expectation.clarification) : "null"}
+          safetyExpectations: ${JSON.stringify(expectation.safety_expectations ?? [])}`);
+  }
   return assertions;
 };
 
@@ -208,13 +239,16 @@ ${answerAssertions(testCase).join("\n")}`;
 
 const routerAssertions = (testCase: EvaluationCase): string[] => {
   const shouldTrigger = testCase.expected.should_trigger ?? true;
-  const selectedSkill = shouldTrigger ? testCase.expected.selected_skill ?? testCase.target_skill : null;
+  const selectedSkills = shouldTrigger
+    ? testCase.expected.selected_skills ?? [testCase.expected.selected_skill ?? testCase.target_skill]
+    : [];
   return [
     `      - type: javascript
         value: file://../scripts/eval-assertions.cjs:routerMatches
         config:
           trigger: ${shouldTrigger}
-          selectedSkill: ${selectedSkill === null ? "null" : yamlString(selectedSkill)}`,
+          selectedSkills: ${JSON.stringify(selectedSkills)}
+          allowClarification: ${testCase.expected.allow_clarification ?? false}`,
   ];
 };
 
@@ -232,7 +266,7 @@ outputPath: eval_results/router-results.json
 
 prompts:
   - label: skill router
-    raw: "System: Route the request using the installed chezmoi skills. Return only JSON with keys trigger (boolean) and selected_skill (skill name or null).\\nAvailable skills: chezmoi-cli-commands, chezmoi-configuration, chezmoi-externals, chezmoi-file-attributes, chezmoi-init, chezmoi-machine-config, chezmoi-scripts, chezmoi-secrets-management, chezmoi-templating.\\nUser: {{user_prompt}}"
+    raw: "System: Route the request using the installed chezmoi skills. Return only JSON with keys trigger (boolean), selected_skill (skill name or null), and needs_clarification (boolean). Set needs_clarification to true and selected_skill to null when the request needs clarification before selecting a skill.\\nAvailable skills: chezmoi-cli-commands, chezmoi-configuration, chezmoi-externals, chezmoi-file-attributes, chezmoi-init, chezmoi-machine-config, chezmoi-scripts, chezmoi-secrets-management, chezmoi-templating.\\nUser: {{user_prompt}}"
 
 providers:
   - id: google:gemini-3.8-flash
@@ -259,7 +293,9 @@ export const generatePromptfooEvals = async (options: {
     throw new Error(`Corpus targets missing skill directories: ${missingSkills.join(", ")}`);
   }
 
-  const answerCases = cases.filter((testCase) => testCase.eval_type === "command_correctness");
+  const answerCases = cases.filter(
+    (testCase) => testCase.eval_type === "command_correctness" || testCase.eval_type === "answer_quality"
+  );
   const answerTests = answerCases.map((testCase) => answerTest(testCase, skills[testCase.target_skill])).join("\n\n");
   const routerTests = cases.map((testCase) => routerTest(testCase)).join("\n\n");
   const summary: GenerationSummary = {

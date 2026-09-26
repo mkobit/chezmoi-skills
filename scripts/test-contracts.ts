@@ -17,10 +17,26 @@ program
 
 const options = program.opts();
 
+const AnswerQualitySchema = z
+  .object({
+    required_concepts: z.array(z.string()).min(1).optional(),
+    forbidden_claims: z.array(z.string()).min(1).optional(),
+    clarification: z.enum(["required", "forbidden"]).optional(),
+    safety_expectations: z.array(z.string()).min(1).optional(),
+  })
+  .refine(
+    (expectation) =>
+      expectation.required_concepts !== undefined ||
+      expectation.forbidden_claims !== undefined ||
+      expectation.clarification !== undefined ||
+      expectation.safety_expectations !== undefined,
+    "Answer quality expectations must include at least one assertion."
+  );
+
 const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness"]),
+  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness", "answer_quality"]),
   target_skill: z.string(),
   input: z.object({
     user_prompt: z.string(),
@@ -29,10 +45,13 @@ const TestCaseSchema = z.object({
   expected: z.object({
     should_trigger: z.boolean().optional(),
     selected_skill: z.string().optional(),
+    selected_skills: z.array(z.string()).min(1).optional(),
+    allow_clarification: z.boolean().optional(),
     exact_command: z.string().optional(),
     command_regex: z.string().optional(),
     required_flags: z.array(z.string()).optional(),
     forbidden_flags: z.array(z.string()).optional(),
+    answer_quality: AnswerQualitySchema.optional(),
   }),
   token_budget: z.number().optional(),
 });
@@ -240,6 +259,16 @@ const evaluateTestCase = (
         passed: evidence.length > 0 && missing.length === 0,
       });
     }
+
+    if (testCase.eval_type === "answer_quality") {
+      const expectation = testCase.expected.answer_quality;
+      assertions.push({
+        type: "answer_quality_expectation_present",
+        expected: "at least one deterministic answer quality expectation",
+        actual: expectation,
+        passed: expectation !== undefined,
+      });
+    }
   }
 
   for (const contextFile of testCase.input.context_files ?? []) {
@@ -313,7 +342,7 @@ const generateMarkdownSummary = (results: TestResult[], timestamp: string, total
   const failed = total - passed;
   const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : "0.0";
   const fixturePromptTokens = results.reduce((sum, result) => sum + result.tokens.prompt_tokens, 0);
-  const categories = ["trigger_matching", "skill_selection", "command_correctness"];
+  const categories = ["trigger_matching", "skill_selection", "command_correctness", "answer_quality"];
   const categoryRows = categories
     .map((category) => {
       const categoryResults = results.filter((result) => result.eval_type === category);

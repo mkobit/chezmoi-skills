@@ -217,5 +217,43 @@
       ]
     },
     "token_budget": 500
+  },
+  {
+    "id": "TC-ADV-CLI-001",
+    "name": "Remote update inspection routes to CLI commands",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "I already initialized chezmoi and want to pull remote dotfile changes, inspect the diff, and avoid applying them until I finish reviewing."
+    },
+    "expected": {
+      "selected_skill": "chezmoi-cli-commands"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-QUAL-CLI-001",
+    "name": "Preview-first update guidance",
+    "eval_type": "answer_quality",
+    "target_skill": "chezmoi-cli-commands",
+    "input": {
+      "user_prompt": "I need to update a laptop, but I want to inspect every change before anything is written. Explain a safe sequence."
+    },
+    "expected": {
+      "answer_quality": {
+        "required_concepts": [
+          "chezmoi diff",
+          "chezmoi apply --dry-run"
+        ],
+        "forbidden_claims": [
+          "you should use chezmoi apply --force"
+        ],
+        "clarification": "forbidden",
+        "safety_expectations": [
+          "review"
+        ]
+      }
+    },
+    "token_budget": 650
   }
 ]
