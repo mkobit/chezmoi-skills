@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import type { ValidationResult } from "./types";
 import { validateSkills } from "./skills";
-import { validatePlugins, validateVersionSync } from "./manifests";
+import { validateMarketplaceSkillParity, validatePlugins, validatePortablePluginManifests, validateVersionSync } from "./manifests";
 import { validateContractCoverage } from "./coverage";
 import { reportTokenEfficiency } from "./tokens";
 
@@ -30,10 +30,12 @@ export const run = async (): Promise<void> => {
 
   const skillResults = await validateSkills(claudePluginDir);
   const pluginResults = await validatePlugins(claudePluginDir);
+  const portablePluginResults = await validatePortablePluginManifests();
+  const marketplaceSkillResults = await validateMarketplaceSkillParity(claudePluginDir);
   const versionResults = await validateVersionSync(claudePluginDir);
   const coverageResults = await validateContractCoverage(claudePluginDir);
 
-  const failed = handleResults([...skillResults, ...pluginResults, ...versionResults, ...coverageResults]);
+  const failed = handleResults([...skillResults, ...pluginResults, ...portablePluginResults, ...marketplaceSkillResults, ...versionResults, ...coverageResults]);
 
   if (failed) {
     process.exit(1);

@@ -38,6 +38,13 @@ Retrieve only the `run_once_` state:
 chezmoi state get-bucket --bucket=scriptState
 ```
 
+Reset the state that determines whether scripts run again:
+
+```sh
+chezmoi state delete-bucket --bucket=scriptState    # re-run run_once_ scripts
+chezmoi state delete-bucket --bucket=entryState     # re-run run_onchange_ scripts
+```
+
 ## State database path
 
 chezmoi stores its persistent state in `chezmoistate.boltdb` in the same directory as its config file (default `~/.config/chezmoi/chezmoistate.boltdb`).

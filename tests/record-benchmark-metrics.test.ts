@@ -30,7 +30,7 @@ describe("record-benchmark-metrics", () => {
     expect(record.pass_rate).toBe(0.9);
     expect(record.total_prompt_tokens).toBe(1500);
     expect(record.total_completion_tokens).toBe(200);
-    expect(record.run_dir).toBe("runs/2026-08-07_abcdef1");
+    expect(record.run_dir).toBe("runs/2026-08-07T04-59-09Z_abcdef1");
   });
 
   it("calculates metrics from results array fallback", () => {
@@ -51,7 +51,86 @@ describe("record-benchmark-metrics", () => {
     expect(record.pass_rate).toBe(0.6667);
     expect(record.total_prompt_tokens).toBe(450);
     expect(record.total_completion_tokens).toBe(45);
-    expect(record.run_dir).toBe("runs/2026-08-07_1234567");
+    expect(record.run_dir).toBe("runs/2026-08-07T12-00-00Z_1234567");
+  });
+
+  it("extracts metrics from Promptfoo v3 nested results and preserves surfaces", () => {
+    const jsonContent = JSON.stringify({
+      evalId: "eval-example",
+      results: {
+        version: 3,
+        timestamp: "2026-09-26T01:05:18.389Z",
+        results: [
+          {
+            success: true,
+            provider: { id: "google:gemini-3.8-flash" },
+            prompt: { label: "baseline (no skill)" },
+            tokenUsage: { prompt: 101, completion: 11 },
+            metadata: { target_skill: "chezmoi-cli-commands" },
+          },
+          {
+            success: false,
+            provider: { id: "google:gemini-3.8-flash" },
+            prompt: { label: "skill catalog (routing context)" },
+            tokenUsage: { prompt: 202, completion: 22 },
+            vars: { target_skill: "chezmoi-cli-commands" },
+          },
+          {
+            success: true,
+            provider: { id: "google:gemini-3.8-flash" },
+            prompt: { label: "selected skill and reference (knowledge context)" },
+            tokenUsage: { prompt: 303, completion: 33 },
+            testCase: { metadata: { target_skill: "chezmoi-templating" } },
+          },
+        ],
+      },
+    });
+
+    const record = extractMetrics(jsonContent, "v3abcdef", undefined);
+    expect(record.timestamp).toBe("2026-09-26T01:05:18.389Z");
+    expect(record.total_tests).toBe(3);
+    expect(record.passed).toBe(2);
+    expect(record.failed).toBe(1);
+    expect(record.pass_rate).toBe(0.6667);
+    expect(record.total_prompt_tokens).toBe(606);
+    expect(record.total_completion_tokens).toBe(66);
+    expect(record.models).toEqual(["google:gemini-3.8-flash"]);
+    expect(record.provider_metrics?.["google:gemini-3.8-flash"]).toEqual({
+      total_tests: 3,
+      passed: 2,
+      failed: 1,
+      pass_rate: 0.6667,
+    });
+    expect(record.provider_surface_metrics?.["google:gemini-3.8-flash"]?.["baseline (no skill)"]).toEqual({
+      total_tests: 1,
+      passed: 1,
+      failed: 0,
+      pass_rate: 1,
+    });
+    expect(record.skill_metrics?.["chezmoi-cli-commands"]).toEqual({
+      total_tests: 2,
+      passed: 1,
+      failed: 1,
+      pass_rate: 0.5,
+    });
+    expect(record.skill_metrics?.["chezmoi-templating"]).toEqual({
+      total_tests: 1,
+      passed: 1,
+      failed: 0,
+      pass_rate: 1,
+    });
+    expect(record.surface_metrics?.["baseline (no skill)"]).toEqual({
+      total_tests: 1,
+      passed: 1,
+      failed: 0,
+      pass_rate: 1,
+    });
+    expect(record.surface_metrics?.["skill catalog (routing context)"]).toEqual({
+      total_tests: 1,
+      passed: 0,
+      failed: 1,
+      pass_rate: 0,
+    });
   });
 
   it("extracts models, skill metrics, release tag, and branch metadata", () => {
@@ -91,6 +170,7 @@ describe("record-benchmark-metrics", () => {
     expect(record.branch).toBe("main");
     expect(record.trigger_event).toBe("release");
     expect(record.models).toEqual(["google:gemini-3.5-flash", "anthropic:claude-5-sonnet"]);
+    expect(record.configured_models).toEqual(["google:gemini-3.5-flash", "anthropic:claude-5-sonnet"]);
     expect(record.skill_metrics?.["chezmoi-cli-commands"]).toEqual({
       total_tests: 2,
       passed: 1,
@@ -137,13 +217,60 @@ describe("record-benchmark-metrics", () => {
       commitSha: "fedcba987",
     });
 
-    expect(record.run_dir).toBe("runs/2026-08-07_fedcba9");
-    expect(existsSync(join(tempDir, "runs/2026-08-07_fedcba9", "results.json"))).toBe(true);
-    expect(existsSync(join(tempDir, "runs/2026-08-07_fedcba9", "index.html"))).toBe(true);
-    expect(existsSync(join(tempDir, "runs/2026-08-07_fedcba9", "promptfoo.db"))).toBe(true);
+    expect(record.run_dir).toBe("runs/2026-08-07T10-00-00Z_fedcba9");
+    expect(existsSync(join(tempDir, record.run_dir, "results.json"))).toBe(true);
+    expect(existsSync(join(tempDir, record.run_dir, "index.html"))).toBe(true);
+    expect(existsSync(join(tempDir, record.run_dir, "promptfoo.db"))).toBe(true);
 
     const historyContent = readFileSync(join(tempDir, "history.jsonl"), "utf-8");
     expect(historyContent).toContain('"commit_sha":"fedcba9"');
+  });
+
+  it("records router results separately when supplied", () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "benchmark-router-test-"));
+    const resultsFile = join(tempDir, "results.json");
+    const htmlFile = join(tempDir, "index.html");
+    const routerResultsFile = join(tempDir, "router-results.json");
+    const routerHtmlFile = join(tempDir, "router-index.html");
+
+    writeFileSync(
+      resultsFile,
+      JSON.stringify({
+        results: {
+          timestamp: "2026-09-26T10:00:00.000Z",
+          results: [{ success: true, prompt: { label: "baseline" } }],
+        },
+      })
+    );
+    writeFileSync(
+      routerResultsFile,
+      JSON.stringify({
+        results: {
+          timestamp: "2026-09-26T10:00:00.000Z",
+          results: [{ success: false }],
+        },
+      })
+    );
+    writeFileSync(htmlFile, "answer");
+    writeFileSync(routerHtmlFile, "router");
+
+    const record = recordMetrics({
+      resultsFile,
+      htmlFile,
+      dbFile: join(tempDir, "missing.db"),
+      routerResultsFile,
+      routerHtmlFile,
+      targetDir: tempDir,
+      commitSha: "router123",
+    });
+
+    const runDir = join(tempDir, record.run_dir);
+    expect(record.suite_metrics).toEqual({
+      answer: { total_tests: 1, passed: 1, failed: 0, pass_rate: 1 },
+      router: { total_tests: 1, passed: 0, failed: 1, pass_rate: 0 },
+    });
+    expect(existsSync(join(runDir, "router-results.json"))).toBe(true);
+    expect(existsSync(join(runDir, "router-index.html"))).toBe(true);
   });
 });
 

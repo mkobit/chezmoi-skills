@@ -9,6 +9,14 @@ When you need detailed configuration keys, schema tables, or advanced options, s
 
 chezmoi reads its config file from `~/.config/chezmoi/chezmoi.$FORMAT`, where `$FORMAT` is `json`, `jsonc`, `toml`, or `yaml`.
 Use `chezmoi doctor` to confirm the active configuration path.
+Use `chezmoi source-path` to print the active source directory.
+
+## Inspecting and regenerating configuration
+
+```sh
+chezmoi execute-template "{{ .chezmoi.config }}"    # print computed configuration
+chezmoi init --prompt                                 # rerun configuration prompts
+```
 
 ## Key configuration areas
 

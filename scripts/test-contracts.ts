@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { join, relative } from "path";
 import matter from "gray-matter";
 import { z } from "zod";
 import { Command } from "commander";
@@ -11,7 +11,7 @@ program
   .option("--skill <skill>", "Filter evaluation by target skill")
   .option("--category <category>", "Filter evaluation by eval_type category")
   .option("--evals-dir <dir>", "Directory containing evaluation test suites", "tests/evals")
-  .option("--out-dir <dir>", "Directory for evaluation benchmark results", "eval_results")
+  .option("--out-dir <dir>", "Directory for static contract results", "eval_results")
   .option("--skills-dir <dir>", "Directory containing skills", "skills")
   .parse(process.argv);
 
@@ -39,6 +39,14 @@ const TestCaseSchema = z.object({
 
 type TestCase = z.infer<typeof TestCaseSchema>;
 
+interface SkillSource {
+  name: string;
+  description: string;
+  root: string;
+  files: string[];
+  content: string;
+}
+
 interface AssertionResult {
   type: string;
   expected: unknown;
@@ -50,6 +58,7 @@ interface TestResult {
   test_id: string;
   name: string;
   eval_type: string;
+  contract_type: "static_repository_coverage";
   target_skill: string;
   status: "PASS" | "FAIL";
   latency_ms: number;
@@ -61,172 +70,210 @@ interface TestResult {
   assertions: AssertionResult[];
 }
 
-const loadSkillHeaders = async (skillsDir: string): Promise<Record<string, { name: string; description: string }>> => {
-  const headers: Record<string, { name: string; description: string }> = {};
-  if (!existsSync(skillsDir)) return headers;
+const PRODUCT_CUE = /\bchezmoi\b|\bdotfiles?\b|\.chezmoi/i;
+const STOP_WORDS = new Set([
+  "about",
+  "after",
+  "all",
+  "and",
+  "apply",
+  "can",
+  "current",
+  "does",
+  "dotfile",
+  "dotfiles",
+  "for",
+  "from",
+  "how",
+  "in",
+  "is",
+  "my",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "using",
+  "what",
+  "when",
+  "with",
+  "would",
+  "you",
+]);
 
-  const dirs = await readdir(skillsDir, { withFileTypes: true }).catch(() => []);
-  for (const dir of dirs) {
-    if (dir.isDirectory()) {
-      const skillMdPath = join(skillsDir, dir.name, "SKILL.md");
-      if (existsSync(skillMdPath)) {
-        const content = await readFile(skillMdPath, "utf-8").catch(() => null);
-        if (content) {
-          const { data } = matter(content);
-          if (data.name && data.description) {
-            headers[data.name] = { name: data.name, description: data.description };
-          }
-        }
-      }
-    }
-  }
-  return headers;
-};
+const estimateTokens = (text: string): number => Math.ceil(text.length / 4);
 
-const estimateTokens = (text: string): number => {
-  return Math.ceil(text.length / 4);
-};
+const tokenize = (text: string): string[] =>
+  text
+    .toLowerCase()
+    .match(/[a-z][a-z0-9-]*/g)
+    ?.filter((term) => term.length > 2 && !STOP_WORDS.has(term)) ?? [];
 
-const runRuleBasedEvaluator = (
-  testCase: TestCase,
-  skillHeaders: Record<string, { name: string; description: string }>
-): { output: string; promptTokens: number; completionTokens: number } => {
-  const prompt = testCase.input.user_prompt.toLowerCase();
-  let promptText = "";
+const markdownFiles = async (directory: string): Promise<string[]> => {
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  const files: string[] = [];
 
-  if (testCase.eval_type === "trigger_matching" || testCase.eval_type === "skill_selection") {
-    const catalogStr = Object.values(skillHeaders)
-      .map((h) => `${h.name}: ${h.description}`)
-      .join("\n");
-    promptText = `You are evaluating command line interactions.\nCatalog:\n${catalogStr}\nUser prompt: ${testCase.input.user_prompt}`;
-  } else {
-    promptText = `You are evaluating command generation for target skill ${testCase.target_skill}.\nUser prompt: ${testCase.input.user_prompt}`;
-  }
-
-  const promptTokens = estimateTokens(promptText);
-
-  let output = "";
-  if (testCase.eval_type === "trigger_matching") {
-    const isChezmoiQuery = prompt.includes("chezmoi") || prompt.includes("track") || prompt.includes("dotfile");
-    output = JSON.stringify({ trigger: isChezmoiQuery });
-  } else if (testCase.eval_type === "skill_selection") {
-    output = JSON.stringify({ selected_skill: testCase.target_skill });
-  } else if (testCase.eval_type === "command_correctness") {
-    if (testCase.expected.exact_command) {
-      output = testCase.expected.exact_command;
-    } else if (prompt.includes("apply") && prompt.includes("without")) {
-      output = "chezmoi apply --dry-run";
-    } else {
-      output = "chezmoi help";
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await markdownFiles(path)));
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(path);
     }
   }
 
-  const completionTokens = estimateTokens(output);
-  return { output, promptTokens, completionTokens };
+  return files;
+};
+
+const loadSkillSources = async (skillsDir: string): Promise<Record<string, SkillSource>> => {
+  const skillSources: Record<string, SkillSource> = {};
+  if (!existsSync(skillsDir)) return skillSources;
+
+  const directories = await readdir(skillsDir, { withFileTypes: true }).catch(() => []);
+  for (const directory of directories) {
+    if (!directory.isDirectory()) continue;
+
+    const root = join(skillsDir, directory.name);
+    const entrypoint = join(root, "SKILL.md");
+    if (!existsSync(entrypoint)) continue;
+
+    const entrypointContent = await readFile(entrypoint, "utf-8");
+    const { data } = matter(entrypointContent);
+    if (typeof data.name !== "string" || typeof data.description !== "string") continue;
+
+    const files = await markdownFiles(root);
+    const contents = await Promise.all(files.map((file) => readFile(file, "utf-8")));
+    skillSources[data.name] = {
+      name: data.name,
+      description: data.description,
+      root,
+      files,
+      content: contents.join("\n"),
+    };
+  }
+
+  return skillSources;
+};
+
+const promptEvidence = (userPrompt: string, source: SkillSource): string[] => {
+  const sourceTerms = new Set(tokenize(source.content));
+  return [...new Set(tokenize(userPrompt).filter((term) => sourceTerms.has(term)))];
+};
+
+const commandEvidence = (testCase: TestCase): string[] => {
+  const command = testCase.expected.exact_command;
+  const terms = new Set<string>();
+
+  if (command?.startsWith("chezmoi ")) {
+    const words = command.slice("chezmoi ".length).split(/\s+/);
+    const first = words[0];
+    if (first) terms.add(`chezmoi ${first}`);
+    if (first === "state" && words[1] && !words[1].startsWith("-")) {
+      terms.add(`chezmoi state ${words[1]}`);
+    }
+  } else if (command?.startsWith("sh -c")) {
+    terms.add("get.chezmoi.io");
+  } else if (command) {
+    const prefix = command.split("_")[0];
+    if (prefix && prefix.length >= 3) terms.add(`${prefix}_`);
+  }
+
+  for (const flag of testCase.expected.required_flags ?? []) {
+    terms.add(flag.replace(/=.*/, ""));
+  }
+
+  return [...terms];
 };
 
 const evaluateTestCase = (
   testCase: TestCase,
-  skillHeaders: Record<string, { name: string; description: string }>
+  skillSources: Record<string, SkillSource>,
+  skillsDir: string
 ): TestResult => {
   const startTime = Date.now();
-  const { output, promptTokens, completionTokens } = runRuleBasedEvaluator(testCase, skillHeaders);
-  const latency_ms = Date.now() - startTime;
-
   const assertions: AssertionResult[] = [];
+  const source = skillSources[testCase.target_skill];
 
-  if (testCase.eval_type === "trigger_matching" && testCase.expected.should_trigger !== undefined) {
-    let triggered = false;
-    try {
-      const parsed = JSON.parse(output);
-      triggered = parsed.trigger === true;
-    } catch {
-      triggered = false;
-    }
+  assertions.push({
+    type: "target_skill_exists",
+    expected: testCase.target_skill,
+    actual: source?.name,
+    passed: source !== undefined,
+  });
+
+  if (source) {
     assertions.push({
-      type: "should_trigger",
-      expected: testCase.expected.should_trigger,
-      actual: triggered,
-      passed: triggered === testCase.expected.should_trigger,
+      type: "skill_entrypoint_exists",
+      expected: "SKILL.md",
+      actual: source.files.map((file) => relative(source.root, file)),
+      passed: source.files.some((file) => file === join(source.root, "SKILL.md")),
     });
-  }
 
-  if (testCase.eval_type === "skill_selection" && testCase.expected.selected_skill !== undefined) {
-    let selected = "";
-    try {
-      const parsed = JSON.parse(output);
-      selected = parsed.selected_skill;
-    } catch {
-      selected = "";
-    }
-    assertions.push({
-      type: "selected_skill",
-      expected: testCase.expected.selected_skill,
-      actual: selected,
-      passed: selected === testCase.expected.selected_skill,
-    });
-  }
-
-  if (testCase.eval_type === "command_correctness") {
-    if (testCase.expected.exact_command !== undefined) {
+    if (testCase.eval_type === "trigger_matching") {
+      const shouldTrigger = testCase.expected.should_trigger;
+      const hasProductCue = PRODUCT_CUE.test(testCase.input.user_prompt);
       assertions.push({
-        type: "exact_command",
-        expected: testCase.expected.exact_command,
-        actual: output,
-        passed: output.trim() === testCase.expected.exact_command.trim(),
+        type: "trigger_fixture_scope",
+        expected: shouldTrigger ? "contains a chezmoi or dotfiles cue" : "omits chezmoi and dotfiles cues",
+        actual: hasProductCue,
+        passed: shouldTrigger === undefined || hasProductCue === shouldTrigger,
       });
     }
 
-    if (testCase.expected.command_regex !== undefined) {
-      const reg = new RegExp(testCase.expected.command_regex);
-      const passed = reg.test(output.trim());
+    if (testCase.eval_type === "skill_selection") {
+      const evidence = promptEvidence(testCase.input.user_prompt, source);
       assertions.push({
-        type: "command_regex",
-        expected: testCase.expected.command_regex,
-        actual: output,
-        passed,
+        type: "selection_prompt_source_overlap",
+        expected: "at least one non-generic prompt term documented by the target skill",
+        actual: evidence,
+        passed: evidence.length > 0,
       });
     }
 
-    if (testCase.expected.required_flags) {
-      for (const flag of testCase.expected.required_flags) {
-        const passed = output.includes(flag);
-        assertions.push({
-          type: `required_flag:${flag}`,
-          expected: flag,
-          actual: output,
-          passed,
-        });
-      }
-    }
-
-    if (testCase.expected.forbidden_flags) {
-      for (const flag of testCase.expected.forbidden_flags) {
-        const passed = !output.includes(flag);
-        assertions.push({
-          type: `forbidden_flag:${flag}`,
-          expected: `NOT ${flag}`,
-          actual: output,
-          passed,
-        });
-      }
+    if (testCase.eval_type === "command_correctness") {
+      const evidence = commandEvidence(testCase);
+      const missing = evidence.filter((term) => !source.content.includes(term));
+      assertions.push({
+        type: "command_target_skill_coverage",
+        expected: evidence,
+        actual: { documented: evidence.filter((term) => !missing.includes(term)), missing },
+        passed: evidence.length > 0 && missing.length === 0,
+      });
     }
   }
 
-  const allPassed = assertions.length > 0 && assertions.every((a) => a.passed);
+  for (const contextFile of testCase.input.context_files ?? []) {
+    const path = join(skillsDir, contextFile);
+    assertions.push({
+      type: `context_file_exists:${contextFile}`,
+      expected: contextFile,
+      actual: existsSync(path),
+      passed: existsSync(path),
+    });
+  }
+
+  const latency_ms = Date.now() - startTime;
+  const allPassed = assertions.length > 0 && assertions.every((assertion) => assertion.passed);
+  const output = {
+    contract_type: "static_repository_coverage",
+    target_skill: testCase.target_skill,
+    assertions: assertions.map(({ type, passed }) => ({ type, passed })),
+  };
 
   return {
     test_id: testCase.id,
     name: testCase.name,
     eval_type: testCase.eval_type,
+    contract_type: "static_repository_coverage",
     target_skill: testCase.target_skill,
     status: allPassed ? "PASS" : "FAIL",
     latency_ms,
     tokens: {
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
+      // This is the fixture prompt size, not model token usage.
+      prompt_tokens: estimateTokens(testCase.input.user_prompt),
+      completion_tokens: 0,
     },
-    actual_output: output,
+    actual_output: JSON.stringify(output),
     assertions,
   };
 };
@@ -237,156 +284,129 @@ const loadTestCases = async (evalsDir: string): Promise<TestCase[]> => {
   const testCases: TestCase[] = [];
 
   for (const file of files) {
-    if (file.endsWith(".json")) {
-      const fullPath = join(evalsDir, file);
-      const raw = await readFile(fullPath, "utf-8").catch(() => null);
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          const array = Array.isArray(parsed) ? parsed : [parsed];
-          for (const item of array) {
-            const val = TestCaseSchema.safeParse(item);
-            if (val.success) {
-              testCases.push(val.data);
-            } else {
-              console.warn(`Warning: Invalid test case in ${file}:`, val.error.errors);
-            }
-          }
-        } catch (e) {
-          console.warn(`Warning: Could not parse ${file}:`, e);
+    if (!file.endsWith(".json")) continue;
+
+    const raw = await readFile(join(evalsDir, file), "utf-8").catch(() => null);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      for (const item of Array.isArray(parsed) ? parsed : [parsed]) {
+        const result = TestCaseSchema.safeParse(item);
+        if (result.success) {
+          testCases.push(result.data);
+        } else {
+          console.warn(`Warning: Invalid test case in ${file}:`, result.error.issues);
         }
       }
+    } catch (error) {
+      console.warn(`Warning: Could not parse ${file}:`, error);
     }
   }
 
   return testCases;
 };
 
-const generateMarkdownSummary = (
-  results: TestResult[],
-  timestamp: string,
-  totalMs: number
-): string => {
+const generateMarkdownSummary = (results: TestResult[], timestamp: string, totalMs: number): string => {
   const total = results.length;
-  const passed = results.filter((r) => r.status === "PASS").length;
+  const passed = results.filter((result) => result.status === "PASS").length;
   const failed = total - passed;
   const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : "0.0";
-  const promptTokens = results.reduce((acc, r) => acc + r.tokens.prompt_tokens, 0);
-  const completionTokens = results.reduce((acc, r) => acc + r.tokens.completion_tokens, 0);
-
+  const fixturePromptTokens = results.reduce((sum, result) => sum + result.tokens.prompt_tokens, 0);
   const categories = ["trigger_matching", "skill_selection", "command_correctness"];
+  const categoryRows = categories
+    .map((category) => {
+      const categoryResults = results.filter((result) => result.eval_type === category);
+      if (categoryResults.length === 0) return "";
+      const categoryPassed = categoryResults.filter((result) => result.status === "PASS").length;
+      const categoryRate = ((categoryPassed / categoryResults.length) * 100).toFixed(1);
+      return `| \`${category}\` | ${categoryResults.length} | ${categoryPassed} | ${categoryResults.length - categoryPassed} | ${categoryRate}% |`;
+    })
+    .filter(Boolean)
+    .join("\n");
+  const detailRows = results
+    .map(
+      (result) =>
+        `| \`${result.test_id}\` | ${result.name} | \`${result.eval_type}\` | ${result.status} | \`${result.target_skill}\` | ${result.latency_ms}ms |`
+    )
+    .join("\n");
 
-  let categoryRows = "";
-  for (const cat of categories) {
-    const catResults = results.filter((r) => r.eval_type === cat);
-    if (catResults.length === 0) continue;
-    const catPassed = catResults.filter((r) => r.status === "PASS").length;
-    const catFailed = catResults.length - catPassed;
-    const catRate = ((catPassed / catResults.length) * 100).toFixed(1);
-    const avgPrompt = Math.round(
-      catResults.reduce((acc, r) => acc + r.tokens.prompt_tokens, 0) / catResults.length
-    );
-    const avgLatency = Math.round(
-      catResults.reduce((acc, r) => acc + r.latency_ms, 0) / catResults.length
-    );
-    categoryRows += `| \`${cat}\` | ${catResults.length} | ${catPassed} | ${catFailed} | ${catRate}% | ${avgPrompt} | ${avgLatency}ms |\n`;
-  }
+  return `# Static repository contract summary
 
-  let detailRows = "";
-  for (const r of results) {
-    detailRows += `| \`${r.test_id}\` | ${r.name} | \`${r.eval_type}\` | ${r.status} | \`${r.target_skill}\` | ${r.tokens.prompt_tokens} / ${r.tokens.completion_tokens} | ${r.latency_ms}ms |\n`;
-  }
-
-  return `# Skill evaluation benchmark summary
+These contracts validate the relationship between the curated corpus and the checked-in skill source.
+They do not execute a model or claim to measure model routing or command-generation quality.
+Use the Promptfoo live evaluation for behavioral results.
 
 - Execution timestamp: \`${timestamp}\`
+- Duration: \`${totalMs}ms\`
 - Total test cases: \`${total}\`
 - Passed: \`${passed}\`
 - Failed: \`${failed}\`
 - Pass rate: \`${passRate}%\`
-- Total prompt tokens: \`${promptTokens.toLocaleString()}\`
-- Total completion tokens: \`${completionTokens.toLocaleString()}\`
+- Fixture prompt tokens: \`${fixturePromptTokens.toLocaleString()}\` (not model usage)
 
 ## Results by evaluation category
 
-| Category | Total | Passed | Failed | Pass rate | Avg prompt tokens | Avg latency |
-| --- | --- | --- | --- | --- | --- | --- |
+| Category | Total | Passed | Failed | Pass rate |
+| --- | --- | --- | --- | --- |
 ${categoryRows}
+
 ## Detailed test case outcomes
 
-| Test ID | Name | Category | Result | Target skill | Tokens (P/C) | Latency |
-| --- | --- | --- | --- | --- | --- | --- |
-${detailRows}`;
+| Test ID | Name | Corpus category | Result | Target skill | Static check time |
+| --- | --- | --- | --- | --- |
+${detailRows}
+`;
 };
 
 const run = async () => {
-  const evalsDir = options.evalsDir;
-  const outDir = options.outDir;
-  const skillsDir = options.skillsDir;
-
-  const skillHeaders = await loadSkillHeaders(skillsDir);
-  let testCases = await loadTestCases(evalsDir);
-
-  if (options.skill) {
-    testCases = testCases.filter((tc) => tc.target_skill === options.skill);
-  }
-  if (options.category) {
-    testCases = testCases.filter((tc) => tc.eval_type === options.category);
-  }
+  let testCases = await loadTestCases(options.evalsDir);
+  if (options.skill) testCases = testCases.filter((testCase) => testCase.target_skill === options.skill);
+  if (options.category) testCases = testCases.filter((testCase) => testCase.eval_type === options.category);
 
   if (testCases.length === 0) {
     console.log("No test cases found matching criteria.");
     return;
   }
 
-  console.log(`Running ${testCases.length} evaluation test cases...`);
+  const skillSources = await loadSkillSources(options.skillsDir);
+  console.log(`Running ${testCases.length} static repository contracts (not model evaluations)...`);
 
   const startTime = Date.now();
-  const results = testCases.map((tc) => evaluateTestCase(tc, skillHeaders));
+  const results = testCases.map((testCase) => evaluateTestCase(testCase, skillSources, options.skillsDir));
   const totalMs = Date.now() - startTime;
-
-  if (!existsSync(outDir)) {
-    await mkdir(outDir, { recursive: true });
-  }
-
   const timestamp = new Date().toISOString();
+
+  if (!existsSync(options.outDir)) await mkdir(options.outDir, { recursive: true });
 
   const jsonSummary = {
     benchmark_run: {
       timestamp,
       duration_ms: totalMs,
+      contract_type: "static_repository_coverage",
       metrics: {
         total_tests: results.length,
-        passed: results.filter((r) => r.status === "PASS").length,
-        failed: results.filter((r) => r.status === "FAIL").length,
-        pass_rate: results.length > 0 ? results.filter((r) => r.status === "PASS").length / results.length : 0,
-        total_prompt_tokens: results.reduce((acc, r) => acc + r.tokens.prompt_tokens, 0),
-        total_completion_tokens: results.reduce((acc, r) => acc + r.tokens.completion_tokens, 0),
+        passed: results.filter((result) => result.status === "PASS").length,
+        failed: results.filter((result) => result.status === "FAIL").length,
+        pass_rate: results.length === 0 ? 0 : results.filter((result) => result.status === "PASS").length / results.length,
+        fixture_prompt_tokens: results.reduce((sum, result) => sum + result.tokens.prompt_tokens, 0),
       },
     },
     results,
   };
 
-  await writeFile(join(outDir, "results.json"), JSON.stringify(jsonSummary, null, 2));
-
-  const markdownReport = generateMarkdownSummary(results, timestamp, totalMs);
-  await writeFile(join(outDir, "summary.md"), markdownReport);
+  await writeFile(join(options.outDir, "results.json"), JSON.stringify(jsonSummary, null, 2));
+  await writeFile(join(options.outDir, "summary.md"), generateMarkdownSummary(results, timestamp, totalMs));
 
   let hasFailures = false;
-  for (const res of results) {
-    if (res.status === "PASS") {
-      console.log(`✅ [${res.eval_type}] ${res.test_id}: ${res.name}`);
-    } else {
-      console.error(`❌ [${res.eval_type}] ${res.test_id}: ${res.name}`);
-      hasFailures = true;
-    }
+  for (const result of results) {
+    const icon = result.status === "PASS" ? "✅" : "❌";
+    console.log(`${icon} [${result.eval_type}] ${result.test_id}: ${result.name}`);
+    hasFailures ||= result.status === "FAIL";
   }
 
-  console.log(`Benchmark results saved to ${outDir}/summary.md and ${outDir}/results.json`);
-
-  if (hasFailures) {
-    process.exit(1);
-  }
+  console.log(`Contract results saved to ${options.outDir}/summary.md and ${options.outDir}/results.json`);
+  if (hasFailures) process.exit(1);
 };
 
 run();

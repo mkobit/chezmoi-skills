@@ -80,7 +80,7 @@ export const validateSkillDir = async (skillsDir: string, dir: string): Promise<
   const parsed = skillSchema.safeParse(data);
 
   if (!parsed.success) {
-    results.push({ valid: false, name: `${dir}/SKILL.md frontmatter`, details: parsed.error.errors });
+    results.push({ valid: false, name: `${dir}/SKILL.md frontmatter`, details: parsed.error.issues });
   } else {
     results.push({ valid: true, name: `${dir}/SKILL.md frontmatter` });
   }

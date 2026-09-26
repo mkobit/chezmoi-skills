@@ -121,6 +121,7 @@ chezmoi caches downloaded files and archive artifacts locally.
 The `refreshPeriod` parameter specifies how frequently chezmoi checks remote endpoints.
 Setting `refreshPeriod = 0` (default) prevents automatic refreshes until forced manually.
 Run `chezmoi apply --refresh-externals` or `chezmoi apply -R` to force immediate re-download.
+List only managed external entries with `chezmoi managed --include externals`.
 
 ## Edge cases and caveats
 

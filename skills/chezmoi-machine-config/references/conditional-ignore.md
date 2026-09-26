@@ -56,6 +56,7 @@ dir/f*
 
 ```sh
 chezmoi ignored    # list targets ignored on this machine
+chezmoi cat ~/.chezmoiignore    # render the active ignore patterns
 ```
 
 ## Interactions

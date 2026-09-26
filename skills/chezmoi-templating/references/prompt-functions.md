@@ -4,6 +4,13 @@ These template functions are only available when generating a config file with `
 For testing with `chezmoi execute-template`, pass the `--init` flag to enable them.
 If the command line flag `--promptDefaults` is set, all prompts return their default values, if available.
 
+Pass deterministic values while testing prompt templates:
+
+```sh
+chezmoi execute-template --init --promptBool=useGpg=true "{{ .useGpg }}"
+chezmoi execute-template --init --promptString=username=alice "{{ .username }}"
+```
+
 ## Prompt functions
 
 | Function Signature | Description |

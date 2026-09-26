@@ -6,7 +6,11 @@
     "test:contracts": "bun run scripts/test-contracts.ts",
     "test": "bun test",
     "extract:evals": "bun run scripts/extract-transcript-evals.ts",
-    "eval": "NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" bunx promptfoo eval -o eval_results/results.json -o eval_results/index.html",
+    "eval:generate": "bun run scripts/generate-promptfoo-evals.ts",
+    "eval:validate": "bun run eval:generate && PROMPTFOO_CONFIG_DIR=eval_results/.promptfoo PROMPTFOO_LOG_DIR=eval_results/.promptfoo/logs NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" promptfoo validate config --config promptfooconfig.yaml && PROMPTFOO_CONFIG_DIR=eval_results/.promptfoo PROMPTFOO_LOG_DIR=eval_results/.promptfoo/logs NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" promptfoo validate config --config eval_results/promptfooconfig.router.generated.yaml",
+    "eval:answers": "PROMPTFOO_CONFIG_DIR=eval_results/.promptfoo PROMPTFOO_LOG_DIR=eval_results/.promptfoo/logs NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" promptfoo eval --config promptfooconfig.yaml -o eval_results/results.json -o eval_results/index.html",
+    "eval:router": "PROMPTFOO_CONFIG_DIR=eval_results/.promptfoo PROMPTFOO_LOG_DIR=eval_results/.promptfoo/logs NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" promptfoo eval --config eval_results/promptfooconfig.router.generated.yaml -o eval_results/router-results.json -o eval_results/router-index.html",
+    "eval": "bun run eval:generate && bun run eval:answers && bun run eval:router",
     "record:benchmark": "bun run scripts/record-benchmark-metrics.ts",
     "generate:history": "bun run scripts/generate-history-index.ts",
     "lint:md": "markdownlint-cli2",
@@ -24,6 +28,7 @@
     "gpt-tokenizer": "^4.0.0",
     "gray-matter": "4.0.3",
     "markdownlint-cli2": "0.23.2",
+    "promptfoo": "0.123.1",
     "zod": "4.5.4"
   }
 }
