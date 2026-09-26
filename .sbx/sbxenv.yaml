@@ -1,0 +1,8 @@
+schemaVersion: "1"
+name: "chezmoi-skills-codex"
+agent: codex
+workspace:
+  path: ..
+  clone: false
+kits:
+  - ./kit
