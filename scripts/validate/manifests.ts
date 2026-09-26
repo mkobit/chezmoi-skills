@@ -172,7 +172,7 @@ export const validateMarketplaceSkillParity = async (claudePluginDir: string = "
       if (!existsSync(skillsDir)) {
         failures.push(`Skills directory not found: ${skillsDir}`);
       } else {
-        const entries = await readdir(skillsDir);
+        const entries = (await readdir(skillsDir)).sort();
         const filesystemDirectories = await Promise.all(entries.map(async (entry) => {
           const entryPath = join(skillsDir, entry);
           return (await stat(entryPath)).isDirectory() ? entry : null;
