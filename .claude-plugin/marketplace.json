@@ -1,22 +1,18 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "chezmoi-skills",
+  "description": "Agent skills for chezmoi dotfile management",
+  "owner": {
+    "name": "Mike Kobit",
+    "url": "https://github.com/mkobit"
+  },
   "plugins": [
     {
       "name": "chezmoi",
       "source": "./",
       "description": "Agent skills for chezmoi dotfile management",
       "version": "0.0.1",
-      "skills": [
-        "cli-commands",
-        "configuration",
-        "externals",
-        "file-attributes",
-        "init",
-        "machine-config",
-        "scripts",
-        "secrets-management",
-        "templating"
-      ]
+      "skills": "./skills"
     }
   ]
 }

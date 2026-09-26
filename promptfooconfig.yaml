@@ -1,143 +1,26 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-description: Chezmoi skills evaluation benchmark suite across 9 skills
+# Generate checked-in corpus inputs first: bun run scripts/generate-promptfoo-evals.ts
+# Structural validation without provider calls: bun run eval:validate
+# Credentialed answer smoke test: bun run eval:generate && bun run eval:answers -- --filter-first-n 1 --no-cache
+# Credentialed router smoke test: promptfoo eval --config eval_results/promptfooconfig.router.generated.yaml --filter-first-n 1 --no-cache
+description: Chezmoi agent-skill answer evaluation derived from tests/evals/*.json
 
 outputPath: eval_results/results.json
 
 prompts:
-  - label: "baseline (no skill)"
+  - label: baseline (no skill)
     raw: "System: You are an AI assistant helping with chezmoi dotfile management.\nUser: {{user_prompt}}"
-  - label: "skill-enhanced (with skill catalog)"
-    raw: "System: You are an AI assistant helping with chezmoi dotfile management.\nAvailable skills:\n- chezmoi-cli-commands: Manage chezmoi CLI commands, flags, diff, and status inspection\n- chezmoi-configuration: Manage chezmoi configuration options and hook directives\n- chezmoi-externals: Manage external dependencies and git-repo external sources\n- chezmoi-file-attributes: Manage target file attributes and source file naming prefixes\n- chezmoi-init: Initialize and clone chezmoi dotfile repositories\n- chezmoi-machine-config: Manage per-machine configuration, OS conditionals, and chezmoidata\n- chezmoi-scripts: Manage lifecycle execution scripts and script state buckets\n- chezmoi-secrets-management: Manage secrets, age/gpg encryption, and keyrings\n- chezmoi-templating: Manage Go template syntax and Sprig functions\nUser: {{user_prompt}}"
+  - label: skill catalog (routing context)
+    raw: "System: You are an AI assistant helping with chezmoi dotfile management.\nUse the catalog to select the relevant skill silently before answering.\nAvailable skills:\n- chezmoi-cli-commands: Manage chezmoi CLI commands, flags, diff, and status inspection\n- chezmoi-configuration: Manage chezmoi configuration options and hook directives\n- chezmoi-externals: Manage external dependencies and git-repo external sources\n- chezmoi-file-attributes: Manage target file attributes and source file naming prefixes\n- chezmoi-init: Initialize and clone chezmoi dotfile repositories\n- chezmoi-machine-config: Manage per-machine configuration, OS conditionals, and chezmoidata\n- chezmoi-scripts: Manage lifecycle execution scripts and script state buckets\n- chezmoi-secrets-management: Manage secrets, age/gpg encryption, and keyrings\n- chezmoi-templating: Manage Go template syntax and Sprig functions\nUser: {{user_prompt}}"
+  - label: selected skill and reference (knowledge context)
+    raw: "System: You are an AI assistant helping with chezmoi dotfile management.\nThe agent has selected this skill entry point:\n{{skill_context}}\nThe agent has read this relevant progressive-disclosure reference:\n{{reference_context}}\nAnswer only from this context when possible.\nUser: {{user_prompt}}"
 
 providers:
-  - id: google:gemini-3.5-flash
+  - id: google:gemini-3.8-flash
     config:
       temperature: 0
-  - id: anthropic:claude-5-sonnet
+  - id: anthropic:messages:claude-sonnet-4-6
     config:
       temperature: 0
 
-tests:
-  - description: Trigger matching for chezmoi add intent
-    vars:
-      user_prompt: "I want to track my ~/.bashrc file with chezmoi."
-    assert:
-      - type: regex
-        value: "chezmoi\\s+add"
-
-  - description: Negative trigger matching for unrelated git query
-    vars:
-      user_prompt: "How do I rebase a local git feature branch?"
-    assert:
-      - type: not-icontains
-        value: "chezmoi"
-
-  - description: Command generation with dry-run flag
-    vars:
-      user_prompt: "Show me what chezmoi apply would change without actually writing any files to disk."
-    assert:
-      - type: regex
-        value: "chezmoi\\s+apply.*(?:--dry-run|-n)"
-      - type: not-icontains
-        value: "--force"
-
-  - description: Non-destructive safe apply preview assertion
-    vars:
-      user_prompt: "Safely preview dotfile updates before applying changes to target files."
-    assert:
-      - type: icontains
-        value: "chezmoi"
-      - type: icontains
-        value: "diff"
-      - type: not-icontains
-        value: "--force"
-
-  - description: Target entry file attribute mapping
-    vars:
-      user_prompt: "What should the source filename be for a private executable hidden file named script in my home directory?"
-    assert:
-      - type: regex
-        value: "(?:executable_private_dot_|private_executable_dot_|dot_executable_private_|dot_private_executable_|private_dot_executable_)script"
-
-  - description: External dependency refresh command
-    vars:
-      user_prompt: "How do I force chezmoi to re-download all external archives regardless of refreshPeriod?"
-    assert:
-      - type: icontains
-        value: "--refresh-externals"
-      - type: icontains
-        value: "chezmoi"
-
-  - description: Git-repo external dependency type configuration
-    vars:
-      user_prompt: "How do I declare an external git repository dependency in .chezmoiexternal.toml?"
-    assert:
-      - type: icontains
-        value: "type = \"git-repo\""
-      - type: icontains
-        value: "url ="
-
-  - description: Git integration configuration
-    vars:
-      user_prompt: "How do I configure git autoCommit and autoPush in my .chezmoi.toml file?"
-    assert:
-      - type: icontains
-        value: "autoCommit"
-      - type: icontains
-        value: "autoPush"
-
-  - description: Repository initialization and cloning
-    vars:
-      user_prompt: "How do I initialize chezmoi from my dotfiles repository at git@github.com:user/dotfiles.git and apply immediately?"
-    assert:
-      - type: regex
-        value: "chezmoi\\s+init.*(?:--apply|-a)"
-
-  - description: Machine config data template variable inspection
-    vars:
-      user_prompt: "How do I check the value of chezmoi.os and chezmoi.arch in my current environment?"
-    assert:
-      - type: icontains
-        value: "chezmoi data"
-
-  - description: Lifecycle execution script state management
-    vars:
-      user_prompt: "How do I clear the run-once script execution history in chezmoi?"
-    assert:
-      - type: icontains
-        value: "chezmoi state delete-bucket"
-
-  - description: Secret manager integration query
-    vars:
-      user_prompt: "How do I decrypt an age-encrypted file in my chezmoi source state?"
-    assert:
-      - type: icontains
-        value: "chezmoi decrypt"
-
-  - description: 1Password item payload inspection
-    vars:
-      user_prompt: "How do I execute 1Password secret query via chezmoi secret subcommand?"
-    assert:
-      - type: regex
-        value: "chezmoi\\s+secret\\s+onepassword.*"
-
-  - description: Secret manager template function query
-    vars:
-      user_prompt: "How do I fetch passwords from Bitwarden or 1Password inside my chezmoi templates?"
-    assert:
-      - type: regex
-        value: "(?:bitwarden|onepassword)"
-
-  - description: Template prompt function usage
-    vars:
-      user_prompt: "How do I interactively prompt for an email address in a chezmoi template file?"
-    assert:
-      - type: regex
-        value: "promptString(?:Once)?"
-
-  - description: Sprig path join function usage in templates
-    vars:
-      user_prompt: "How do I join file path components safely inside a chezmoi template?"
-    assert:
-      - type: icontains
-        value: "joinPath"
+tests: file://eval_results/promptfoo-answer-tests.generated.yaml

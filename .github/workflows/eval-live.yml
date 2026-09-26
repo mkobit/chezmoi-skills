@@ -1,4 +1,4 @@
-name: Live LLM Benchmark Evaluation
+name: Live LLM benchmark evaluation
 
 on:
   schedule:
@@ -7,19 +7,29 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: live-benchmark-history
+  cancel-in-progress: false
+
 jobs:
   eval-live:
-    name: Run Promptfoo Live Evals
+    name: Run Promptfoo live evals
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Run Promptfoo Live Evaluation
+      - name: Validate Promptfoo configuration
+        env:
+          PROMPTFOO_DISABLE_TELEMETRY: "1"
+          CI: "true"
+        run: bun run eval:validate
+
+      - name: Run Promptfoo live evaluation
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_API_KEY }}
@@ -29,41 +39,78 @@ jobs:
           CI: "true"
         run: bun run eval
 
+      - name: Upload benchmark results artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: promptfoo-results
+          path: |
+            eval_results/results.json
+            eval_results/index.html
+            eval_results/router-results.json
+            eval_results/router-index.html
+          if-no-files-found: error
+
+  publish-history:
+    name: Publish benchmark history
+    needs: eval-live
+    if: needs.eval-live.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Download benchmark results artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: promptfoo-results
+          path: eval_results
+
       - name: Checkout gh-pages branch
+        id: checkout-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: gh-pages
           path: gh-pages
+          persist-credentials: false
         continue-on-error: true
+
+      - name: Initialize gh-pages branch
+        if: steps.checkout-pages.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          mkdir -p gh-pages
+          git -C gh-pages init
+          git -C gh-pages checkout --orphan gh-pages
 
       - name: Record benchmark metrics
         run: |
+          set -euo pipefail
           mkdir -p gh-pages
-          bun run record:benchmark --target-dir gh-pages --commit-sha ${{ github.sha }}
+          bun run record:benchmark --target-dir gh-pages --commit-sha "${{ github.sha }}"
 
       - name: Generate benchmark history index
         run: |
+          set -euo pipefail
           bun run generate:history --target-dir gh-pages
 
       - name: Publish benchmark history to gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           cd gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ ! -d .git ]; then
-            git init
-            git checkout -b gh-pages
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" 2>/dev/null || \
             git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-          fi
           git add .
-          git commit -m "chore: record benchmark history for ${{ github.sha }} [skip ci]" || echo "No changes to commit"
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: record benchmark history for ${{ github.sha }} [skip ci]"
+          fi
           git push origin gh-pages
-
-      - name: Upload Benchmark Results Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: promptfoo-results
-          path: eval_results/results.json
-          if-no-files-found: ignore

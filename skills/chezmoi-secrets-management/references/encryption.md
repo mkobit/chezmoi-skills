@@ -33,6 +33,12 @@ chezmoi add --encrypt ~/.ssh/id_ed25519
 chezmoi stores the file as `private_dot_ssh/encrypted_private_id_ed25519.age` in the source repository.
 The `encrypted_` prefix applies only to files and never to directories.
 
+Inspect an encrypted source file without applying it:
+
+```sh
+chezmoi decrypt encrypted_private_id_ed25519.age
+```
+
 ### Decryption at apply time
 
 The identity file must be present and readable when running `chezmoi apply`.

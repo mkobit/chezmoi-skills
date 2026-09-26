@@ -1,0 +1,29 @@
+{
+  "name": "chezmoi",
+  "version": "0.0.1",
+  "description": "Agent skills for managing dotfiles with chezmoi.",
+  "author": {
+    "name": "Mike Kobit",
+    "url": "https://github.com/mkobit"
+  },
+  "homepage": "https://github.com/mkobit/chezmoi-skills",
+  "repository": "https://github.com/mkobit/chezmoi-skills",
+  "license": "MIT",
+  "keywords": [
+    "chezmoi",
+    "dotfiles",
+    "homedir"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Chezmoi",
+    "shortDescription": "Manage chezmoi dotfiles.",
+    "longDescription": "Use portable Agent Skills to manage chezmoi dotfiles.",
+    "developerName": "Mike Kobit",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Help me manage my chezmoi dotfiles."
+    ]
+  }
+}
