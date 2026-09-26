@@ -11,6 +11,7 @@
     "eval:answers": "PROMPTFOO_CONFIG_DIR=eval_results/.promptfoo PROMPTFOO_LOG_DIR=eval_results/.promptfoo/logs NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" promptfoo eval --config promptfooconfig.yaml -o eval_results/results.json -o eval_results/index.html",
     "eval:router": "PROMPTFOO_CONFIG_DIR=eval_results/.promptfoo PROMPTFOO_LOG_DIR=eval_results/.promptfoo/logs NODE_OPTIONS=\"-r ./scripts/patch-version.cjs\" promptfoo eval --config eval_results/promptfooconfig.router.generated.yaml -o eval_results/router-results.json -o eval_results/router-index.html",
     "eval": "bun run eval:generate && bun run eval:answers && bun run eval:router",
+    "benchmark:prepare": "bun run eval:generate && bun run scripts/prepare-live-benchmark.ts",
     "record:benchmark": "bun run scripts/record-benchmark-metrics.ts",
     "generate:history": "bun run scripts/generate-history-index.ts",
     "lint:md": "markdownlint-cli2",

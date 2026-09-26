@@ -16,14 +16,82 @@ describe("Promptfoo assertions", () => {
     const context = { config: { trigger: true, selectedSkill: "chezmoi-templating" } };
 
     expect(
-      assertions.routerMatches('{"trigger":true,"selected_skill":"chezmoi-templating"}', context)
+      assertions.routerMatches(
+        '{"trigger":true,"selected_skill":"chezmoi-templating","needs_clarification":false}',
+        context
+      )
     ).toBe(true);
     expect(
-      assertions.routerMatches('```json\n{"trigger":true,"selected_skill":"chezmoi-templating"}\n```', context)
+      assertions.routerMatches(
+        '```json\n{"trigger":true,"selected_skill":"chezmoi-templating","needs_clarification":false}\n```',
+        context
+      )
     ).toBe(true);
     expect(
-      assertions.routerMatches('{"trigger":false,"selected_skill":"chezmoi-templating"}', context)
+      assertions.routerMatches(
+        '{"trigger":false,"selected_skill":"chezmoi-templating","needs_clarification":false}',
+        context
+      )
     ).toBe(false);
     expect(assertions.routerMatches("not JSON", context)).toBe(false);
+  });
+
+  it("accepts any configured skill or an explicit clarification for ambiguous routes", () => {
+    const context = {
+      config: {
+        trigger: true,
+        selectedSkills: ["chezmoi-configuration", "chezmoi-machine-config"],
+        allowClarification: true,
+      },
+    };
+
+    expect(
+      assertions.routerMatches(
+        '{"trigger":true,"selected_skill":"chezmoi-machine-config","needs_clarification":false}',
+        context
+      )
+    ).toBe(true);
+    expect(
+      assertions.routerMatches('{"trigger":true,"selected_skill":null,"needs_clarification":true}', context)
+    ).toBe(true);
+    expect(
+      assertions.routerMatches('{"trigger":true,"selected_skill":null,"needs_clarification":false}', context)
+    ).toBe(false);
+    expect(
+      assertions.routerMatches(
+        '{"trigger":true,"selected_skill":"chezmoi-machine-config","needs_clarification":true}',
+        context
+      )
+    ).toBe(false);
+  });
+
+  it("requires a null selection when the skill catalog should not trigger", () => {
+    const context = { config: { trigger: false, selectedSkills: [], allowClarification: false } };
+
+    expect(
+      assertions.routerMatches('{"trigger":false,"selected_skill":null,"needs_clarification":false}', context)
+    ).toBe(true);
+    expect(
+      assertions.routerMatches(
+        '{"trigger":false,"selected_skill":"chezmoi-cli-commands","needs_clarification":false}',
+        context
+      )
+    ).toBe(false);
+  });
+
+  it("matches deterministic answer quality expectations", () => {
+    const context = {
+      config: {
+        requiredConcepts: ["--dry-run"],
+        forbiddenClaims: ["you should use --force"],
+        clarification: "forbidden",
+        safetyExpectations: ["preview"],
+      },
+    };
+
+    expect(assertions.answerQualityMatches("Preview with `chezmoi apply --dry-run` first.", context)).toBe(true);
+    expect(assertions.answerQualityMatches("Preview with --dry-run; do not use --force.", context)).toBe(true);
+    expect(assertions.answerQualityMatches("Should I use --dry-run?", context)).toBe(false);
+    expect(assertions.answerQualityMatches("Preview with --dry-run; you should use --force next.", context)).toBe(false);
   });
 });

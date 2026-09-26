@@ -142,5 +142,53 @@
       "selected_skill": "chezmoi-machine-config"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-ADV-MACH-001",
+    "name": "WSL machine data request routes to machine configuration",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "On WSL Ubuntu, how do I use .chezmoi.os and machine-specific data to skip one managed file?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-machine-config"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-AMB-MACH-TMPL-001",
+    "name": "Unresolved machine data or template request",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "A value must differ on my work laptop and appear inside a template, but I have not decided whether it is host data or template logic. Where should it go?"
+    },
+    "expected": {
+      "selected_skills": [
+        "chezmoi-machine-config",
+        "chezmoi-templating"
+      ],
+      "allow_clarification": true
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-QUAL-MACH-001",
+    "name": "Clarify the machine-specific decision boundary",
+    "eval_type": "answer_quality",
+    "target_skill": "chezmoi-machine-config",
+    "input": {
+      "user_prompt": "Each computer should behave differently, but I do not know whether the difference is based on operating system, hostname, or a value I choose. What should I edit?"
+    },
+    "expected": {
+      "answer_quality": {
+        "required_concepts": [
+          ".chezmoidata"
+        ],
+        "clarification": "required"
+      }
+    },
+    "token_budget": 650
   }
 ]

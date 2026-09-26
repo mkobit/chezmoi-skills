@@ -165,5 +165,18 @@
       "selected_skill": "chezmoi-scripts"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-ADV-SCR-001",
+    "name": "Named lifecycle script routes to scripts",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-scripts",
+    "input": {
+      "user_prompt": "How do I name and order a run_after_ script that formats files after chezmoi apply?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-scripts"
+    },
+    "token_budget": 450
   }
 ]

@@ -150,5 +150,35 @@
       ]
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-ADV-CFG-001",
+    "name": "Configuration hook wins over lifecycle script naming",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "How do I define a .post hook in chezmoi configuration to run a formatter after apply instead of creating a run_after_ script?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-configuration"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-AMB-CFG-SCR-001",
+    "name": "Unresolved hook or lifecycle script request",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-configuration",
+    "input": {
+      "user_prompt": "After chezmoi applies my files, I want a formatter to run. Should I use a configuration hook or a run_after_ script?"
+    },
+    "expected": {
+      "selected_skills": [
+        "chezmoi-configuration",
+        "chezmoi-scripts"
+      ],
+      "allow_clarification": true
+    },
+    "token_budget": 450
   }
 ]

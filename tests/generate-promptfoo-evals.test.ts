@@ -10,9 +10,9 @@ describe("generate-promptfoo-evals", () => {
     const summary = await generatePromptfooEvals({ outDir });
 
     expect(summary).toEqual({
-      total_cases: 98,
-      answer_cases: 43,
-      router_cases: 98,
+      total_cases: 109,
+      answer_cases: 46,
+      router_cases: 109,
       skills: [
         "chezmoi-cli-commands",
         "chezmoi-configuration",
@@ -31,8 +31,8 @@ describe("generate-promptfoo-evals", () => {
     const routerConfig = readFileSync(join(outDir, "promptfooconfig.router.generated.yaml"), "utf-8");
     const answerConfig = readFileSync("promptfooconfig.yaml", "utf-8");
 
-    expect(answerTests.match(/^  - description:/gm)).toHaveLength(43);
-    expect(routerTests.match(/^  - description:/gm)).toHaveLength(98);
+    expect(answerTests.match(/^  - description:/gm)).toHaveLength(46);
+    expect(routerTests.match(/^  - description:/gm)).toHaveLength(109);
     expect(routerTests).toContain('corpus_id: "TC-TRIG-001"');
     expect(routerTests).toContain('target_skill: "chezmoi-templating"');
     expect(answerTests).toContain("Apply the source state to the target directory");
@@ -41,6 +41,9 @@ describe("generate-promptfoo-evals", () => {
     expect(answerTests).not.toContain('reference_context: "file://');
     expect(routerConfig).toContain("tests: file://promptfoo-router-tests.generated.yaml");
     expect(routerTests).toContain("file://../scripts/eval-assertions.cjs:routerMatches");
+    expect(routerTests).toContain('selectedSkills: ["chezmoi-configuration","chezmoi-scripts"]');
+    expect(routerTests).toContain("allowClarification: true");
+    expect(answerTests).toContain("file://scripts/eval-assertions.cjs:answerQualityMatches");
     expect(answerConfig).toContain("tests: file://eval_results/promptfoo-answer-tests.generated.yaml");
     for (const skill of summary.skills) {
       expect(answerTests).toContain(`target_skill: "${skill}"`);

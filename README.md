@@ -68,6 +68,8 @@ Run the answer and routing benchmarks with `bun run eval` only when the required
 
 Live-evaluation results are not yet a verified compatibility signal and require review before they inform release decisions.
 
+Use the [live benchmark review workflow](docs/live-benchmark.md) before authorizing or accepting a credentialed run.
+
 ## Contributing and releases
 
 Keep skill entry points concise and move detailed material into linked `references/` files.

@@ -139,5 +139,42 @@
       "selected_skill": "chezmoi-externals"
     },
     "token_budget": 450
+  },
+  {
+    "id": "TC-ADV-EXT-001",
+    "name": "Templated external declaration routes to externals",
+    "eval_type": "skill_selection",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "How do I use .chezmoiexternal.yaml.tmpl to download a GitHub archive whose URL contains template variables?"
+    },
+    "expected": {
+      "selected_skill": "chezmoi-externals"
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-QUAL-EXT-001",
+    "name": "Verified external archive guidance",
+    "eval_type": "answer_quality",
+    "target_skill": "chezmoi-externals",
+    "input": {
+      "user_prompt": "Explain how to manage a downloaded release archive as a chezmoi external without silently trusting changed upstream content."
+    },
+    "expected": {
+      "answer_quality": {
+        "required_concepts": [
+          ".chezmoiexternal",
+          "sha256"
+        ],
+        "forbidden_claims": [
+          "you can skip checksum verification"
+        ],
+        "safety_expectations": [
+          "verify"
+        ]
+      }
+    },
+    "token_budget": 650
   }
 ]
