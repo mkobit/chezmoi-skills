@@ -62,13 +62,11 @@ Run unit tests with `mise run test`.
 
 Run all linters with `mise run lint`.
 
-Generate the Promptfoo suites and validate both configurations without provider calls with `bun run eval:validate`.
+Generate and validate the Promptfoo suites with `bun run eval:validate`; this path does not call providers.
 
-Run the answer and routing benchmarks with `bun run eval` only when the required model-provider credentials are configured.
+Credentialed evaluations are sparse, manual, and reviewed, and they are not routine continuous-integration or release checks.
 
-Live-evaluation results are not yet a verified compatibility signal and require review before they inform release decisions.
-
-Use the [live benchmark review workflow](docs/live-benchmark.md) before authorizing or accepting a credentialed run.
+See the [evaluation strategy and live benchmark review](docs/live-benchmark.md) for longitudinal result tracking, OpenAI smoke samples, Codex host checks, and full-matrix gates.
 
 ## Contributing and releases
 
