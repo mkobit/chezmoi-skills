@@ -22,14 +22,14 @@
   },
   "devDependencies": {
     "commander": "15.0.0",
-    "cspell": "^10.2.1",
-    "eslint": "^10.9.1",
+    "cspell": "^10.3.3",
+    "eslint": "^10.10.0",
     "eslint-plugin-jsonc": "^3.4.2",
     "eslint-plugin-yml": "^3.8.1",
     "gpt-tokenizer": "^4.0.0",
     "gray-matter": "4.0.3",
     "markdownlint-cli2": "0.23.2",
     "promptfoo": "0.123.1",
-    "zod": "4.5.4"
+    "zod": "4.6.5"
   }
 }
