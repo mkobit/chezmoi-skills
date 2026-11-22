@@ -32,6 +32,9 @@ jobs:
       - name: Check formatting
         run: bun run fmt:check
 
+      - name: Typecheck
+        run: bun run typecheck
+
       - name: Validate skills and claude configs
         run: bun run validate
 

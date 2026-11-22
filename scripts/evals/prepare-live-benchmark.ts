@@ -42,7 +42,7 @@ export interface LiveBenchmarkPreflight {
   total_planned_requests: number;
 }
 
-const sha256 = (content: string): string =>
+const sha256 = (content: string | Uint8Array): string =>
   createHash("sha256").update(content).digest("hex");
 
 const fileSha256 = (path: string): string => sha256(readFileSync(path));
@@ -80,8 +80,10 @@ const yamlValues = (content: string, key: string): string[] => {
   const values: string[] = [];
   const pattern = new RegExp(`^\\s*-\\s+${key}:\\s*(.+?)\\s*$`, "gm");
   for (const match of content.matchAll(pattern)) {
-    const value = match[1].trim();
-    values.push(value.replace(/^['"]|['"]$/g, ""));
+    const value = match[1]?.trim();
+    if (value) {
+      values.push(value.replace(/^['"]|['"]$/g, ""));
+    }
   }
   return values;
 };

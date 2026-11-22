@@ -79,7 +79,7 @@ const options = program.opts();
 const extractUserPromptText = (content: string): string => {
   let text = content;
   const requestMatch = text.match(/<USER_REQUEST>([\s\S]*?)<\/USER_REQUEST>/);
-  if (requestMatch) {
+  if (requestMatch?.[1] !== undefined) {
     text = requestMatch[1];
   }
   text = text.replace(
@@ -103,7 +103,7 @@ const extractChezmoiCommand = (step: TranscriptStep): string | null => {
       const cleanCmd = rawCmd.replace(/^"|"$/g, "").trim();
       if (cleanCmd.includes("chezmoi")) {
         const match = cleanCmd.match(/(chezmoi\s+[^\&\;\|]+)/);
-        if (match) {
+        if (match?.[1]) {
           return match[1].trim();
         }
       }
@@ -133,7 +133,7 @@ export const parseTranscript = (
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
-    if (step.type === "USER_INPUT" && step.content) {
+    if (step?.type === "USER_INPUT" && step.content) {
       const promptText = extractUserPromptText(step.content);
       if (!promptText || promptText.length < 5) continue;
       if (
@@ -144,8 +144,9 @@ export const parseTranscript = (
 
       let extractedCmd: string | null = null;
       for (let j = i + 1; j < Math.min(i + 5, steps.length); j++) {
-        if (steps[j].type === "USER_INPUT") break;
-        const cmd = extractChezmoiCommand(steps[j]);
+        const nextStep = steps[j];
+        if (!nextStep || nextStep.type === "USER_INPUT") break;
+        const cmd = extractChezmoiCommand(nextStep);
         if (cmd) {
           extractedCmd = cmd;
           break;

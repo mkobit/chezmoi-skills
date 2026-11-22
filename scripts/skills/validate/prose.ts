@@ -6,7 +6,7 @@ export const checkSingleSentencePerLine = (content: string): string[] => {
   let inCodeBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? "";
     const trimmed = line.trim();
 
     if (i === 0 && trimmed === "---") {

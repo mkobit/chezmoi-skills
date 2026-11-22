@@ -350,8 +350,10 @@ describe("generate-history-index", () => {
 
     const records = parseHistoryJsonl(jsonl);
     expect(records).toHaveLength(2);
-    expect(records[0].commit_sha).toBe("sha2222");
-    expect(records[1].commit_sha).toBe("sha1111");
+    const [firstRecord, secondRecord] = records;
+    if (!firstRecord || !secondRecord) throw new Error("Expected 2 records");
+    expect(firstRecord.commit_sha).toBe("sha2222");
+    expect(secondRecord.commit_sha).toBe("sha1111");
   });
 
   it("generates history html index containing summary metrics, SVG chart, and run links", () => {
