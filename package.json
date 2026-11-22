@@ -17,9 +17,11 @@
     "lint:md": "markdownlint-cli2",
     "lint:spelling": "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\"",
     "fmt": "bun fmt",
-    "fmt:check": "bun fmt --check"
+    "fmt:check": "bun fmt --check",
+    "typecheck": "bun check"
   },
   "devDependencies": {
+    "@types/bun": "^1.4.4",
     "commander": "15.1.0",
     "cspell": "^10.5.1",
     "gpt-tokenizer": "^4.1.2",

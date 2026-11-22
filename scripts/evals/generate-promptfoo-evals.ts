@@ -347,7 +347,13 @@ export const generatePromptfooEvals = async (
       testCase.eval_type === "answer_quality",
   );
   const answerTests = answerCases
-    .map((testCase) => answerTest(testCase, skills[testCase.target_skill]))
+    .map((testCase) => {
+      const skill = skills[testCase.target_skill];
+      if (!skill) {
+        throw new Error(`Missing skill source: ${testCase.target_skill}`);
+      }
+      return answerTest(testCase, skill);
+    })
     .join("\n\n");
   const routerTests = cases
     .map((testCase) => routerTest(testCase))

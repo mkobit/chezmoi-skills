@@ -42,7 +42,7 @@ export const checkInternalLinks = (
   let inCodeBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? "";
     const trimmed = line.trim();
 
     if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
@@ -58,6 +58,7 @@ export const checkInternalLinks = (
 
     while ((match = linkRegex.exec(line)) !== null) {
       const rawTarget = match[1];
+      if (!rawTarget) continue;
       if (
         rawTarget.startsWith("http://") ||
         rawTarget.startsWith("https://") ||

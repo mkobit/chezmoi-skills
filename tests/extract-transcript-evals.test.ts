@@ -26,12 +26,14 @@ describe("extract-transcript-evals", () => {
 
     const cases = parseTranscript(jsonl, "chezmoi-cli-commands", "TC-TEST");
     expect(cases).toHaveLength(1);
-    expect(cases[0].id).toBe("TC-TEST-001");
-    expect(cases[0].eval_type).toBe("command_correctness");
-    expect(cases[0].expected.exact_command).toBe(
+    const firstCase = cases[0];
+    if (!firstCase) throw new Error("Expected 1 test case");
+    expect(firstCase.id).toBe("TC-TEST-001");
+    expect(firstCase.eval_type).toBe("command_correctness");
+    expect(firstCase.expected.exact_command).toBe(
       "chezmoi diff --exclude scripts",
     );
-    expect(cases[0].expected.required_flags).toEqual(["--exclude"]);
+    expect(firstCase.expected.required_flags).toEqual(["--exclude"]);
   });
 
   it("extracts trigger_matching test case when prompt mentions chezmoi but no command is run", () => {
@@ -51,9 +53,11 @@ describe("extract-transcript-evals", () => {
 
     const cases = parseTranscript(jsonl, "chezmoi-cli-commands", "TC-TEST");
     expect(cases).toHaveLength(1);
-    expect(cases[0].id).toBe("TC-TEST-001");
-    expect(cases[0].eval_type).toBe("trigger_matching");
-    expect(cases[0].expected.should_trigger).toBe(true);
+    const firstCase = cases[0];
+    if (!firstCase) throw new Error("Expected 1 test case");
+    expect(firstCase.id).toBe("TC-TEST-001");
+    expect(firstCase.eval_type).toBe("trigger_matching");
+    expect(firstCase.expected.should_trigger).toBe(true);
   });
 
   it("ignores non-chezmoi user requests", () => {

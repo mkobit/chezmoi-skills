@@ -42,6 +42,10 @@ run = "bun fmt"
 description = "Check file formatting with bun fmt"
 run = "bun fmt --check"
 
+[tasks.typecheck]
+description = "Typecheck TypeScript files with bun check"
+run = "bun check"
+
 [tasks.lint]
 description = "Run all linters"
 depends = ["lint:md", "lint:spelling", "fmt:check"]

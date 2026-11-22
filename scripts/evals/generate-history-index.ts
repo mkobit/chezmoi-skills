@@ -95,7 +95,6 @@ export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
     .map((p, i) => {
       if (!p.release_tag) return "";
       const x = getX(i).toFixed(1);
-      const y = getY(p.pass_rate).toFixed(1);
       return `<line x1="${x}" y1="${marginTop}" x2="${x}" y2="${height - marginBottom}" stroke="#a855f7" stroke-dasharray="3,3" stroke-width="1.5" />
       <text x="${x}" y="${marginTop - 8}" fill="#c084fc" font-size="11" font-weight="700" text-anchor="middle">${p.release_tag}</text>`;
     })
@@ -151,11 +150,9 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
   const latestRun = records[0];
   const previousRun = records[1];
 
-  const latestPassRateVal = latestRun ? latestRun.pass_rate : 0;
   const latestPassRate = latestRun
     ? `${(latestRun.pass_rate * 100).toFixed(1)}%`
     : "N/A";
-  const latestDate = latestRun ? latestRun.timestamp.slice(0, 10) : "N/A";
 
   let deltaHtml = "";
   if (latestRun && previousRun) {
