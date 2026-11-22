@@ -1,4 +1,4 @@
-description: "Sets up Bun environment from .mise.toml and installs dependencies"
+description: "Sets up Bun environment from mise.toml and installs dependencies"
 runs:
   using: "composite"
   steps:
