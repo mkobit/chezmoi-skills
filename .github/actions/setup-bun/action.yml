@@ -1,12 +1,12 @@
-description: "Sets up Bun environment and installs dependencies"
+description: "Sets up Bun environment from .mise.toml and installs dependencies"
 runs:
   using: "composite"
   steps:
-    - name: Setup Bun
-      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+    - name: Setup mise and Bun
+      uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
       with:
-        bun-version: 1.4.4
-        cache: true
+        install: true
+        github_token: ${{ github.token }}
 
     - name: Install dependencies
       run: bun install --frozen-lockfile
