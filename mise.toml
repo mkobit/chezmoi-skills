@@ -34,10 +34,14 @@ run = "bun run markdownlint-cli2"
 description = "Lint spelling across markdown files"
 run = "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\""
 
-[tasks."lint:eslint"]
-description = "Lint JavaScript, TypeScript, and JSON files with ESLint"
-run = "bun run eslint ."
+[tasks.fmt]
+description = "Format files with bun fmt"
+run = "bun fmt"
+
+[tasks."fmt:check"]
+description = "Check file formatting with bun fmt"
+run = "bun fmt --check"
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:md", "lint:spelling", "lint:eslint"]
+depends = ["lint:md", "lint:spelling", "fmt:check"]

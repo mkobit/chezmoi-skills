@@ -62,13 +62,8 @@
     "expected": {
       "exact_command": "chezmoi execute-template --init --promptBool=useGpg=true \"{{ .useGpg }}\"",
       "command_regex": "^chezmoi execute-template --init --promptBool=useGpg=true \\\".*\\\"$",
-      "required_flags": [
-        "--init",
-        "--promptBool=useGpg=true"
-      ],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "required_flags": ["--init", "--promptBool=useGpg=true"],
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 500
   },
@@ -84,9 +79,7 @@
       "exact_command": "chezmoi execute-template \"{{ include \\\".chezmoitemplates/header\\\" }}\"",
       "command_regex": "^chezmoi execute-template \\\".*\\\"$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--purge"
-      ]
+      "forbidden_flags": ["--purge"]
     },
     "token_budget": 500
   },
@@ -127,13 +120,8 @@
     "expected": {
       "exact_command": "chezmoi execute-template --init --promptString=username=alice \"{{ .username }}\"",
       "command_regex": "^chezmoi execute-template --init --promptString=username=alice \\\".*\\\"$",
-      "required_flags": [
-        "--init",
-        "--promptString=username=alice"
-      ],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "required_flags": ["--init", "--promptString=username=alice"],
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 500
   },
@@ -149,9 +137,7 @@
       "exact_command": "chezmoi execute-template \"{{ joinPath .chezmoi.homeDir \\\".config\\\" }}\"",
       "command_regex": "^chezmoi execute-template \\\".*\\\"$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--purge"
-      ]
+      "forbidden_flags": ["--purge"]
     },
     "token_budget": 500
   },
@@ -167,9 +153,7 @@
       "exact_command": "chezmoi data",
       "command_regex": "^chezmoi data$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--apply"
-      ]
+      "forbidden_flags": ["--apply"]
     },
     "token_budget": 400
   }

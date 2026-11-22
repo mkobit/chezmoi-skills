@@ -63,9 +63,7 @@
       "exact_command": "chezmoi doctor",
       "command_regex": "^chezmoi doctor$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--apply"
-      ]
+      "forbidden_flags": ["--apply"]
     },
     "token_budget": 400
   },
@@ -81,9 +79,7 @@
       "exact_command": "chezmoi execute-template \"{{ .chezmoi.config }}\"",
       "command_regex": "^chezmoi execute-template \".*\"$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 500
   },
@@ -125,9 +121,7 @@
       "exact_command": "chezmoi source-path",
       "command_regex": "^chezmoi source-path$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--apply"
-      ]
+      "forbidden_flags": ["--apply"]
     },
     "token_budget": 400
   },
@@ -142,12 +136,8 @@
     "expected": {
       "exact_command": "chezmoi init --prompt",
       "command_regex": "^chezmoi init --prompt$",
-      "required_flags": [
-        "--prompt"
-      ],
-      "forbidden_flags": [
-        "--purge"
-      ]
+      "required_flags": ["--prompt"],
+      "forbidden_flags": ["--purge"]
     },
     "token_budget": 450
   },
@@ -173,10 +163,7 @@
       "user_prompt": "After chezmoi applies my files, I want a formatter to run. Should I use a configuration hook or a run_after_ script?"
     },
     "expected": {
-      "selected_skills": [
-        "chezmoi-configuration",
-        "chezmoi-scripts"
-      ],
+      "selected_skills": ["chezmoi-configuration", "chezmoi-scripts"],
       "allow_clarification": true
     },
     "token_budget": 450

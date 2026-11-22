@@ -88,9 +88,7 @@
     "expected": {
       "exact_command": "chezmoi apply --dry-run",
       "command_regex": "^chezmoi apply (?:--dry-run|-n|--verbose|-v|\\s)+$",
-      "required_flags": [
-        "--dry-run"
-      ]
+      "required_flags": ["--dry-run"]
     },
     "token_budget": 1200
   },
@@ -105,12 +103,8 @@
     "expected": {
       "exact_command": "chezmoi diff --exclude scripts",
       "command_regex": "^chezmoi diff --exclude scripts$",
-      "required_flags": [
-        "--exclude"
-      ],
-      "forbidden_flags": [
-        "--force"
-      ]
+      "required_flags": ["--exclude"],
+      "forbidden_flags": ["--force"]
     },
     "token_budget": 500
   },
@@ -125,12 +119,8 @@
     "expected": {
       "exact_command": "chezmoi add --encrypt ~/.ssh/id_rsa",
       "command_regex": "^chezmoi add --encrypt ~/.+$",
-      "required_flags": [
-        "--encrypt"
-      ],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "required_flags": ["--encrypt"],
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 500
   },
@@ -145,13 +135,8 @@
     "expected": {
       "exact_command": "chezmoi apply --dry-run",
       "command_regex": "^chezmoi apply --dry-run$",
-      "required_flags": [
-        "--dry-run"
-      ],
-      "forbidden_flags": [
-        "--force",
-        "-f"
-      ]
+      "required_flags": ["--dry-run"],
+      "forbidden_flags": ["--force", "-f"]
     },
     "token_budget": 500
   },
@@ -166,13 +151,8 @@
     "expected": {
       "exact_command": "chezmoi purge --dry-run",
       "command_regex": "^chezmoi purge --dry-run$",
-      "required_flags": [
-        "--dry-run"
-      ],
-      "forbidden_flags": [
-        "--force",
-        "-f"
-      ]
+      "required_flags": ["--dry-run"],
+      "forbidden_flags": ["--force", "-f"]
     },
     "token_budget": 500
   },
@@ -187,13 +167,8 @@
     "expected": {
       "exact_command": "chezmoi destroy --dry-run",
       "command_regex": "^chezmoi destroy --dry-run$",
-      "required_flags": [
-        "--dry-run"
-      ],
-      "forbidden_flags": [
-        "--force",
-        "-f"
-      ]
+      "required_flags": ["--dry-run"],
+      "forbidden_flags": ["--force", "-f"]
     },
     "token_budget": 500
   },
@@ -208,13 +183,8 @@
     "expected": {
       "exact_command": "chezmoi state reset --dry-run",
       "command_regex": "^chezmoi state reset --dry-run$",
-      "required_flags": [
-        "--dry-run"
-      ],
-      "forbidden_flags": [
-        "--force",
-        "-f"
-      ]
+      "required_flags": ["--dry-run"],
+      "forbidden_flags": ["--force", "-f"]
     },
     "token_budget": 500
   },
@@ -241,17 +211,10 @@
     },
     "expected": {
       "answer_quality": {
-        "required_concepts": [
-          "chezmoi diff",
-          "chezmoi apply --dry-run"
-        ],
-        "forbidden_claims": [
-          "you should use chezmoi apply --force"
-        ],
+        "required_concepts": ["chezmoi diff", "chezmoi apply --dry-run"],
+        "forbidden_claims": ["you should use chezmoi apply --force"],
         "clarification": "forbidden",
-        "safety_expectations": [
-          "review"
-        ]
+        "safety_expectations": ["review"]
       }
     },
     "token_budget": 650

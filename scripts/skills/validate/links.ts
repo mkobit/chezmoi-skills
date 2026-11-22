@@ -32,7 +32,10 @@ export const extractHeadings = (fileContent: string): Set<string> => {
   return slugs;
 };
 
-export const checkInternalLinks = (content: string, filePath: string): string[] => {
+export const checkInternalLinks = (
+  content: string,
+  filePath: string,
+): string[] => {
   const lines = content.split("\n");
   const errors: string[] = [];
 
@@ -72,16 +75,23 @@ export const checkInternalLinks = (content: string, filePath: string): string[] 
       if (targetPathWithoutAnchor) {
         targetFilePath = join(dirname(filePath), targetPathWithoutAnchor);
         if (!existsSync(targetFilePath)) {
-          errors.push(`Line ${i + 1}: Referenced link target "${rawTarget}" does not exist (${targetFilePath})`);
+          errors.push(
+            `Line ${i + 1}: Referenced link target "${rawTarget}" does not exist (${targetFilePath})`,
+          );
           continue;
         }
       }
 
       if (anchor) {
-        const targetContent = targetFilePath === filePath ? content : readFileSync(targetFilePath, "utf-8");
+        const targetContent =
+          targetFilePath === filePath
+            ? content
+            : readFileSync(targetFilePath, "utf-8");
         const slugs = extractHeadings(targetContent);
         if (!slugs.has(anchor.toLowerCase())) {
-          errors.push(`Line ${i + 1}: Referenced anchor "#${anchor}" not found in target file (${targetFilePath})`);
+          errors.push(
+            `Line ${i + 1}: Referenced anchor "#${anchor}" not found in target file (${targetFilePath})`,
+          );
         }
       }
     }

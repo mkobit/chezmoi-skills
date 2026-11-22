@@ -7,7 +7,8 @@ describe("extract-transcript-evals", () => {
       JSON.stringify({
         step_index: 0,
         type: "USER_INPUT",
-        content: "<USER_REQUEST>How do I view pending changes with chezmoi diff?</USER_REQUEST>",
+        content:
+          "<USER_REQUEST>How do I view pending changes with chezmoi diff?</USER_REQUEST>",
       }),
       JSON.stringify({
         step_index: 1,
@@ -27,7 +28,9 @@ describe("extract-transcript-evals", () => {
     expect(cases).toHaveLength(1);
     expect(cases[0].id).toBe("TC-TEST-001");
     expect(cases[0].eval_type).toBe("command_correctness");
-    expect(cases[0].expected.exact_command).toBe("chezmoi diff --exclude scripts");
+    expect(cases[0].expected.exact_command).toBe(
+      "chezmoi diff --exclude scripts",
+    );
     expect(cases[0].expected.required_flags).toEqual(["--exclude"]);
   });
 
@@ -36,7 +39,8 @@ describe("extract-transcript-evals", () => {
       JSON.stringify({
         step_index: 0,
         type: "USER_INPUT",
-        content: "<USER_REQUEST>What is the best way to organize chezmoi dotfiles?</USER_REQUEST>",
+        content:
+          "<USER_REQUEST>What is the best way to organize chezmoi dotfiles?</USER_REQUEST>",
       }),
       JSON.stringify({
         step_index: 1,

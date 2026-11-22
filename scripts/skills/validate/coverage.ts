@@ -5,7 +5,9 @@ import matter from "gray-matter";
 import type { ValidationResult } from "./types";
 import { getSkillsDirectories } from "./skills";
 
-export const validateContractCoverage = async (claudePluginDir: string = ".claude-plugin"): Promise<ValidationResult[]> => {
+export const validateContractCoverage = async (
+  claudePluginDir: string = ".claude-plugin",
+): Promise<ValidationResult[]> => {
   const results: ValidationResult[] = [];
   const evalsDir = "tests/evals";
 
@@ -30,16 +32,36 @@ export const validateContractCoverage = async (claudePluginDir: string = ".claud
   }
 
   if (knownSkillNames.size === 0) {
-    return [{ valid: false, name: "contract test coverage", details: "No skills found to validate coverage against" }];
+    return [
+      {
+        valid: false,
+        name: "contract test coverage",
+        details: "No skills found to validate coverage against",
+      },
+    ];
   }
 
   if (!existsSync(evalsDir)) {
-    return [{ valid: false, name: "contract test coverage", details: `Evals directory "${evalsDir}" not found` }];
+    return [
+      {
+        valid: false,
+        name: "contract test coverage",
+        details: `Evals directory "${evalsDir}" not found`,
+      },
+    ];
   }
 
-  const evalFiles = (await readdir(evalsDir).catch(() => [])).filter((f) => f.endsWith(".json"));
+  const evalFiles = (await readdir(evalsDir).catch(() => [])).filter((f) =>
+    f.endsWith(".json"),
+  );
   if (evalFiles.length === 0) {
-    return [{ valid: false, name: "contract test coverage", details: `No eval test files found in "${evalsDir}"` }];
+    return [
+      {
+        valid: false,
+        name: "contract test coverage",
+        details: `No eval test files found in "${evalsDir}"`,
+      },
+    ];
   }
 
   const testedSkillCounts = new Map<string, number>();
@@ -64,18 +86,27 @@ export const validateContractCoverage = async (claudePluginDir: string = ".claud
         }
         if (tc.target_skill) {
           if (knownSkillNames.has(tc.target_skill)) {
-            testedSkillCounts.set(tc.target_skill, (testedSkillCounts.get(tc.target_skill) || 0) + 1);
+            testedSkillCounts.set(
+              tc.target_skill,
+              (testedSkillCounts.get(tc.target_skill) || 0) + 1,
+            );
           } else {
             orphanedSkills.add(tc.target_skill);
           }
         }
       }
     } catch (e) {
-      results.push({ valid: false, name: `evals file format (${file})`, details: `Invalid JSON format: ${String(e)}` });
+      results.push({
+        valid: false,
+        name: `evals file format (${file})`,
+        details: `Invalid JSON format: ${String(e)}`,
+      });
     }
   }
 
-  const untestedSkills = Array.from(knownSkillNames).filter((s) => !testedSkillCounts.has(s) || testedSkillCounts.get(s)! === 0);
+  const untestedSkills = Array.from(knownSkillNames).filter(
+    (s) => !testedSkillCounts.has(s) || testedSkillCounts.get(s)! === 0,
+  );
 
   if (untestedSkills.length > 0) {
     results.push({

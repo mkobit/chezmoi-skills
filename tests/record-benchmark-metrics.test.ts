@@ -2,8 +2,16 @@ import { describe, expect, it } from "bun:test";
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import { extractMetrics, recordMetrics } from "../scripts/evals/record-benchmark-metrics";
-import { parseHistoryJsonl, generateHistoryHtml, generateHistoryIndex, generateSvgChart } from "../scripts/evals/generate-history-index";
+import {
+  extractMetrics,
+  recordMetrics,
+} from "../scripts/evals/record-benchmark-metrics";
+import {
+  parseHistoryJsonl,
+  generateHistoryHtml,
+  generateHistoryIndex,
+  generateSvgChart,
+} from "../scripts/evals/generate-history-index";
 
 describe("record-benchmark-metrics", () => {
   it("extracts metrics from benchmark_run structure", () => {
@@ -36,13 +44,26 @@ describe("record-benchmark-metrics", () => {
   it("calculates metrics from results array fallback", () => {
     const jsonContent = JSON.stringify({
       results: [
-        { status: "PASS", tokens: { prompt_tokens: 100, completion_tokens: 10 } },
-        { status: "FAIL", tokens: { prompt_tokens: 200, completion_tokens: 20 } },
-        { status: "PASS", tokens: { prompt_tokens: 150, completion_tokens: 15 } },
+        {
+          status: "PASS",
+          tokens: { prompt_tokens: 100, completion_tokens: 10 },
+        },
+        {
+          status: "FAIL",
+          tokens: { prompt_tokens: 200, completion_tokens: 20 },
+        },
+        {
+          status: "PASS",
+          tokens: { prompt_tokens: 150, completion_tokens: 15 },
+        },
       ],
     });
 
-    const record = extractMetrics(jsonContent, "123456789", "2026-08-07T12:00:00.000Z");
+    const record = extractMetrics(
+      jsonContent,
+      "123456789",
+      "2026-08-07T12:00:00.000Z",
+    );
     expect(record.timestamp).toBe("2026-08-07T12:00:00.000Z");
     expect(record.commit_sha).toBe("1234567");
     expect(record.total_tests).toBe(3);
@@ -78,7 +99,9 @@ describe("record-benchmark-metrics", () => {
           {
             success: true,
             provider: { id: "google:gemini-3.8-flash" },
-            prompt: { label: "selected skill and reference (knowledge context)" },
+            prompt: {
+              label: "selected skill and reference (knowledge context)",
+            },
             tokenUsage: { prompt: 303, completion: 33 },
             testCase: { metadata: { target_skill: "chezmoi-templating" } },
           },
@@ -101,7 +124,11 @@ describe("record-benchmark-metrics", () => {
       failed: 1,
       pass_rate: 0.6667,
     });
-    expect(record.provider_surface_metrics?.["google:gemini-3.8-flash"]?.["baseline (no skill)"]).toEqual({
+    expect(
+      record.provider_surface_metrics?.["google:gemini-3.8-flash"]?.[
+        "baseline (no skill)"
+      ],
+    ).toEqual({
       total_tests: 1,
       passed: 1,
       failed: 0,
@@ -125,12 +152,14 @@ describe("record-benchmark-metrics", () => {
       failed: 0,
       pass_rate: 1,
     });
-    expect(record.surface_metrics?.["skill catalog (routing context)"]).toEqual({
-      total_tests: 1,
-      passed: 0,
-      failed: 1,
-      pass_rate: 0,
-    });
+    expect(record.surface_metrics?.["skill catalog (routing context)"]).toEqual(
+      {
+        total_tests: 1,
+        passed: 0,
+        failed: 1,
+        pass_rate: 0,
+      },
+    );
   });
 
   it("extracts models, skill metrics, release tag, and branch metadata", () => {
@@ -160,17 +189,28 @@ describe("record-benchmark-metrics", () => {
       ],
     });
 
-    const record = extractMetrics(jsonContent, "123456789", "2026-08-07T12:00:00.000Z", {
-      releaseTag: "v0.1.0",
-      branch: "main",
-      triggerEvent: "release",
-    });
+    const record = extractMetrics(
+      jsonContent,
+      "123456789",
+      "2026-08-07T12:00:00.000Z",
+      {
+        releaseTag: "v0.1.0",
+        branch: "main",
+        triggerEvent: "release",
+      },
+    );
 
     expect(record.release_tag).toBe("v0.1.0");
     expect(record.branch).toBe("main");
     expect(record.trigger_event).toBe("release");
-    expect(record.models).toEqual(["google:gemini-3.5-flash", "anthropic:claude-5-sonnet"]);
-    expect(record.configured_models).toEqual(["google:gemini-3.5-flash", "anthropic:claude-5-sonnet"]);
+    expect(record.models).toEqual([
+      "google:gemini-3.5-flash",
+      "anthropic:claude-5-sonnet",
+    ]);
+    expect(record.configured_models).toEqual([
+      "google:gemini-3.5-flash",
+      "anthropic:claude-5-sonnet",
+    ]);
     expect(record.skill_metrics?.["chezmoi-cli-commands"]).toEqual({
       total_tests: 2,
       passed: 1,
@@ -218,11 +258,18 @@ describe("record-benchmark-metrics", () => {
     });
 
     expect(record.run_dir).toBe("runs/2026-08-07T10-00-00Z_fedcba9");
-    expect(existsSync(join(tempDir, record.run_dir, "results.json"))).toBe(true);
+    expect(existsSync(join(tempDir, record.run_dir, "results.json"))).toBe(
+      true,
+    );
     expect(existsSync(join(tempDir, record.run_dir, "index.html"))).toBe(true);
-    expect(existsSync(join(tempDir, record.run_dir, "promptfoo.db"))).toBe(true);
+    expect(existsSync(join(tempDir, record.run_dir, "promptfoo.db"))).toBe(
+      true,
+    );
 
-    const historyContent = readFileSync(join(tempDir, "history.jsonl"), "utf-8");
+    const historyContent = readFileSync(
+      join(tempDir, "history.jsonl"),
+      "utf-8",
+    );
     expect(historyContent).toContain('"commit_sha":"fedcba9"');
   });
 
@@ -240,7 +287,7 @@ describe("record-benchmark-metrics", () => {
           timestamp: "2026-09-26T10:00:00.000Z",
           results: [{ success: true, prompt: { label: "baseline" } }],
         },
-      })
+      }),
     );
     writeFileSync(
       routerResultsFile,
@@ -249,7 +296,7 @@ describe("record-benchmark-metrics", () => {
           timestamp: "2026-09-26T10:00:00.000Z",
           results: [{ success: false }],
         },
-      })
+      }),
     );
     writeFileSync(htmlFile, "answer");
     writeFileSync(routerHtmlFile, "router");
@@ -395,7 +442,7 @@ describe("generate-history-index", () => {
         total_prompt_tokens: 500,
         total_completion_tokens: 50,
         run_dir: "runs/2026-08-07_sha3333",
-      }) + "\n"
+      }) + "\n",
     );
 
     const outputPath = generateHistoryIndex(tempDir);

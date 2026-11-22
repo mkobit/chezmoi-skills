@@ -10,23 +10,38 @@ import { checkInternalLinks } from "./links";
 
 export const skillSchema = z.object({
   name: z.string().max(64, "name must be 64 characters or less"),
-  description: z.string().max(1024, "description must be 1024 characters or less"),
+  description: z
+    .string()
+    .max(1024, "description must be 1024 characters or less"),
 });
 
-export const codexSkillMetadataSchema = z.object({
-  interface: z.object({
-    display_name: z.string().trim().min(1, "interface.display_name must be a non-empty string"),
-  }).passthrough(),
-}).passthrough();
+export const codexSkillMetadataSchema = z
+  .object({
+    interface: z
+      .object({
+        display_name: z
+          .string()
+          .trim()
+          .min(1, "interface.display_name must be a non-empty string"),
+      })
+      .passthrough(),
+  })
+  .passthrough();
 
-export const getSkillsDirectories = async (claudePluginDir: string = ".claude-plugin"): Promise<string[]> => {
+export const getSkillsDirectories = async (
+  claudePluginDir: string = ".claude-plugin",
+): Promise<string[]> => {
   const marketplaceJsonPath = join(claudePluginDir, "marketplace.json");
   if (!existsSync(marketplaceJsonPath)) {
-    console.error(`Error: ${marketplaceJsonPath} not found. Cannot determine skills directories.`);
+    console.error(
+      `Error: ${marketplaceJsonPath} not found. Cannot determine skills directories.`,
+    );
     return [];
   }
 
-  const contentResult = await readFile(marketplaceJsonPath, "utf-8").catch(() => null);
+  const contentResult = await readFile(marketplaceJsonPath, "utf-8").catch(
+    () => null,
+  );
   if (!contentResult) {
     console.error(`Error reading ${marketplaceJsonPath}`);
     return [];
@@ -40,9 +55,14 @@ export const getSkillsDirectories = async (claudePluginDir: string = ".claude-pl
     return [];
   }
 
-  const parsedResult = z.object({
-    plugins: z.array(z.object({ source: z.string().optional() }).passthrough()),
-  }).passthrough().safeParse(parsedJson);
+  const parsedResult = z
+    .object({
+      plugins: z.array(
+        z.object({ source: z.string().optional() }).passthrough(),
+      ),
+    })
+    .passthrough()
+    .safeParse(parsedJson);
 
   if (!parsedResult.success) {
     console.error(`Error: Invalid plugins array in ${marketplaceJsonPath}`);
@@ -56,7 +76,9 @@ export const getSkillsDirectories = async (claudePluginDir: string = ".claude-pl
 };
 
 export const getMarkdownFiles = async (dirPath: string): Promise<string[]> => {
-  const entries = await readdir(dirPath, { withFileTypes: true }).catch(() => []);
+  const entries = await readdir(dirPath, { withFileTypes: true }).catch(
+    () => [],
+  );
   const filesPromises = entries.map(async (entry) => {
     const fullPath = join(dirPath, entry.name);
     if (entry.isDirectory()) {
@@ -70,7 +92,10 @@ export const getMarkdownFiles = async (dirPath: string): Promise<string[]> => {
   return results.flat();
 };
 
-export const validateSkillDir = async (skillsDir: string, dir: string): Promise<ValidationResult[]> => {
+export const validateSkillDir = async (
+  skillsDir: string,
+  dir: string,
+): Promise<ValidationResult[]> => {
   const results: ValidationResult[] = [];
   const skillMdPath = join(skillsDir, dir, "SKILL.md");
   if (!existsSync(skillMdPath)) {
@@ -86,29 +111,49 @@ export const validateSkillDir = async (skillsDir: string, dir: string): Promise<
   const parsed = skillSchema.safeParse(data);
 
   if (!parsed.success) {
-    results.push({ valid: false, name: `${dir}/SKILL.md frontmatter`, details: parsed.error.issues });
+    results.push({
+      valid: false,
+      name: `${dir}/SKILL.md frontmatter`,
+      details: parsed.error.issues,
+    });
   } else {
     results.push({ valid: true, name: `${dir}/SKILL.md frontmatter` });
   }
 
   const openaiYamlPath = join(skillsDir, dir, "agents", "openai.yaml");
   if (!existsSync(openaiYamlPath)) {
-    results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: "Missing agents/openai.yaml" });
+    results.push({
+      valid: false,
+      name: `${dir}/agents/openai.yaml`,
+      details: "Missing agents/openai.yaml",
+    });
   } else {
     const yamlContent = await readFile(openaiYamlPath, "utf-8").catch((e) => e);
     if (yamlContent instanceof Error) {
-      results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: String(yamlContent) });
+      results.push({
+        valid: false,
+        name: `${dir}/agents/openai.yaml`,
+        details: String(yamlContent),
+      });
     } else {
       try {
         const parsedYaml = Bun.YAML.parse(yamlContent);
         const codexParsed = codexSkillMetadataSchema.safeParse(parsedYaml);
         if (!codexParsed.success) {
-          results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: codexParsed.error.issues });
+          results.push({
+            valid: false,
+            name: `${dir}/agents/openai.yaml`,
+            details: codexParsed.error.issues,
+          });
         } else {
           results.push({ valid: true, name: `${dir}/agents/openai.yaml` });
         }
       } catch (e) {
-        results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: String(e) });
+        results.push({
+          valid: false,
+          name: `${dir}/agents/openai.yaml`,
+          details: String(e),
+        });
       }
     }
   }
@@ -119,20 +164,32 @@ export const validateSkillDir = async (skillsDir: string, dir: string): Promise<
     const relPath = file.substring(skillsDir.length + 1);
     const fileContent = await readFile(file, "utf-8").catch(() => null);
     if (fileContent === null) {
-      results.push({ valid: false, name: relPath, details: "Failed to read file" });
+      results.push({
+        valid: false,
+        name: relPath,
+        details: "Failed to read file",
+      });
       continue;
     }
 
     const proseErrors = checkSingleSentencePerLine(fileContent);
     if (proseErrors.length > 0) {
-      results.push({ valid: false, name: `${relPath} prose rule`, details: proseErrors.join("; ") });
+      results.push({
+        valid: false,
+        name: `${relPath} prose rule`,
+        details: proseErrors.join("; "),
+      });
     } else {
       results.push({ valid: true, name: `${relPath} prose rule` });
     }
 
     const linkErrors = checkInternalLinks(fileContent, file);
     if (linkErrors.length > 0) {
-      results.push({ valid: false, name: `${relPath} internal links`, details: linkErrors.join("; ") });
+      results.push({
+        valid: false,
+        name: `${relPath} internal links`,
+        details: linkErrors.join("; "),
+      });
     } else {
       results.push({ valid: true, name: `${relPath} internal links` });
     }
@@ -144,21 +201,42 @@ export const validateSkillDir = async (skillsDir: string, dir: string): Promise<
     if (isSkillMd) {
       const descTokens = encode(data.description || "").length;
       if (descTokens > 100) {
-        results.push({ valid: false, name: `${relPath} description token budget`, details: `Description token count (${descTokens}) exceeds max budget of 100 tokens` });
+        results.push({
+          valid: false,
+          name: `${relPath} description token budget`,
+          details: `Description token count (${descTokens}) exceeds max budget of 100 tokens`,
+        });
       } else {
-        results.push({ valid: true, name: `${relPath} description token budget (${descTokens} <= 100)` });
+        results.push({
+          valid: true,
+          name: `${relPath} description token budget (${descTokens} <= 100)`,
+        });
       }
 
       if (bodyTokens > 600) {
-        results.push({ valid: false, name: `${relPath} body token budget`, details: `SKILL.md body token count (${bodyTokens}) exceeds max budget of 600 tokens` });
+        results.push({
+          valid: false,
+          name: `${relPath} body token budget`,
+          details: `SKILL.md body token count (${bodyTokens}) exceeds max budget of 600 tokens`,
+        });
       } else {
-        results.push({ valid: true, name: `${relPath} body token budget (${bodyTokens} <= 600)` });
+        results.push({
+          valid: true,
+          name: `${relPath} body token budget (${bodyTokens} <= 600)`,
+        });
       }
     } else {
       if (bodyTokens > 1500) {
-        results.push({ valid: false, name: `${relPath} L3 reference token budget`, details: `L3 reference file token count (${bodyTokens}) exceeds max budget of 1500 tokens` });
+        results.push({
+          valid: false,
+          name: `${relPath} L3 reference token budget`,
+          details: `L3 reference file token count (${bodyTokens}) exceeds max budget of 1500 tokens`,
+        });
       } else {
-        results.push({ valid: true, name: `${relPath} L3 reference token budget (${bodyTokens} <= 1500)` });
+        results.push({
+          valid: true,
+          name: `${relPath} L3 reference token budget (${bodyTokens} <= 1500)`,
+        });
       }
     }
   }
@@ -166,32 +244,53 @@ export const validateSkillDir = async (skillsDir: string, dir: string): Promise<
   return results;
 };
 
-export const validateSkills = async (claudePluginDir: string = ".claude-plugin"): Promise<ValidationResult[]> => {
+export const validateSkills = async (
+  claudePluginDir: string = ".claude-plugin",
+): Promise<ValidationResult[]> => {
   const allSkillsDirs = await getSkillsDirectories(claudePluginDir);
   if (allSkillsDirs.length === 0) {
-    return [{ valid: false, name: "Skills Resolution", details: "Failed to determine any skills directories from plugin config" }];
+    return [
+      {
+        valid: false,
+        name: "Skills Resolution",
+        details:
+          "Failed to determine any skills directories from plugin config",
+      },
+    ];
   }
 
   const allResultsPromises = allSkillsDirs.map(async (skillsDir) => {
     if (!existsSync(skillsDir)) {
-      return [{ valid: false, name: skillsDir, details: "Directory not found" }];
+      return [
+        { valid: false, name: skillsDir, details: "Directory not found" },
+      ];
     }
 
     console.log(`Validating skills directory (${skillsDir})...`);
 
     const files = await readdir(skillsDir).catch(() => []);
     const dirsPromises = files.map(async (file) => {
-      const isDir = await stat(join(skillsDir, file)).then((s) => s.isDirectory()).catch(() => false);
+      const isDir = await stat(join(skillsDir, file))
+        .then((s) => s.isDirectory())
+        .catch(() => false);
       return isDir ? file : null;
     });
 
     const dirs = (await Promise.all(dirsPromises)).filter(Boolean) as string[];
 
     if (dirs.length === 0) {
-      return [{ valid: false, name: skillsDir, details: "No skills found in directory" }];
+      return [
+        {
+          valid: false,
+          name: skillsDir,
+          details: "No skills found in directory",
+        },
+      ];
     }
 
-    const dirResultsPromises = dirs.map((dir) => validateSkillDir(skillsDir, dir));
+    const dirResultsPromises = dirs.map((dir) =>
+      validateSkillDir(skillsDir, dir),
+    );
     const nestedResults = await Promise.all(dirResultsPromises);
     return nestedResults.flat();
   });

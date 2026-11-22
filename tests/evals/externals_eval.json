@@ -62,9 +62,7 @@
     "expected": {
       "exact_command": "chezmoi apply --refresh-externals",
       "command_regex": "^chezmoi apply (?:--refresh-externals|-R|\\s)+$",
-      "required_flags": [
-        "--refresh-externals"
-      ]
+      "required_flags": ["--refresh-externals"]
     },
     "token_budget": 500
   },
@@ -79,12 +77,8 @@
     "expected": {
       "exact_command": "chezmoi managed --include externals",
       "command_regex": "^chezmoi managed --include externals$",
-      "required_flags": [
-        "--include"
-      ],
-      "forbidden_flags": [
-        "--purge"
-      ]
+      "required_flags": ["--include"],
+      "forbidden_flags": ["--purge"]
     },
     "token_budget": 500
   },
@@ -163,16 +157,9 @@
     },
     "expected": {
       "answer_quality": {
-        "required_concepts": [
-          ".chezmoiexternal",
-          "sha256"
-        ],
-        "forbidden_claims": [
-          "you can skip checksum verification"
-        ],
-        "safety_expectations": [
-          "verify"
-        ]
+        "required_concepts": [".chezmoiexternal", "sha256"],
+        "forbidden_claims": ["you can skip checksum verification"],
+        "safety_expectations": ["verify"]
       }
     },
     "token_budget": 650

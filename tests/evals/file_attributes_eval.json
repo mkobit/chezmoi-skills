@@ -78,9 +78,7 @@
       "exact_command": "exact_private_dot_config",
       "command_regex": "^exact_private_dot_config$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--force"
-      ]
+      "forbidden_flags": ["--force"]
     },
     "token_budget": 400
   },
@@ -96,9 +94,7 @@
       "exact_command": "empty_dot_hushlogin",
       "command_regex": "^empty_dot_hushlogin$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 400
   },

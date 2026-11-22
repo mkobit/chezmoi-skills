@@ -62,12 +62,8 @@
     "expected": {
       "exact_command": "chezmoi state delete-bucket --bucket=scriptState",
       "command_regex": "^chezmoi state delete-bucket --bucket=scriptState$",
-      "required_flags": [
-        "--bucket=scriptState"
-      ],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "required_flags": ["--bucket=scriptState"],
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 500
   },
@@ -83,9 +79,7 @@
       "exact_command": "run_onchange_after_00_install_packages.sh.tmpl",
       "command_regex": "^run_onchange_after_[0-9]+_.*\\.sh\\.tmpl$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--force"
-      ]
+      "forbidden_flags": ["--force"]
     },
     "token_budget": 400
   },
@@ -100,9 +94,7 @@
     "expected": {
       "exact_command": "chezmoi apply --include=scripts",
       "command_regex": "^chezmoi apply --include=scripts$",
-      "required_flags": [
-        "--include=scripts"
-      ]
+      "required_flags": ["--include=scripts"]
     },
     "token_budget": 500
   },
@@ -117,9 +109,7 @@
     "expected": {
       "exact_command": "chezmoi apply --exclude=scripts",
       "command_regex": "^chezmoi apply --exclude=scripts$",
-      "required_flags": [
-        "--exclude=scripts"
-      ]
+      "required_flags": ["--exclude=scripts"]
     },
     "token_budget": 500
   },
@@ -134,9 +124,7 @@
     "expected": {
       "exact_command": "chezmoi state delete-bucket --bucket=entryState",
       "command_regex": "^chezmoi state delete-bucket --bucket=entryState$",
-      "required_flags": [
-        "--bucket=entryState"
-      ]
+      "required_flags": ["--bucket=entryState"]
     },
     "token_budget": 500
   },
