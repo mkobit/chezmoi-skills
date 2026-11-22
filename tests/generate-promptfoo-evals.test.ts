@@ -10,9 +10,9 @@ describe("generate-promptfoo-evals", () => {
     const summary = await generatePromptfooEvals({ outDir });
 
     expect(summary).toEqual({
-      total_cases: 109,
-      answer_cases: 46,
-      router_cases: 109,
+      total_cases: 111,
+      answer_cases: 48,
+      router_cases: 111,
       skills: [
         "chezmoi-cli-commands",
         "chezmoi-configuration",
@@ -40,8 +40,8 @@ describe("generate-promptfoo-evals", () => {
     );
     const answerConfig = readFileSync("promptfooconfig.yaml", "utf-8");
 
-    expect(answerTests.match(/^  - description:/gm)).toHaveLength(46);
-    expect(routerTests.match(/^  - description:/gm)).toHaveLength(109);
+    expect(answerTests.match(/^  - description:/gm)).toHaveLength(48);
+    expect(routerTests.match(/^  - description:/gm)).toHaveLength(111);
     expect(routerTests).toContain('corpus_id: "TC-TRIG-001"');
     expect(routerTests).toContain('target_skill: "chezmoi-templating"');
     expect(answerTests).toContain(

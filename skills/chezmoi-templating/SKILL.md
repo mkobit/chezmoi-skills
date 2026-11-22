@@ -30,6 +30,7 @@ The `.tmpl` extension is stripped from the final target path.
 - [sprig-functions.md](references/sprig-functions.md): Sprig functions and chezmoi-specific functions (`output`, `include`, `joinPath`, `lookPath`).
 - [prompt-functions.md](references/prompt-functions.md): Interactive prompt functions for config templates (`promptString`, `promptBool`, `promptInt`, `promptChoice`).
 - [shared-template-fragments.md](references/shared-template-fragments.md): Reusable template components stored under `.chezmoitemplates/`.
+- [template-readability.md](references/template-readability.md): Readability heuristics for complex boolean chains, directional whitespace trimming, short comments, and multi-stage pipelines.
 
 ## Related skills
 

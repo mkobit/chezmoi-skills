@@ -156,5 +156,36 @@
       "forbidden_flags": ["--apply"]
     },
     "token_budget": 400
+  },
+  {
+    "id": "TC-TPL-ANS-001",
+    "name": "Template readability refactoring with variable extraction, whitespace trimming, and comment",
+    "eval_type": "answer_quality",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "Refactor this nested chezmoi template condition for readability, directional whitespace trimming, and a short comment explaining why:\n{{- if and (or (eq .head \"sbx\") (hasPrefix \"sbx \" .head)) (has .action (list \"allow\" \"prompt\" \"deny\")) -}}\necho \"matched\"\n{{- end -}}"
+    },
+    "expected": {
+      "answer_quality": {
+        "required_concepts": [":=", "{{-", "/*"]
+      }
+    },
+    "token_budget": 450
+  },
+  {
+    "id": "TC-TPL-ANS-002",
+    "name": "Template readability restraint on single-condition check",
+    "eval_type": "answer_quality",
+    "target_skill": "chezmoi-templating",
+    "input": {
+      "user_prompt": "Should I extract intermediate variables and comments for this single-condition chezmoi template check for readability and whitespace trimming?\n{{ if eq .chezmoi.os \"darwin\" }}\necho \"macOS\"\n{{ end }}"
+    },
+    "expected": {
+      "answer_quality": {
+        "required_concepts": ["inline"],
+        "forbidden_claims": ["you must extract", "always extract"]
+      }
+    },
+    "token_budget": 350
   }
 ]

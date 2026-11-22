@@ -30,3 +30,4 @@ Special control files at the root of the source state configure scope, deletion,
 - Consult `chezmoi-cli-commands` for `chezmoi add`, `chezmoi forget`, and `chezmoi destroy`.
 - Consult `chezmoi-externals` for external file, archive, and git repository imports.
 - Consult `chezmoi-secrets-management` for `encrypted_` prefix workflows.
+- Consult `chezmoi-templating` for `modify_` template syntax and readability.
