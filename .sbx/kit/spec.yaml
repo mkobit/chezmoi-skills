@@ -28,4 +28,4 @@ setup:
       description: "Install mise into /usr/local/bin and configure shell paths"
     - command: "mise settings set paranoid false && mise settings set yes true && mise install && mise reshim"
       user: "1000"
-      description: "Install configured tools from .mise.toml for agent"
+      description: "Install configured tools from mise.toml for agent"
