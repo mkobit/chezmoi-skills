@@ -13,6 +13,12 @@ export const skillSchema = z.object({
   description: z.string().max(1024, "description must be 1024 characters or less"),
 });
 
+export const codexSkillMetadataSchema = z.object({
+  interface: z.object({
+    display_name: z.string().trim().min(1, "interface.display_name must be a non-empty string"),
+  }).passthrough(),
+}).passthrough();
+
 export const getSkillsDirectories = async (claudePluginDir: string = ".claude-plugin"): Promise<string[]> => {
   const marketplaceJsonPath = join(claudePluginDir, "marketplace.json");
   if (!existsSync(marketplaceJsonPath)) {
@@ -83,6 +89,28 @@ export const validateSkillDir = async (skillsDir: string, dir: string): Promise<
     results.push({ valid: false, name: `${dir}/SKILL.md frontmatter`, details: parsed.error.issues });
   } else {
     results.push({ valid: true, name: `${dir}/SKILL.md frontmatter` });
+  }
+
+  const openaiYamlPath = join(skillsDir, dir, "agents", "openai.yaml");
+  if (!existsSync(openaiYamlPath)) {
+    results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: "Missing agents/openai.yaml" });
+  } else {
+    const yamlContent = await readFile(openaiYamlPath, "utf-8").catch((e) => e);
+    if (yamlContent instanceof Error) {
+      results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: String(yamlContent) });
+    } else {
+      try {
+        const parsedYaml = Bun.YAML.parse(yamlContent);
+        const codexParsed = codexSkillMetadataSchema.safeParse(parsedYaml);
+        if (!codexParsed.success) {
+          results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: codexParsed.error.issues });
+        } else {
+          results.push({ valid: true, name: `${dir}/agents/openai.yaml` });
+        }
+      } catch (e) {
+        results.push({ valid: false, name: `${dir}/agents/openai.yaml`, details: String(e) });
+      }
+    }
   }
 
   const mdFiles = await getMarkdownFiles(join(skillsDir, dir));
