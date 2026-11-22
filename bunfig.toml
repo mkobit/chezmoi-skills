@@ -1,0 +1,9 @@
+[fmt]
+ignorePatterns = [
+  "**/*.md",
+  "**/*.mdx",
+  "**/bun.lock",
+  "**/mise.lock",
+  "**/eval_results/**",
+  "**/.worktrees/**",
+]

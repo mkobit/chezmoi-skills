@@ -16,16 +16,12 @@
     "generate:history": "bun run scripts/evals/generate-history-index.ts",
     "lint:md": "markdownlint-cli2",
     "lint:spelling": "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\"",
-    "lint:eslint": "eslint .",
-    "lint:json": "eslint \"**/*.json\" \"**/*.jsonc\"",
-    "lint:yaml": "eslint \"**/*.yaml\" \"**/*.yml\""
+    "fmt": "bun fmt",
+    "fmt:check": "bun fmt --check"
   },
   "devDependencies": {
     "commander": "15.1.0",
     "cspell": "^10.5.1",
-    "eslint": "^10.15.0",
-    "eslint-plugin-jsonc": "^3.4.2",
-    "eslint-plugin-yml": "^3.10.0",
     "gpt-tokenizer": "^4.1.2",
     "gray-matter": "4.0.3",
     "markdownlint-cli2": "0.24.1",
