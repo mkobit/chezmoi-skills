@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-const assertions = require("../scripts/eval-assertions.cjs");
+const assertions = require("../scripts/evals/eval-assertions.cjs");
 
 describe("Promptfoo assertions", () => {
   it("matches commands in plain text, code spans, and fenced blocks", () => {

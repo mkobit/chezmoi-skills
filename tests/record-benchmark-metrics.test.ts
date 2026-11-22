@@ -2,8 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import { extractMetrics, recordMetrics } from "../scripts/record-benchmark-metrics";
-import { parseHistoryJsonl, generateHistoryHtml, generateHistoryIndex, generateSvgChart } from "../scripts/generate-history-index";
+import { extractMetrics, recordMetrics } from "../scripts/evals/record-benchmark-metrics";
+import { parseHistoryJsonl, generateHistoryHtml, generateHistoryIndex, generateSvgChart } from "../scripts/evals/generate-history-index";
 
 describe("record-benchmark-metrics", () => {
   it("extracts metrics from benchmark_run structure", () => {

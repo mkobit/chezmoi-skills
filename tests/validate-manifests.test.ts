@@ -7,7 +7,7 @@ import {
   portablePluginJsonSchema,
   validateMarketplaceSkillParity,
   validateVersionSync,
-} from "../scripts/validate/manifests";
+} from "../scripts/skills/validate/manifests";
 
 const temporaryDirectories: string[] = [];
 

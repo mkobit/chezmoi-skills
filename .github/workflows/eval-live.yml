@@ -37,7 +37,7 @@ jobs:
       - name: Prepare reproducible request plan
         env:
           GITHUB_SHA: ${{ github.sha }}
-        run: bun run scripts/prepare-live-benchmark.ts
+        run: bun run scripts/evals/prepare-live-benchmark.ts
 
       - name: Upload benchmark plan
         uses: actions/upload-artifact@v7.0.2

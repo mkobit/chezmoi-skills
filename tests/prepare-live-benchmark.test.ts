@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
-import { prepareLiveBenchmark } from "../scripts/prepare-live-benchmark";
+import { prepareLiveBenchmark } from "../scripts/evals/prepare-live-benchmark";
 
 const write = (root: string, path: string, content: string): void => {
   const fullPath = join(root, path);
@@ -24,9 +24,9 @@ describe("prepare-live-benchmark", () => {
       ])
     );
     write(root, "skills/example/SKILL.md", "---\nname: example\ndescription: Example\n---\n");
-    write(root, "scripts/eval-assertions.cjs", "module.exports = {};\n");
-    write(root, "scripts/generate-promptfoo-evals.ts", "export {};\n");
-    write(root, "scripts/patch-version.cjs", "module.exports = {};\n");
+    write(root, "scripts/evals/eval-assertions.cjs", "module.exports = {};\n");
+    write(root, "scripts/evals/generate-promptfoo-evals.ts", "export {};\n");
+    write(root, "scripts/evals/patch-version.cjs", "module.exports = {};\n");
     write(root, "bun.lock", "lockfile\n");
     write(
       root,
