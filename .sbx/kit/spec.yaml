@@ -2,7 +2,7 @@ schemaVersion: "2"
 kind: mixin
 name: chezmoi-skills-toolchain
 version: "0.1.0"
-description: Bootstrap mise and bun 1.4.2 toolchain for chezmoi-skills
+description: Bootstrap mise and bun 1.4.4 toolchain for chezmoi-skills
 
 permissions:
   network:
@@ -26,6 +26,6 @@ setup:
         printf '%s\n' 'export PATH="/home/agent/.local/share/mise/shims:/home/agent/.local/bin:$PATH"' > /etc/profile.d/mise.sh
         printf '%s\n' 'export PATH="/home/agent/.local/share/mise/shims:/home/agent/.local/bin:$PATH"' >> /etc/sandbox-persistent.sh
       description: "Install mise into /usr/local/bin and configure shell paths"
-    - command: "mise use -g bun@1.4.2"
+    - command: "mise use -g bun@1.4.4"
       user: "1000"
-      description: "Install bun 1.4.2 for agent"
+      description: "Install bun 1.4.4 for agent"
