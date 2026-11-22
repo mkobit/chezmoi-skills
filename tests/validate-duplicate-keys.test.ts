@@ -108,12 +108,12 @@ describe("validateDuplicateKeys", () => {
 
     const results = await validateDuplicateKeys(root);
     expect(results).toHaveLength(1);
-    expect(results[0]?.valid).toBe(false);
-    const details = results[0]?.details as string[];
-    expect(details.some((d) => d.startsWith("config.jsonc:"))).toBe(true);
-    expect(details.some((d) => d.startsWith(".github/workflows/ci.yml:"))).toBe(
-      true,
-    );
+    const result = results[0];
+    expect(result?.valid).toBe(false);
+    if (result && !result.valid) {
+      expect(String(result.details)).toContain("config.jsonc:");
+      expect(String(result.details)).toContain(".github/workflows/ci.yml:");
+    }
   });
 
   it("passes when all config files have unique keys", async () => {

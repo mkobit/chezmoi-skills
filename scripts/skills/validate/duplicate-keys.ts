@@ -167,7 +167,7 @@ export const validateDuplicateKeys = async (
         {
           valid: false,
           name: `duplicate keys (${files.length} files)`,
-          details: failures,
+          details: failures.join("\n"),
         },
       ];
     }
