@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { mkdtempSync, readFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { generatePromptfooEvals } from "../scripts/generate-promptfoo-evals";
+import { generatePromptfooEvals } from "../scripts/evals/generate-promptfoo-evals";
 
 describe("generate-promptfoo-evals", () => {
   it("derives answer and router suites from the full checked-in corpus without provider calls", async () => {
@@ -40,10 +40,10 @@ describe("generate-promptfoo-evals", () => {
     expect(answerTests).not.toContain('skill_context: "file://');
     expect(answerTests).not.toContain('reference_context: "file://');
     expect(routerConfig).toContain("tests: file://promptfoo-router-tests.generated.yaml");
-    expect(routerTests).toContain("file://../scripts/eval-assertions.cjs:routerMatches");
+    expect(routerTests).toContain("file://../scripts/evals/eval-assertions.cjs:routerMatches");
     expect(routerTests).toContain('selectedSkills: ["chezmoi-configuration","chezmoi-scripts"]');
     expect(routerTests).toContain("allowClarification: true");
-    expect(answerTests).toContain("file://scripts/eval-assertions.cjs:answerQualityMatches");
+    expect(answerTests).toContain("file://scripts/evals/eval-assertions.cjs:answerQualityMatches");
     expect(answerConfig).toContain("tests: file://eval_results/promptfoo-answer-tests.generated.yaml");
     for (const skill of summary.skills) {
       expect(answerTests).toContain(`target_skill: "${skill}"`);

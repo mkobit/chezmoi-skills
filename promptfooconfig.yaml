@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-# Generate checked-in corpus inputs first: bun run scripts/generate-promptfoo-evals.ts
+# Generate checked-in corpus inputs first: bun run scripts/evals/generate-promptfoo-evals.ts
 # Structural validation without provider calls: bun run eval:validate
 # Credentialed answer smoke test: bun run eval:generate && bun run eval:answers -- --filter-first-n 1 --no-cache
 # Credentialed router smoke test: promptfoo eval --config eval_results/promptfooconfig.router.generated.yaml --filter-first-n 1 --no-cache

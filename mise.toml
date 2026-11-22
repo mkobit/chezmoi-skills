@@ -15,11 +15,11 @@ run = "sbx env plan .sbx/sbxenv.yaml && sbx env plan .sbx/sbxenv.agy.yaml && sbx
 
 [tasks.validate]
 description = "Validate skills schema and Claude plugin configurations"
-run = "bun run scripts/validate/index.ts --claude-plugin-dir=.claude-plugin"
+run = "bun run scripts/skills/validate/index.ts --claude-plugin-dir=.claude-plugin"
 
 [tasks."test:contracts"]
 description = "Run Tier 2 deterministic mock contract tests"
-run = "bun run scripts/test-contracts.ts"
+run = "bun run scripts/evals/test-contracts.ts"
 
 [tasks.test]
 description = "Run unit tests"

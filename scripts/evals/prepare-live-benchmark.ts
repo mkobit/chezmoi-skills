@@ -104,9 +104,9 @@ export const prepareLiveBenchmark = (rootDir = "."): LiveBenchmarkPreflight => {
   }
   const skillFiles = listedFilesRecursive(join(root, "skills"), ".md");
   const evaluationCodeFiles = [
-    join(root, "scripts", "eval-assertions.cjs"),
-    join(root, "scripts", "generate-promptfoo-evals.ts"),
-    join(root, "scripts", "patch-version.cjs"),
+    join(root, "scripts", "evals", "eval-assertions.cjs"),
+    join(root, "scripts", "evals", "generate-promptfoo-evals.ts"),
+    join(root, "scripts", "evals", "patch-version.cjs"),
   ];
   const answerConfigPath = join(root, "promptfooconfig.yaml");
   const routerConfigPath = join(generatedDir, "promptfooconfig.router.generated.yaml");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseTranscript } from "../scripts/extract-transcript-evals";
+import { parseTranscript } from "../scripts/evals/extract-transcript-evals";
 
 describe("extract-transcript-evals", () => {
   it("extracts command_correctness test case when a chezmoi command is run", () => {
