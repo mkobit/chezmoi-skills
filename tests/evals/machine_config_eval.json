@@ -63,9 +63,7 @@
       "exact_command": "chezmoi execute-template \"{{ .chezmoi.os }}/{{ .chezmoi.arch }}\"",
       "command_regex": "^chezmoi execute-template \".*\"$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--dry-run"
-      ]
+      "forbidden_flags": ["--dry-run"]
     },
     "token_budget": 500
   },
@@ -81,9 +79,7 @@
       "exact_command": "chezmoi cat ~/.chezmoiignore",
       "command_regex": "^chezmoi cat .*$",
       "required_flags": [],
-      "forbidden_flags": [
-        "--force"
-      ]
+      "forbidden_flags": ["--force"]
     },
     "token_budget": 500
   },
@@ -165,10 +161,7 @@
       "user_prompt": "A value must differ on my work laptop and appear inside a template, but I have not decided whether it is host data or template logic. Where should it go?"
     },
     "expected": {
-      "selected_skills": [
-        "chezmoi-machine-config",
-        "chezmoi-templating"
-      ],
+      "selected_skills": ["chezmoi-machine-config", "chezmoi-templating"],
       "allow_clarification": true
     },
     "token_budget": 450
@@ -183,9 +176,7 @@
     },
     "expected": {
       "answer_quality": {
-        "required_concepts": [
-          ".chezmoidata"
-        ],
+        "required_concepts": [".chezmoidata"],
         "clarification": "required"
       }
     },

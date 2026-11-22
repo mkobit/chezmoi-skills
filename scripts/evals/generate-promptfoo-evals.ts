@@ -18,13 +18,18 @@ const AnswerQualitySchema = z
       expectation.forbidden_claims !== undefined ||
       expectation.clarification !== undefined ||
       expectation.safety_expectations !== undefined,
-    "Answer quality expectations must include at least one assertion."
+    "Answer quality expectations must include at least one assertion.",
   );
 
 const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness", "answer_quality"]),
+  eval_type: z.enum([
+    "trigger_matching",
+    "skill_selection",
+    "command_correctness",
+    "answer_quality",
+  ]),
   target_skill: z.string(),
   input: z.object({
     user_prompt: z.string(),
@@ -100,7 +105,9 @@ const tokenize = (text: string): string[] =>
     ?.filter((term) => term.length > 2 && !STOP_WORDS.has(term)) ?? [];
 
 const markdownFiles = async (directory: string): Promise<string[]> => {
-  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  const entries = await readdir(directory, { withFileTypes: true }).catch(
+    () => [],
+  );
   const files: string[] = [];
 
   for (const entry of entries) {
@@ -116,11 +123,15 @@ const markdownFiles = async (directory: string): Promise<string[]> => {
 };
 
 const loadCases = async (evalsDir: string): Promise<EvaluationCase[]> => {
-  const files = (await readdir(evalsDir)).filter((file) => file.endsWith(".json")).sort();
+  const files = (await readdir(evalsDir))
+    .filter((file) => file.endsWith(".json"))
+    .sort();
   const cases: EvaluationCase[] = [];
 
   for (const file of files) {
-    const parsed: unknown = JSON.parse(await readFile(join(evalsDir, file), "utf-8"));
+    const parsed: unknown = JSON.parse(
+      await readFile(join(evalsDir, file), "utf-8"),
+    );
     for (const item of Array.isArray(parsed) ? parsed : [parsed]) {
       cases.push(TestCaseSchema.parse(item));
     }
@@ -129,7 +140,9 @@ const loadCases = async (evalsDir: string): Promise<EvaluationCase[]> => {
   return cases;
 };
 
-const loadSkillSources = async (skillsDir: string): Promise<Record<string, SkillSource>> => {
+const loadSkillSources = async (
+  skillsDir: string,
+): Promise<Record<string, SkillSource>> => {
   const directories = await readdir(skillsDir, { withFileTypes: true });
   const skills: Record<string, SkillSource> = {};
 
@@ -148,7 +161,7 @@ const loadSkillSources = async (skillsDir: string): Promise<Record<string, Skill
       (await markdownFiles(join(root, "references"))).map(async (file) => ({
         file,
         content: await readFile(file, "utf-8"),
-      }))
+      })),
     );
     skills[data.name] = {
       entrypoint: { file: entrypointFile, content: entrypointContent },
@@ -159,7 +172,10 @@ const loadSkillSources = async (skillsDir: string): Promise<Record<string, Skill
   return skills;
 };
 
-const selectReference = (testCase: EvaluationCase, skill: SkillSource): SkillReference => {
+const selectReference = (
+  testCase: EvaluationCase,
+  skill: SkillSource,
+): SkillReference => {
   const selectionTerms = new Set(
     tokenize(
       [
@@ -170,18 +186,25 @@ const selectReference = (testCase: EvaluationCase, skill: SkillSource): SkillRef
         ...(testCase.expected.answer_quality?.safety_expectations ?? []),
       ]
         .filter(Boolean)
-        .join(" ")
-    )
+        .join(" "),
+    ),
   );
-  const commandName = testCase.expected.exact_command?.match(/^chezmoi\s+([a-z-]+)/)?.[1];
+  const commandName =
+    testCase.expected.exact_command?.match(/^chezmoi\s+([a-z-]+)/)?.[1];
   const ranked = skill.references
     .map((reference) => ({
       reference,
       score:
-        [...new Set(tokenize(reference.content))].filter((term) => selectionTerms.has(term)).length +
+        [...new Set(tokenize(reference.content))].filter((term) =>
+          selectionTerms.has(term),
+        ).length +
         (commandName && reference.file.endsWith(`/${commandName}.md`) ? 10 : 0),
     }))
-    .sort((left, right) => right.score - left.score || left.reference.file.localeCompare(right.reference.file));
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.reference.file.localeCompare(right.reference.file),
+    );
 
   return ranked[0]?.reference ?? skill.entrypoint;
 };
@@ -191,7 +214,10 @@ const metadata = (testCase: EvaluationCase): string => `    metadata:
       eval_type: ${yamlString(testCase.eval_type)}
       target_skill: ${yamlString(testCase.target_skill)}`;
 
-const vars = (testCase: EvaluationCase, skill: SkillSource): string => `    vars:
+const vars = (
+  testCase: EvaluationCase,
+  skill: SkillSource,
+): string => `    vars:
       user_prompt: ${yamlString(testCase.input.user_prompt)}
       target_skill: ${yamlString(testCase.target_skill)}
       skill_context: ${yamlString(skill.entrypoint.content)}
@@ -204,7 +230,9 @@ const routerVars = (testCase: EvaluationCase): string => `    vars:
 const answerAssertions = (testCase: EvaluationCase): string[] => {
   const assertions: string[] = [];
   if (testCase.expected.exact_command) {
-    assertions.push(`      - type: contains\n        value: ${yamlString(testCase.expected.exact_command)}`);
+    assertions.push(
+      `      - type: contains\n        value: ${yamlString(testCase.expected.exact_command)}`,
+    );
   }
   if (testCase.expected.command_regex) {
     assertions.push(`      - type: javascript
@@ -213,10 +241,14 @@ const answerAssertions = (testCase: EvaluationCase): string[] => {
           pattern: ${yamlString(testCase.expected.command_regex)}`);
   }
   for (const flag of testCase.expected.required_flags ?? []) {
-    assertions.push(`      - type: icontains\n        value: ${yamlString(flag)}`);
+    assertions.push(
+      `      - type: icontains\n        value: ${yamlString(flag)}`,
+    );
   }
   for (const flag of testCase.expected.forbidden_flags ?? []) {
-    assertions.push(`      - type: not-icontains\n        value: ${yamlString(flag)}`);
+    assertions.push(
+      `      - type: not-icontains\n        value: ${yamlString(flag)}`,
+    );
   }
   if (testCase.expected.answer_quality) {
     const expectation = testCase.expected.answer_quality;
@@ -231,7 +263,10 @@ const answerAssertions = (testCase: EvaluationCase): string[] => {
   return assertions;
 };
 
-const answerTest = (testCase: EvaluationCase, skill: SkillSource): string => `  - description: ${yamlString(`[${testCase.id}] ${testCase.name}`)}
+const answerTest = (
+  testCase: EvaluationCase,
+  skill: SkillSource,
+): string => `  - description: ${yamlString(`[${testCase.id}] ${testCase.name}`)}
 ${metadata(testCase)}
 ${vars(testCase, skill)}
     assert:
@@ -240,7 +275,9 @@ ${answerAssertions(testCase).join("\n")}`;
 const routerAssertions = (testCase: EvaluationCase): string[] => {
   const shouldTrigger = testCase.expected.should_trigger ?? true;
   const selectedSkills = shouldTrigger
-    ? testCase.expected.selected_skills ?? [testCase.expected.selected_skill ?? testCase.target_skill]
+    ? (testCase.expected.selected_skills ?? [
+        testCase.expected.selected_skill ?? testCase.target_skill,
+      ])
     : [];
   return [
     `      - type: javascript
@@ -252,7 +289,9 @@ const routerAssertions = (testCase: EvaluationCase): string[] => {
   ];
 };
 
-const routerTest = (testCase: EvaluationCase): string => `  - description: ${yamlString(`[${testCase.id}] ${testCase.name}`)}
+const routerTest = (
+  testCase: EvaluationCase,
+): string => `  - description: ${yamlString(`[${testCase.id}] ${testCase.name}`)}
 ${metadata(testCase)}
 ${routerVars(testCase)}
     assert:
@@ -279,25 +318,40 @@ providers:
 tests: file://promptfoo-router-tests.generated.yaml
 `;
 
-export const generatePromptfooEvals = async (options: {
-  evalsDir?: string;
-  skillsDir?: string;
-  outDir?: string;
-} = {}): Promise<GenerationSummary> => {
+export const generatePromptfooEvals = async (
+  options: {
+    evalsDir?: string;
+    skillsDir?: string;
+    outDir?: string;
+  } = {},
+): Promise<GenerationSummary> => {
   const evalsDir = options.evalsDir ?? "tests/evals";
   const skillsDir = options.skillsDir ?? "skills";
   const outDir = options.outDir ?? "eval_results";
-  const [cases, skills] = await Promise.all([loadCases(evalsDir), loadSkillSources(skillsDir)]);
-  const missingSkills = [...new Set(cases.map((testCase) => testCase.target_skill))].filter((skill) => !skills[skill]);
+  const [cases, skills] = await Promise.all([
+    loadCases(evalsDir),
+    loadSkillSources(skillsDir),
+  ]);
+  const missingSkills = [
+    ...new Set(cases.map((testCase) => testCase.target_skill)),
+  ].filter((skill) => !skills[skill]);
   if (missingSkills.length > 0) {
-    throw new Error(`Corpus targets missing skill directories: ${missingSkills.join(", ")}`);
+    throw new Error(
+      `Corpus targets missing skill directories: ${missingSkills.join(", ")}`,
+    );
   }
 
   const answerCases = cases.filter(
-    (testCase) => testCase.eval_type === "command_correctness" || testCase.eval_type === "answer_quality"
+    (testCase) =>
+      testCase.eval_type === "command_correctness" ||
+      testCase.eval_type === "answer_quality",
   );
-  const answerTests = answerCases.map((testCase) => answerTest(testCase, skills[testCase.target_skill])).join("\n\n");
-  const routerTests = cases.map((testCase) => routerTest(testCase)).join("\n\n");
+  const answerTests = answerCases
+    .map((testCase) => answerTest(testCase, skills[testCase.target_skill]))
+    .join("\n\n");
+  const routerTests = cases
+    .map((testCase) => routerTest(testCase))
+    .join("\n\n");
   const summary: GenerationSummary = {
     total_cases: cases.length,
     answer_cases: answerCases.length,
@@ -307,10 +361,22 @@ export const generatePromptfooEvals = async (options: {
 
   await mkdir(outDir, { recursive: true });
   await Promise.all([
-    writeFile(join(outDir, "promptfoo-answer-tests.generated.yaml"), `${answerTests}\n`),
-    writeFile(join(outDir, "promptfoo-router-tests.generated.yaml"), `${routerTests}\n`),
-    writeFile(join(outDir, "promptfooconfig.router.generated.yaml"), routerConfig),
-    writeFile(join(outDir, "promptfoo-evals.manifest.json"), `${JSON.stringify(summary, null, 2)}\n`),
+    writeFile(
+      join(outDir, "promptfoo-answer-tests.generated.yaml"),
+      `${answerTests}\n`,
+    ),
+    writeFile(
+      join(outDir, "promptfoo-router-tests.generated.yaml"),
+      `${routerTests}\n`,
+    ),
+    writeFile(
+      join(outDir, "promptfooconfig.router.generated.yaml"),
+      routerConfig,
+    ),
+    writeFile(
+      join(outDir, "promptfoo-evals.manifest.json"),
+      `${JSON.stringify(summary, null, 2)}\n`,
+    ),
   ]);
 
   return summary;
@@ -319,13 +385,21 @@ export const generatePromptfooEvals = async (options: {
 if (import.meta.main) {
   const program = new Command();
   program
-    .option("--evals-dir <dir>", "Directory containing the checked-in corpus", "tests/evals")
+    .option(
+      "--evals-dir <dir>",
+      "Directory containing the checked-in corpus",
+      "tests/evals",
+    )
     .option("--skills-dir <dir>", "Directory containing skills", "skills")
-    .option("--out-dir <dir>", "Directory for generated Promptfoo inputs", "eval_results")
+    .option(
+      "--out-dir <dir>",
+      "Directory for generated Promptfoo inputs",
+      "eval_results",
+    )
     .parse(process.argv);
 
   const summary = await generatePromptfooEvals(program.opts());
   console.log(
-    `Generated ${summary.answer_cases} answer tests and ${summary.router_cases} router tests from ${summary.total_cases} corpus cases across ${summary.skills.length} skills.`
+    `Generated ${summary.answer_cases} answer tests and ${summary.router_cases} router tests from ${summary.total_cases} corpus cases across ${summary.skills.length} skills.`,
   );
 }

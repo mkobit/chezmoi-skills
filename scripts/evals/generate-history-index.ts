@@ -26,7 +26,7 @@ const metricRecordSchema = z.object({
         passed: z.number(),
         failed: z.number(),
         pass_rate: z.number(),
-      })
+      }),
     )
     .optional(),
   run_dir: z.string(),
@@ -46,7 +46,9 @@ export function parseHistoryJsonl(content: string): BenchmarkMetricRecord[] {
     }
   }
 
-  return records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return records.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
 }
 
 export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
@@ -85,7 +87,9 @@ export function generateSvgChart(records: BenchmarkMetricRecord[]): string {
     })
     .join("\n");
 
-  const svgPoints = points.map((p, i) => `${getX(i).toFixed(1)},${getY(p.pass_rate).toFixed(1)}`).join(" ");
+  const svgPoints = points
+    .map((p, i) => `${getX(i).toFixed(1)},${getY(p.pass_rate).toFixed(1)}`)
+    .join(" ");
 
   const releaseLinesHtml = points
     .map((p, i) => {
@@ -148,7 +152,9 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
   const previousRun = records[1];
 
   const latestPassRateVal = latestRun ? latestRun.pass_rate : 0;
-  const latestPassRate = latestRun ? `${(latestRun.pass_rate * 100).toFixed(1)}%` : "N/A";
+  const latestPassRate = latestRun
+    ? `${(latestRun.pass_rate * 100).toFixed(1)}%`
+    : "N/A";
   const latestDate = latestRun ? latestRun.timestamp.slice(0, 10) : "N/A";
 
   let deltaHtml = "";
@@ -164,12 +170,14 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
   }
 
   const avgPassRateVal =
-    totalRuns > 0 ? (records.reduce((acc, r) => acc + r.pass_rate, 0) / totalRuns) * 100 : 0;
+    totalRuns > 0
+      ? (records.reduce((acc, r) => acc + r.pass_rate, 0) / totalRuns) * 100
+      : 0;
   const avgPassRate = totalRuns > 0 ? `${avgPassRateVal.toFixed(1)}%` : "N/A";
 
   const totalTokens = records.reduce(
     (acc, r) => acc + r.total_prompt_tokens + r.total_completion_tokens,
-    0
+    0,
   );
 
   const svgChartHtml = generateSvgChart(records);
@@ -202,8 +210,11 @@ export function generateHistoryHtml(records: BenchmarkMetricRecord[]): string {
       const releaseBadge = r.release_tag
         ? `<span class="badge badge-release">${r.release_tag}</span> `
         : "";
-      const branchLabel = r.branch ? `<code>${r.branch}</code>` : `<span class="text-muted">-</span>`;
-      const modelsList = r.models && r.models.length > 0 ? r.models.join(", ") : "N/A";
+      const branchLabel = r.branch
+        ? `<code>${r.branch}</code>`
+        : `<span class="text-muted">-</span>`;
+      const modelsList =
+        r.models && r.models.length > 0 ? r.models.join(", ") : "N/A";
 
       return `        <tr>
           <td>${r.timestamp.replace("T", " ").slice(0, 16)} UTC</td>
@@ -493,7 +504,10 @@ ${rowsHtml}
 </html>`;
 }
 
-export function generateHistoryIndex(targetDir: string, outputFile?: string): string {
+export function generateHistoryIndex(
+  targetDir: string,
+  outputFile?: string,
+): string {
   const historyPath = join(targetDir, "history.jsonl");
   const outputPath = outputFile || join(targetDir, "index.html");
 
@@ -511,7 +525,11 @@ export function generateHistoryIndex(targetDir: string, outputFile?: string): st
 if (import.meta.main) {
   const program = new Command();
   program
-    .option("--target-dir <path>", "Directory containing history.jsonl and runs/", ".")
+    .option(
+      "--target-dir <path>",
+      "Directory containing history.jsonl and runs/",
+      ".",
+    )
     .option("--output-file <path>", "Path to write output HTML file")
     .parse(process.argv);
 
@@ -521,7 +539,9 @@ if (import.meta.main) {
     const outputPath = generateHistoryIndex(opts.targetDir, opts.outputFile);
     console.log(`Generated history index HTML at ${outputPath}`);
   } catch (error) {
-    console.error(`Error generating history index: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Error generating history index: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(1);
   }
 }

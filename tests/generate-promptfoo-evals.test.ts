@@ -26,25 +26,48 @@ describe("generate-promptfoo-evals", () => {
       ],
     });
 
-    const answerTests = readFileSync(join(outDir, "promptfoo-answer-tests.generated.yaml"), "utf-8");
-    const routerTests = readFileSync(join(outDir, "promptfoo-router-tests.generated.yaml"), "utf-8");
-    const routerConfig = readFileSync(join(outDir, "promptfooconfig.router.generated.yaml"), "utf-8");
+    const answerTests = readFileSync(
+      join(outDir, "promptfoo-answer-tests.generated.yaml"),
+      "utf-8",
+    );
+    const routerTests = readFileSync(
+      join(outDir, "promptfoo-router-tests.generated.yaml"),
+      "utf-8",
+    );
+    const routerConfig = readFileSync(
+      join(outDir, "promptfooconfig.router.generated.yaml"),
+      "utf-8",
+    );
     const answerConfig = readFileSync("promptfooconfig.yaml", "utf-8");
 
     expect(answerTests.match(/^  - description:/gm)).toHaveLength(46);
     expect(routerTests.match(/^  - description:/gm)).toHaveLength(109);
     expect(routerTests).toContain('corpus_id: "TC-TRIG-001"');
     expect(routerTests).toContain('target_skill: "chezmoi-templating"');
-    expect(answerTests).toContain("Apply the source state to the target directory");
-    expect(answerTests).toContain("Execute and look up chezmoi CLI subcommands");
+    expect(answerTests).toContain(
+      "Apply the source state to the target directory",
+    );
+    expect(answerTests).toContain(
+      "Execute and look up chezmoi CLI subcommands",
+    );
     expect(answerTests).not.toContain('skill_context: "file://');
     expect(answerTests).not.toContain('reference_context: "file://');
-    expect(routerConfig).toContain("tests: file://promptfoo-router-tests.generated.yaml");
-    expect(routerTests).toContain("file://../scripts/evals/eval-assertions.cjs:routerMatches");
-    expect(routerTests).toContain('selectedSkills: ["chezmoi-configuration","chezmoi-scripts"]');
+    expect(routerConfig).toContain(
+      "tests: file://promptfoo-router-tests.generated.yaml",
+    );
+    expect(routerTests).toContain(
+      "file://../scripts/evals/eval-assertions.cjs:routerMatches",
+    );
+    expect(routerTests).toContain(
+      'selectedSkills: ["chezmoi-configuration","chezmoi-scripts"]',
+    );
     expect(routerTests).toContain("allowClarification: true");
-    expect(answerTests).toContain("file://scripts/evals/eval-assertions.cjs:answerQualityMatches");
-    expect(answerConfig).toContain("tests: file://eval_results/promptfoo-answer-tests.generated.yaml");
+    expect(answerTests).toContain(
+      "file://scripts/evals/eval-assertions.cjs:answerQualityMatches",
+    );
+    expect(answerConfig).toContain(
+      "tests: file://eval_results/promptfoo-answer-tests.generated.yaml",
+    );
     for (const skill of summary.skills) {
       expect(answerTests).toContain(`target_skill: "${skill}"`);
     }

@@ -33,7 +33,10 @@ export const checkSingleSentencePerLine = (content: string): string[] => {
     }
 
     const snippets = trimmed.includes("|")
-      ? trimmed.split("|").map((cell) => cell.trim()).filter(Boolean)
+      ? trimmed
+          .split("|")
+          .map((cell) => cell.trim())
+          .filter(Boolean)
       : [trimmed];
 
     for (const snippet of snippets) {
@@ -46,12 +49,17 @@ export const checkSingleSentencePerLine = (content: string): string[] => {
       clean = clean.replace(/`[^`]+`/g, " ");
       clean = clean.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
       clean = clean.replace(/https?:\/\/\S+/g, " ");
-      clean = clean.replace(/\b(e\.g\.|i\.e\.|etc\.|vs\.|v\d+(\.\d+)*|no\.|dr\.|mr\.|ms\.|inc\.|corp\.|ltd\.|st\.|fig\.|approx\.|dept\.)/gi, " ");
+      clean = clean.replace(
+        /\b(e\.g\.|i\.e\.|etc\.|vs\.|v\d+(\.\d+)*|no\.|dr\.|mr\.|ms\.|inc\.|corp\.|ltd\.|st\.|fig\.|approx\.|dept\.)/gi,
+        " ",
+      );
       clean = clean.replace(/\d+\.\d+/g, " ");
       clean = clean.replace(/\.\.\./g, " ").replace(/\.\./g, " ");
 
       if (/[.!?][)'"\]`]*\s+\S/.test(clean)) {
-        errors.push(`Line ${i + 1}: Multiple sentences found on a single line: "${line}"`);
+        errors.push(
+          `Line ${i + 1}: Multiple sentences found on a single line: "${line}"`,
+        );
         break;
       }
     }

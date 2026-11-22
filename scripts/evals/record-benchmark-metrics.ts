@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, appendFileSync, copyFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  appendFileSync,
+  copyFileSync,
+} from "fs";
 import { join } from "path";
 import { Command } from "commander";
 import { z } from "zod";
@@ -82,29 +88,31 @@ const promptfooTestCaseSchema = z
   })
   .passthrough();
 
-const singleResultSchema = z.object({
-  target_skill: z.string().optional(),
-  skill: z.string().optional(),
-  status: z.string().optional(),
-  success: z.boolean().optional(),
-  provider: providerSchema.optional(),
-  tokens: z
-    .object({
-      prompt_tokens: z.number().optional(),
-      completion_tokens: z.number().optional(),
-    })
-    .optional(),
-  tokenUsage: z
-    .object({
-      prompt: z.number().optional(),
-      completion: z.number().optional(),
-    })
-    .optional(),
-  prompt: promptSchema.optional(),
-  metadata: metadataSchema.optional(),
-  vars: z.record(z.string(), z.unknown()).optional(),
-  testCase: promptfooTestCaseSchema.optional(),
-}).passthrough();
+const singleResultSchema = z
+  .object({
+    target_skill: z.string().optional(),
+    skill: z.string().optional(),
+    status: z.string().optional(),
+    success: z.boolean().optional(),
+    provider: providerSchema.optional(),
+    tokens: z
+      .object({
+        prompt_tokens: z.number().optional(),
+        completion_tokens: z.number().optional(),
+      })
+      .optional(),
+    tokenUsage: z
+      .object({
+        prompt: z.number().optional(),
+        completion: z.number().optional(),
+      })
+      .optional(),
+    prompt: promptSchema.optional(),
+    metadata: metadataSchema.optional(),
+    vars: z.record(z.string(), z.unknown()).optional(),
+    testCase: promptfooTestCaseSchema.optional(),
+  })
+  .passthrough();
 
 const promptfooResultsSchema = z
   .object({
@@ -115,7 +123,9 @@ const promptfooResultsSchema = z
 
 const resultsFileSchema = z.object({
   benchmark_run: benchmarkRunSchema.optional(),
-  results: z.union([z.array(singleResultSchema), promptfooResultsSchema]).optional(),
+  results: z
+    .union([z.array(singleResultSchema), promptfooResultsSchema])
+    .optional(),
   config: z
     .object({
       providers: z.array(providerSchema).optional(),
@@ -137,18 +147,23 @@ export function extractMetrics(
   fileContent: string,
   commitSha: string,
   customTimestamp?: string,
-  extraOptions?: Partial<ExtractMetricsOptions>
+  extraOptions?: Partial<ExtractMetricsOptions>,
 ): BenchmarkMetricRecord {
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(fileContent);
   } catch (error) {
-    throw new Error(`Failed to parse results JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to parse results JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
   const parsed = resultsFileSchema.parse(parsedJson);
 
-  const promptfooResults = parsed.results && !Array.isArray(parsed.results) ? parsed.results : undefined;
+  const promptfooResults =
+    parsed.results && !Array.isArray(parsed.results)
+      ? parsed.results
+      : undefined;
   const timestamp =
     customTimestamp ||
     extraOptions?.customTimestamp ||
@@ -164,10 +179,22 @@ export function extractMetrics(
 
   const modelSet = new Set<string>();
   const configuredModelSet = new Set<string>();
-  const skillCounts: Record<string, { total_tests: number; passed: number; failed: number }> = {};
-  const surfaceCounts: Record<string, { total_tests: number; passed: number; failed: number }> = {};
-  const providerCounts: Record<string, { total_tests: number; passed: number; failed: number }> = {};
-  const providerSurfaceCounts: Record<string, Record<string, { total_tests: number; passed: number; failed: number }>> = {};
+  const skillCounts: Record<
+    string,
+    { total_tests: number; passed: number; failed: number }
+  > = {};
+  const surfaceCounts: Record<
+    string,
+    { total_tests: number; passed: number; failed: number }
+  > = {};
+  const providerCounts: Record<
+    string,
+    { total_tests: number; passed: number; failed: number }
+  > = {};
+  const providerSurfaceCounts: Record<
+    string,
+    Record<string, { total_tests: number; passed: number; failed: number }>
+  > = {};
 
   if (parsed.config?.providers) {
     for (const p of parsed.config.providers) {
@@ -176,7 +203,9 @@ export function extractMetrics(
     }
   }
 
-  const results = Array.isArray(parsed.results) ? parsed.results : promptfooResults?.results;
+  const results = Array.isArray(parsed.results)
+    ? parsed.results
+    : promptfooResults?.results;
   if (results && results.length > 0) {
     totalTests = results.length;
     for (const r of results) {
@@ -187,7 +216,8 @@ export function extractMetrics(
         failed++;
       }
       const pTokens = r.tokens?.prompt_tokens ?? r.tokenUsage?.prompt ?? 0;
-      const cTokens = r.tokens?.completion_tokens ?? r.tokenUsage?.completion ?? 0;
+      const cTokens =
+        r.tokens?.completion_tokens ?? r.tokenUsage?.completion ?? 0;
       promptTokens += pTokens;
       completionTokens += cTokens;
 
@@ -197,20 +227,29 @@ export function extractMetrics(
           : r.provider.id || r.provider.label
         : undefined;
       if (providerName) {
-          modelSet.add(providerName);
-          if (!providerCounts[providerName]) providerCounts[providerName] = { total_tests: 0, passed: 0, failed: 0 };
-          providerCounts[providerName].total_tests++;
-          if (isPass) providerCounts[providerName].passed++;
-          else providerCounts[providerName].failed++;
-        }
+        modelSet.add(providerName);
+        if (!providerCounts[providerName])
+          providerCounts[providerName] = {
+            total_tests: 0,
+            passed: 0,
+            failed: 0,
+          };
+        providerCounts[providerName].total_tests++;
+        if (isPass) providerCounts[providerName].passed++;
+        else providerCounts[providerName].failed++;
+      }
 
       const skillName =
         r.target_skill ||
         r.skill ||
         r.metadata?.target_skill ||
-        (typeof r.vars?.target_skill === "string" ? r.vars.target_skill : undefined) ||
+        (typeof r.vars?.target_skill === "string"
+          ? r.vars.target_skill
+          : undefined) ||
         r.testCase?.metadata?.target_skill ||
-        (typeof r.testCase?.vars?.target_skill === "string" ? r.testCase.vars.target_skill : undefined);
+        (typeof r.testCase?.vars?.target_skill === "string"
+          ? r.testCase.vars.target_skill
+          : undefined);
       if (skillName) {
         if (!skillCounts[skillName]) {
           skillCounts[skillName] = { total_tests: 0, passed: 0, failed: 0 };
@@ -235,9 +274,14 @@ export function extractMetrics(
           surfaceCounts[surfaceName].failed++;
         }
         if (providerName) {
-          if (!providerSurfaceCounts[providerName]) providerSurfaceCounts[providerName] = {};
+          if (!providerSurfaceCounts[providerName])
+            providerSurfaceCounts[providerName] = {};
           if (!providerSurfaceCounts[providerName][surfaceName]) {
-            providerSurfaceCounts[providerName][surfaceName] = { total_tests: 0, passed: 0, failed: 0 };
+            providerSurfaceCounts[providerName][surfaceName] = {
+              total_tests: 0,
+              passed: 0,
+              failed: 0,
+            };
           }
           const counts = providerSurfaceCounts[providerName][surfaceName];
           counts.total_tests++;
@@ -257,13 +301,19 @@ export function extractMetrics(
     completionTokens = m.total_completion_tokens;
   }
 
-  const skillMetrics: Record<string, { total_tests: number; passed: number; failed: number; pass_rate: number }> = {};
+  const skillMetrics: Record<
+    string,
+    { total_tests: number; passed: number; failed: number; pass_rate: number }
+  > = {};
   for (const [sName, sData] of Object.entries(skillCounts)) {
     skillMetrics[sName] = {
       total_tests: sData.total_tests,
       passed: sData.passed,
       failed: sData.failed,
-      pass_rate: sData.total_tests > 0 ? Number((sData.passed / sData.total_tests).toFixed(4)) : 0,
+      pass_rate:
+        sData.total_tests > 0
+          ? Number((sData.passed / sData.total_tests).toFixed(4))
+          : 0,
     };
   }
 
@@ -273,7 +323,10 @@ export function extractMetrics(
       total_tests: surfaceData.total_tests,
       passed: surfaceData.passed,
       failed: surfaceData.failed,
-      pass_rate: surfaceData.total_tests > 0 ? Number((surfaceData.passed / surfaceData.total_tests).toFixed(4)) : 0,
+      pass_rate:
+        surfaceData.total_tests > 0
+          ? Number((surfaceData.passed / surfaceData.total_tests).toFixed(4))
+          : 0,
     };
   }
 
@@ -283,19 +336,30 @@ export function extractMetrics(
       total_tests: providerData.total_tests,
       passed: providerData.passed,
       failed: providerData.failed,
-      pass_rate: providerData.total_tests > 0 ? Number((providerData.passed / providerData.total_tests).toFixed(4)) : 0,
+      pass_rate:
+        providerData.total_tests > 0
+          ? Number((providerData.passed / providerData.total_tests).toFixed(4))
+          : 0,
     };
   }
 
-  const providerSurfaceMetrics: Record<string, Record<string, MetricSummary>> = {};
-  for (const [providerName, surfaces] of Object.entries(providerSurfaceCounts)) {
+  const providerSurfaceMetrics: Record<
+    string,
+    Record<string, MetricSummary>
+  > = {};
+  for (const [providerName, surfaces] of Object.entries(
+    providerSurfaceCounts,
+  )) {
     providerSurfaceMetrics[providerName] = {};
     for (const [surfaceName, counts] of Object.entries(surfaces)) {
       providerSurfaceMetrics[providerName][surfaceName] = {
         total_tests: counts.total_tests,
         passed: counts.passed,
         failed: counts.failed,
-        pass_rate: counts.total_tests > 0 ? Number((counts.passed / counts.total_tests).toFixed(4)) : 0,
+        pass_rate:
+          counts.total_tests > 0
+            ? Number((counts.passed / counts.total_tests).toFixed(4))
+            : 0,
       };
     }
   }
@@ -318,14 +382,20 @@ export function extractMetrics(
 
   if (extraOptions?.releaseTag) record.release_tag = extraOptions.releaseTag;
   if (extraOptions?.branch) record.branch = extraOptions.branch;
-  if (extraOptions?.triggerEvent) record.trigger_event = extraOptions.triggerEvent;
-  if (extraOptions?.evalSuiteVersion) record.eval_suite_version = extraOptions.evalSuiteVersion;
+  if (extraOptions?.triggerEvent)
+    record.trigger_event = extraOptions.triggerEvent;
+  if (extraOptions?.evalSuiteVersion)
+    record.eval_suite_version = extraOptions.evalSuiteVersion;
   if (modelSet.size > 0) record.models = Array.from(modelSet);
-  if (configuredModelSet.size > 0) record.configured_models = Array.from(configuredModelSet);
+  if (configuredModelSet.size > 0)
+    record.configured_models = Array.from(configuredModelSet);
   if (Object.keys(skillMetrics).length > 0) record.skill_metrics = skillMetrics;
-  if (Object.keys(surfaceMetrics).length > 0) record.surface_metrics = surfaceMetrics;
-  if (Object.keys(providerMetrics).length > 0) record.provider_metrics = providerMetrics;
-  if (Object.keys(providerSurfaceMetrics).length > 0) record.provider_surface_metrics = providerSurfaceMetrics;
+  if (Object.keys(surfaceMetrics).length > 0)
+    record.surface_metrics = surfaceMetrics;
+  if (Object.keys(providerMetrics).length > 0)
+    record.provider_metrics = providerMetrics;
+  if (Object.keys(providerSurfaceMetrics).length > 0)
+    record.provider_surface_metrics = providerSurfaceMetrics;
 
   return record;
 }
@@ -379,7 +449,11 @@ export function recordMetrics(options: {
   };
   const routerResultsFile = options.routerResultsFile;
   if (routerResultsFile && existsSync(routerResultsFile)) {
-    const routerRecord = extractMetrics(readFileSync(routerResultsFile, "utf-8"), options.commitSha, record.timestamp);
+    const routerRecord = extractMetrics(
+      readFileSync(routerResultsFile, "utf-8"),
+      options.commitSha,
+      record.timestamp,
+    );
     suiteMetrics.router = {
       total_tests: routerRecord.total_tests,
       passed: routerRecord.passed,
@@ -388,7 +462,10 @@ export function recordMetrics(options: {
     };
     copyFileSync(routerResultsFile, join(fullRunDir, "router-results.json"));
     if (options.routerHtmlFile && existsSync(options.routerHtmlFile)) {
-      copyFileSync(options.routerHtmlFile, join(fullRunDir, "router-index.html"));
+      copyFileSync(
+        options.routerHtmlFile,
+        join(fullRunDir, "router-index.html"),
+      );
     }
   }
   record.suite_metrics = suiteMetrics;
@@ -402,18 +479,57 @@ export function recordMetrics(options: {
 if (import.meta.main) {
   const program = new Command();
   program
-    .option("--results-file <path>", "Path to promptfoo results JSON file", "eval_results/results.json")
-    .option("--html-file <path>", "Path to promptfoo HTML report file", "eval_results/index.html")
-    .option("--db-file <path>", "Path to promptfoo DB file", "eval_results/.promptfoo/promptfoo.db")
-    .option("--router-results-file <path>", "Path to router Promptfoo results JSON file", "eval_results/router-results.json")
-    .option("--router-html-file <path>", "Path to router Promptfoo HTML report file", "eval_results/router-index.html")
-    .option("--target-dir <path>", "Directory for benchmark history storage", ".")
-    .option("--commit-sha <sha>", "Git commit SHA", process.env.GITHUB_SHA || "local")
+    .option(
+      "--results-file <path>",
+      "Path to promptfoo results JSON file",
+      "eval_results/results.json",
+    )
+    .option(
+      "--html-file <path>",
+      "Path to promptfoo HTML report file",
+      "eval_results/index.html",
+    )
+    .option(
+      "--db-file <path>",
+      "Path to promptfoo DB file",
+      "eval_results/.promptfoo/promptfoo.db",
+    )
+    .option(
+      "--router-results-file <path>",
+      "Path to router Promptfoo results JSON file",
+      "eval_results/router-results.json",
+    )
+    .option(
+      "--router-html-file <path>",
+      "Path to router Promptfoo HTML report file",
+      "eval_results/router-index.html",
+    )
+    .option(
+      "--target-dir <path>",
+      "Directory for benchmark history storage",
+      ".",
+    )
+    .option(
+      "--commit-sha <sha>",
+      "Git commit SHA",
+      process.env.GITHUB_SHA || "local",
+    )
     .option("--timestamp <iso-string>", "Optional timestamp override")
     .option("--release-tag <tag>", "Git release tag (e.g. v0.1.0)")
-    .option("--branch <branch>", "Git branch name", process.env.GITHUB_REF_NAME || "main")
-    .option("--trigger-event <event>", "Workflow trigger event", process.env.GITHUB_EVENT_NAME || "manual")
-    .option("--eval-suite-version <version>", "Evaluation suite version or commit SHA")
+    .option(
+      "--branch <branch>",
+      "Git branch name",
+      process.env.GITHUB_REF_NAME || "main",
+    )
+    .option(
+      "--trigger-event <event>",
+      "Workflow trigger event",
+      process.env.GITHUB_EVENT_NAME || "manual",
+    )
+    .option(
+      "--eval-suite-version <version>",
+      "Evaluation suite version or commit SHA",
+    )
     .parse(process.argv);
 
   const opts = program.opts();
@@ -433,9 +549,13 @@ if (import.meta.main) {
       triggerEvent: opts.triggerEvent,
       evalSuiteVersion: opts.evalSuiteVersion,
     });
-    console.log(`Recorded benchmark metrics to ${join(opts.targetDir, record.run_dir)}`);
+    console.log(
+      `Recorded benchmark metrics to ${join(opts.targetDir, record.run_dir)}`,
+    );
   } catch (error) {
-    console.error(`Error recording benchmark metrics: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Error recording benchmark metrics: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(1);
   }
 }

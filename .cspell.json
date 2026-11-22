@@ -68,9 +68,5 @@
     "worktrees",
     "zstd"
   ],
-  "ignorePaths": [
-    "node_modules/**",
-    ".git/**",
-    "bun.lock"
-  ]
+  "ignorePaths": ["node_modules/**", ".git/**", "bun.lock"]
 }

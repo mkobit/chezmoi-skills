@@ -10,8 +10,16 @@ const program = new Command();
 program
   .option("--skill <skill>", "Filter evaluation by target skill")
   .option("--category <category>", "Filter evaluation by eval_type category")
-  .option("--evals-dir <dir>", "Directory containing evaluation test suites", "tests/evals")
-  .option("--out-dir <dir>", "Directory for static contract results", "eval_results")
+  .option(
+    "--evals-dir <dir>",
+    "Directory containing evaluation test suites",
+    "tests/evals",
+  )
+  .option(
+    "--out-dir <dir>",
+    "Directory for static contract results",
+    "eval_results",
+  )
   .option("--skills-dir <dir>", "Directory containing skills", "skills")
   .parse(process.argv);
 
@@ -30,13 +38,18 @@ const AnswerQualitySchema = z
       expectation.forbidden_claims !== undefined ||
       expectation.clarification !== undefined ||
       expectation.safety_expectations !== undefined,
-    "Answer quality expectations must include at least one assertion."
+    "Answer quality expectations must include at least one assertion.",
   );
 
 const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness", "answer_quality"]),
+  eval_type: z.enum([
+    "trigger_matching",
+    "skill_selection",
+    "command_correctness",
+    "answer_quality",
+  ]),
   target_skill: z.string(),
   input: z.object({
     user_prompt: z.string(),
@@ -129,7 +142,9 @@ const tokenize = (text: string): string[] =>
     ?.filter((term) => term.length > 2 && !STOP_WORDS.has(term)) ?? [];
 
 const markdownFiles = async (directory: string): Promise<string[]> => {
-  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  const entries = await readdir(directory, { withFileTypes: true }).catch(
+    () => [],
+  );
   const files: string[] = [];
 
   for (const entry of entries) {
@@ -144,11 +159,15 @@ const markdownFiles = async (directory: string): Promise<string[]> => {
   return files;
 };
 
-const loadSkillSources = async (skillsDir: string): Promise<Record<string, SkillSource>> => {
+const loadSkillSources = async (
+  skillsDir: string,
+): Promise<Record<string, SkillSource>> => {
   const skillSources: Record<string, SkillSource> = {};
   if (!existsSync(skillsDir)) return skillSources;
 
-  const directories = await readdir(skillsDir, { withFileTypes: true }).catch(() => []);
+  const directories = await readdir(skillsDir, { withFileTypes: true }).catch(
+    () => [],
+  );
   for (const directory of directories) {
     if (!directory.isDirectory()) continue;
 
@@ -158,10 +177,13 @@ const loadSkillSources = async (skillsDir: string): Promise<Record<string, Skill
 
     const entrypointContent = await readFile(entrypoint, "utf-8");
     const { data } = matter(entrypointContent);
-    if (typeof data.name !== "string" || typeof data.description !== "string") continue;
+    if (typeof data.name !== "string" || typeof data.description !== "string")
+      continue;
 
     const files = await markdownFiles(root);
-    const contents = await Promise.all(files.map((file) => readFile(file, "utf-8")));
+    const contents = await Promise.all(
+      files.map((file) => readFile(file, "utf-8")),
+    );
     skillSources[data.name] = {
       name: data.name,
       description: data.description,
@@ -176,7 +198,9 @@ const loadSkillSources = async (skillsDir: string): Promise<Record<string, Skill
 
 const promptEvidence = (userPrompt: string, source: SkillSource): string[] => {
   const sourceTerms = new Set(tokenize(source.content));
-  return [...new Set(tokenize(userPrompt).filter((term) => sourceTerms.has(term)))];
+  return [
+    ...new Set(tokenize(userPrompt).filter((term) => sourceTerms.has(term))),
+  ];
 };
 
 const commandEvidence = (testCase: TestCase): string[] => {
@@ -207,7 +231,7 @@ const commandEvidence = (testCase: TestCase): string[] => {
 const evaluateTestCase = (
   testCase: TestCase,
   skillSources: Record<string, SkillSource>,
-  skillsDir: string
+  skillsDir: string,
 ): TestResult => {
   const startTime = Date.now();
   const assertions: AssertionResult[] = [];
@@ -225,7 +249,9 @@ const evaluateTestCase = (
       type: "skill_entrypoint_exists",
       expected: "SKILL.md",
       actual: source.files.map((file) => relative(source.root, file)),
-      passed: source.files.some((file) => file === join(source.root, "SKILL.md")),
+      passed: source.files.some(
+        (file) => file === join(source.root, "SKILL.md"),
+      ),
     });
 
     if (testCase.eval_type === "trigger_matching") {
@@ -233,7 +259,9 @@ const evaluateTestCase = (
       const hasProductCue = PRODUCT_CUE.test(testCase.input.user_prompt);
       assertions.push({
         type: "trigger_fixture_scope",
-        expected: shouldTrigger ? "contains a chezmoi or dotfiles cue" : "omits chezmoi and dotfiles cues",
+        expected: shouldTrigger
+          ? "contains a chezmoi or dotfiles cue"
+          : "omits chezmoi and dotfiles cues",
         actual: hasProductCue,
         passed: shouldTrigger === undefined || hasProductCue === shouldTrigger,
       });
@@ -243,7 +271,8 @@ const evaluateTestCase = (
       const evidence = promptEvidence(testCase.input.user_prompt, source);
       assertions.push({
         type: "selection_prompt_source_overlap",
-        expected: "at least one non-generic prompt term documented by the target skill",
+        expected:
+          "at least one non-generic prompt term documented by the target skill",
         actual: evidence,
         passed: evidence.length > 0,
       });
@@ -255,7 +284,10 @@ const evaluateTestCase = (
       assertions.push({
         type: "command_target_skill_coverage",
         expected: evidence,
-        actual: { documented: evidence.filter((term) => !missing.includes(term)), missing },
+        actual: {
+          documented: evidence.filter((term) => !missing.includes(term)),
+          missing,
+        },
         passed: evidence.length > 0 && missing.length === 0,
       });
     }
@@ -282,7 +314,8 @@ const evaluateTestCase = (
   }
 
   const latency_ms = Date.now() - startTime;
-  const allPassed = assertions.length > 0 && assertions.every((assertion) => assertion.passed);
+  const allPassed =
+    assertions.length > 0 && assertions.every((assertion) => assertion.passed);
   const output = {
     contract_type: "static_repository_coverage",
     target_skill: testCase.target_skill,
@@ -325,7 +358,10 @@ const loadTestCases = async (evalsDir: string): Promise<TestCase[]> => {
         if (result.success) {
           testCases.push(result.data);
         } else {
-          console.warn(`Warning: Invalid test case in ${file}:`, result.error.issues);
+          console.warn(
+            `Warning: Invalid test case in ${file}:`,
+            result.error.issues,
+          );
         }
       }
     } catch (error) {
@@ -336,19 +372,38 @@ const loadTestCases = async (evalsDir: string): Promise<TestCase[]> => {
   return testCases;
 };
 
-const generateMarkdownSummary = (results: TestResult[], timestamp: string, totalMs: number): string => {
+const generateMarkdownSummary = (
+  results: TestResult[],
+  timestamp: string,
+  totalMs: number,
+): string => {
   const total = results.length;
   const passed = results.filter((result) => result.status === "PASS").length;
   const failed = total - passed;
   const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : "0.0";
-  const fixturePromptTokens = results.reduce((sum, result) => sum + result.tokens.prompt_tokens, 0);
-  const categories = ["trigger_matching", "skill_selection", "command_correctness", "answer_quality"];
+  const fixturePromptTokens = results.reduce(
+    (sum, result) => sum + result.tokens.prompt_tokens,
+    0,
+  );
+  const categories = [
+    "trigger_matching",
+    "skill_selection",
+    "command_correctness",
+    "answer_quality",
+  ];
   const categoryRows = categories
     .map((category) => {
-      const categoryResults = results.filter((result) => result.eval_type === category);
+      const categoryResults = results.filter(
+        (result) => result.eval_type === category,
+      );
       if (categoryResults.length === 0) return "";
-      const categoryPassed = categoryResults.filter((result) => result.status === "PASS").length;
-      const categoryRate = ((categoryPassed / categoryResults.length) * 100).toFixed(1);
+      const categoryPassed = categoryResults.filter(
+        (result) => result.status === "PASS",
+      ).length;
+      const categoryRate = (
+        (categoryPassed / categoryResults.length) *
+        100
+      ).toFixed(1);
       return `| \`${category}\` | ${categoryResults.length} | ${categoryPassed} | ${categoryResults.length - categoryPassed} | ${categoryRate}% |`;
     })
     .filter(Boolean)
@@ -356,7 +411,7 @@ const generateMarkdownSummary = (results: TestResult[], timestamp: string, total
   const detailRows = results
     .map(
       (result) =>
-        `| \`${result.test_id}\` | ${result.name} | \`${result.eval_type}\` | ${result.status} | \`${result.target_skill}\` | ${result.latency_ms}ms |`
+        `| \`${result.test_id}\` | ${result.name} | \`${result.eval_type}\` | ${result.status} | \`${result.target_skill}\` | ${result.latency_ms}ms |`,
     )
     .join("\n");
 
@@ -390,8 +445,14 @@ ${detailRows}
 
 const run = async () => {
   let testCases = await loadTestCases(options.evalsDir);
-  if (options.skill) testCases = testCases.filter((testCase) => testCase.target_skill === options.skill);
-  if (options.category) testCases = testCases.filter((testCase) => testCase.eval_type === options.category);
+  if (options.skill)
+    testCases = testCases.filter(
+      (testCase) => testCase.target_skill === options.skill,
+    );
+  if (options.category)
+    testCases = testCases.filter(
+      (testCase) => testCase.eval_type === options.category,
+    );
 
   if (testCases.length === 0) {
     console.log("No test cases found matching criteria.");
@@ -399,14 +460,19 @@ const run = async () => {
   }
 
   const skillSources = await loadSkillSources(options.skillsDir);
-  console.log(`Running ${testCases.length} static repository contracts (not model evaluations)...`);
+  console.log(
+    `Running ${testCases.length} static repository contracts (not model evaluations)...`,
+  );
 
   const startTime = Date.now();
-  const results = testCases.map((testCase) => evaluateTestCase(testCase, skillSources, options.skillsDir));
+  const results = testCases.map((testCase) =>
+    evaluateTestCase(testCase, skillSources, options.skillsDir),
+  );
   const totalMs = Date.now() - startTime;
   const timestamp = new Date().toISOString();
 
-  if (!existsSync(options.outDir)) await mkdir(options.outDir, { recursive: true });
+  if (!existsSync(options.outDir))
+    await mkdir(options.outDir, { recursive: true });
 
   const jsonSummary = {
     benchmark_run: {
@@ -417,24 +483,41 @@ const run = async () => {
         total_tests: results.length,
         passed: results.filter((result) => result.status === "PASS").length,
         failed: results.filter((result) => result.status === "FAIL").length,
-        pass_rate: results.length === 0 ? 0 : results.filter((result) => result.status === "PASS").length / results.length,
-        fixture_prompt_tokens: results.reduce((sum, result) => sum + result.tokens.prompt_tokens, 0),
+        pass_rate:
+          results.length === 0
+            ? 0
+            : results.filter((result) => result.status === "PASS").length /
+              results.length,
+        fixture_prompt_tokens: results.reduce(
+          (sum, result) => sum + result.tokens.prompt_tokens,
+          0,
+        ),
       },
     },
     results,
   };
 
-  await writeFile(join(options.outDir, "results.json"), JSON.stringify(jsonSummary, null, 2));
-  await writeFile(join(options.outDir, "summary.md"), generateMarkdownSummary(results, timestamp, totalMs));
+  await writeFile(
+    join(options.outDir, "results.json"),
+    JSON.stringify(jsonSummary, null, 2),
+  );
+  await writeFile(
+    join(options.outDir, "summary.md"),
+    generateMarkdownSummary(results, timestamp, totalMs),
+  );
 
   let hasFailures = false;
   for (const result of results) {
     const icon = result.status === "PASS" ? "✅" : "❌";
-    console.log(`${icon} [${result.eval_type}] ${result.test_id}: ${result.name}`);
+    console.log(
+      `${icon} [${result.eval_type}] ${result.test_id}: ${result.name}`,
+    );
     hasFailures ||= result.status === "FAIL";
   }
 
-  console.log(`Contract results saved to ${options.outDir}/summary.md and ${options.outDir}/results.json`);
+  console.log(
+    `Contract results saved to ${options.outDir}/summary.md and ${options.outDir}/results.json`,
+  );
   if (hasFailures) process.exit(1);
 };
 

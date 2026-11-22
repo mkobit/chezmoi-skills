@@ -11,7 +11,10 @@ import {
 
 const temporaryDirectories: string[] = [];
 
-const createFixture = (skills: Array<{ directory: string; name?: string }>, skillsPath: string = "./skills") => {
+const createFixture = (
+  skills: Array<{ directory: string; name?: string }>,
+  skillsPath: string = "./skills",
+) => {
   const root = mkdtempSync(join(tmpdir(), "chezmoi-skills-manifest-"));
   temporaryDirectories.push(root);
   const pluginDirectory = join(root, ".claude-plugin");
@@ -19,23 +22,31 @@ const createFixture = (skills: Array<{ directory: string; name?: string }>, skil
   mkdirSync(pluginDirectory);
   mkdirSync(skillsDirectory);
 
-  writeFileSync(join(pluginDirectory, "marketplace.json"), JSON.stringify({
-    name: "test-marketplace",
-    owner: { name: "Test owner" },
-    plugins: [{
-      name: "test-plugin",
-      source: "./",
-      version: "1.0.0",
-      skills: skillsPath,
-    }],
-  }));
+  writeFileSync(
+    join(pluginDirectory, "marketplace.json"),
+    JSON.stringify({
+      name: "test-marketplace",
+      owner: { name: "Test owner" },
+      plugins: [
+        {
+          name: "test-plugin",
+          source: "./",
+          version: "1.0.0",
+          skills: skillsPath,
+        },
+      ],
+    }),
+  );
 
   for (const skill of skills) {
     const skillDirectory = join(skillsDirectory, skill.directory);
     mkdirSync(skillDirectory);
-    writeFileSync(join(skillDirectory, "SKILL.md"), skill.name === undefined
-      ? "---\ndescription: Test skill.\n---\n\nTest instructions.\n"
-      : `---\nname: ${skill.name}\ndescription: Test skill.\n---\n\nTest instructions.\n`);
+    writeFileSync(
+      join(skillDirectory, "SKILL.md"),
+      skill.name === undefined
+        ? "---\ndescription: Test skill.\n---\n\nTest instructions.\n"
+        : `---\nname: ${skill.name}\ndescription: Test skill.\n---\n\nTest instructions.\n`,
+    );
   }
 
   return pluginDirectory;
@@ -49,14 +60,32 @@ const createVersionFixture = (codexVersion: string = "1.0.0") => {
   mkdirSync(claudePluginDirectory);
   mkdirSync(codexPluginDirectory);
 
-  writeFileSync(join(root, ".release-please-manifest.json"), JSON.stringify({ ".": "1.0.0" }));
-  writeFileSync(join(root, "package.json"), JSON.stringify({ version: "1.0.0" }));
-  writeFileSync(join(root, "plugin.json"), JSON.stringify({ version: "1.0.0" }));
-  writeFileSync(join(codexPluginDirectory, "plugin.json"), JSON.stringify({ version: codexVersion }));
-  writeFileSync(join(claudePluginDirectory, "plugin.json"), JSON.stringify({ version: "1.0.0" }));
-  writeFileSync(join(claudePluginDirectory, "marketplace.json"), JSON.stringify({
-    plugins: [{ version: "1.0.0" }],
-  }));
+  writeFileSync(
+    join(root, ".release-please-manifest.json"),
+    JSON.stringify({ ".": "1.0.0" }),
+  );
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({ version: "1.0.0" }),
+  );
+  writeFileSync(
+    join(root, "plugin.json"),
+    JSON.stringify({ version: "1.0.0" }),
+  );
+  writeFileSync(
+    join(codexPluginDirectory, "plugin.json"),
+    JSON.stringify({ version: codexVersion }),
+  );
+  writeFileSync(
+    join(claudePluginDirectory, "plugin.json"),
+    JSON.stringify({ version: "1.0.0" }),
+  );
+  writeFileSync(
+    join(claudePluginDirectory, "marketplace.json"),
+    JSON.stringify({
+      plugins: [{ version: "1.0.0" }],
+    }),
+  );
 
   return { root, claudePluginDirectory };
 };
@@ -78,17 +107,27 @@ describe("validateMarketplaceSkillParity", () => {
 
     const results = await validateMarketplaceSkillParity(pluginDirectory);
 
-    expect(results).toContainEqual({ valid: true, name: "marketplace skill declaration parity (test-plugin: 2 directories)" });
-    expect(results).toContainEqual({ valid: true, name: "marketplace skill frontmatter name uniqueness (2 unique names)" });
+    expect(results).toContainEqual({
+      valid: true,
+      name: "marketplace skill declaration parity (test-plugin: 2 directories)",
+    });
+    expect(results).toContainEqual({
+      valid: true,
+      name: "marketplace skill frontmatter name uniqueness (2 unique names)",
+    });
   });
 
   it("rejects a marketplace skills path that does not resolve", async () => {
-    const pluginDirectory = createFixture([
-      { directory: "first", name: "first" },
-    ], "./missing");
+    const pluginDirectory = createFixture(
+      [{ directory: "first", name: "first" }],
+      "./missing",
+    );
 
     const results = await validateMarketplaceSkillParity(pluginDirectory);
-    const parity = results.find((result) => result.name === "marketplace skill declaration parity (test-plugin)");
+    const parity = results.find(
+      (result) =>
+        result.name === "marketplace skill declaration parity (test-plugin)",
+    );
 
     expect(parity).toEqual({
       valid: false,
@@ -109,12 +148,14 @@ describe("validateMarketplaceSkillParity", () => {
     expect(results).toContainEqual({
       valid: false,
       name: "marketplace skill declaration parity (test-plugin)",
-      details: "SKILL.md frontmatter name does not match directory: first is named duplicate; SKILL.md frontmatter name does not match directory: second is named duplicate; SKILL.md frontmatter name is missing for directory: third",
+      details:
+        "SKILL.md frontmatter name does not match directory: first is named duplicate; SKILL.md frontmatter name does not match directory: second is named duplicate; SKILL.md frontmatter name is missing for directory: third",
     });
     expect(results).toContainEqual({
       valid: false,
       name: "marketplace skill frontmatter name uniqueness",
-      details: "Duplicate SKILL.md frontmatter names: duplicate (test-plugin/first, test-plugin/second)",
+      details:
+        "Duplicate SKILL.md frontmatter names: duplicate (test-plugin/first, test-plugin/second)",
     });
   });
 
@@ -128,7 +169,8 @@ describe("validateMarketplaceSkillParity", () => {
     expect(results).toContainEqual({
       valid: false,
       name: "marketplace skill declaration parity (test-plugin)",
-      details: "SKILL.md frontmatter name does not match directory: first is named other",
+      details:
+        "SKILL.md frontmatter name does not match directory: first is named other",
     });
   });
 });
@@ -147,36 +189,42 @@ describe("portable plugin manifests", () => {
   };
 
   it("accepts the portable manifest and Codex compatibility overlay", () => {
-    expect(portablePluginJsonSchema.safeParse(portablePlugin).success).toBe(true);
-    expect(codexPluginJsonSchema.safeParse({
-      ...portablePlugin,
-      skills: "./skills/",
-      interface: {
-        displayName: "Chezmoi",
-        shortDescription: "Manage chezmoi dotfiles.",
-        longDescription: "Use Agent Skills to manage chezmoi dotfiles.",
-        developerName: "Test owner",
-        category: "Productivity",
-        capabilities: [],
-        defaultPrompt: ["Help me manage chezmoi dotfiles."],
-      },
-    }).success).toBe(true);
+    expect(portablePluginJsonSchema.safeParse(portablePlugin).success).toBe(
+      true,
+    );
+    expect(
+      codexPluginJsonSchema.safeParse({
+        ...portablePlugin,
+        skills: "./skills/",
+        interface: {
+          displayName: "Chezmoi",
+          shortDescription: "Manage chezmoi dotfiles.",
+          longDescription: "Use Agent Skills to manage chezmoi dotfiles.",
+          developerName: "Test owner",
+          category: "Productivity",
+          capabilities: [],
+          defaultPrompt: ["Help me manage chezmoi dotfiles."],
+        },
+      }).success,
+    ).toBe(true);
   });
 
   it("requires the Codex skills path to resolve from the plugin root", () => {
-    expect(codexPluginJsonSchema.safeParse({
-      ...portablePlugin,
-      skills: "./skills",
-      interface: {
-        displayName: "Chezmoi",
-        shortDescription: "Manage chezmoi dotfiles.",
-        longDescription: "Use Agent Skills to manage chezmoi dotfiles.",
-        developerName: "Test owner",
-        category: "Productivity",
-        capabilities: [],
-        defaultPrompt: ["Help me manage chezmoi dotfiles."],
-      },
-    }).success).toBe(false);
+    expect(
+      codexPluginJsonSchema.safeParse({
+        ...portablePlugin,
+        skills: "./skills",
+        interface: {
+          displayName: "Chezmoi",
+          shortDescription: "Manage chezmoi dotfiles.",
+          longDescription: "Use Agent Skills to manage chezmoi dotfiles.",
+          developerName: "Test owner",
+          category: "Productivity",
+          capabilities: [],
+          defaultPrompt: ["Help me manage chezmoi dotfiles."],
+        },
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -186,10 +234,13 @@ describe("validateVersionSync", () => {
 
     const results = await validateVersionSync(claudePluginDirectory, root);
 
-    expect(results).toEqual([{
-      valid: false,
-      name: "version sync",
-      details: "Versions out of sync: .release-please-manifest.json=1.0.0, root plugin.json=1.0.0, .codex-plugin/plugin.json=1.0.1, .claude-plugin/plugin.json=1.0.0, package.json=1.0.0, marketplace.json plugins[0]=1.0.0",
-    }]);
+    expect(results).toEqual([
+      {
+        valid: false,
+        name: "version sync",
+        details:
+          "Versions out of sync: .release-please-manifest.json=1.0.0, root plugin.json=1.0.0, .codex-plugin/plugin.json=1.0.1, .claude-plugin/plugin.json=1.0.0, package.json=1.0.0, marketplace.json plugins[0]=1.0.0",
+      },
+    ]);
   });
 });

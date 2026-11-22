@@ -1,5 +1,11 @@
 import { createHash } from "crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "fs";
 import { dirname, join, relative, resolve } from "path";
 import { Command } from "commander";
 
@@ -36,7 +42,8 @@ export interface LiveBenchmarkPreflight {
   total_planned_requests: number;
 }
 
-const sha256 = (content: string): string => createHash("sha256").update(content).digest("hex");
+const sha256 = (content: string): string =>
+  createHash("sha256").update(content).digest("hex");
 
 const fileSha256 = (path: string): string => sha256(readFileSync(path));
 
@@ -50,7 +57,11 @@ const listedFilesRecursive = (directory: string, suffix: string): string[] =>
   readdirSync(directory, { withFileTypes: true })
     .flatMap((entry) => {
       const path = join(directory, entry.name);
-      return entry.isDirectory() ? listedFilesRecursive(path, suffix) : entry.isFile() && entry.name.endsWith(suffix) ? [path] : [];
+      return entry.isDirectory()
+        ? listedFilesRecursive(path, suffix)
+        : entry.isFile() && entry.name.endsWith(suffix)
+          ? [path]
+          : [];
     })
     .sort();
 
@@ -76,7 +87,8 @@ const yamlValues = (content: string, key: string): string[] => {
 };
 
 const readRequired = (path: string): string => {
-  if (!existsSync(path)) throw new Error(`Required generated input not found: ${path}`);
+  if (!existsSync(path))
+    throw new Error(`Required generated input not found: ${path}`);
   return readFileSync(path, "utf-8");
 };
 
@@ -85,7 +97,8 @@ export const prepareLiveBenchmark = (rootDir = "."): LiveBenchmarkPreflight => {
   const evalsDir = join(root, "tests", "evals");
   const generatedDir = join(root, "eval_results");
   const corpusFiles = listedFiles(evalsDir, ".json");
-  if (corpusFiles.length === 0) throw new Error(`No JSON corpus files found in ${evalsDir}`);
+  if (corpusFiles.length === 0)
+    throw new Error(`No JSON corpus files found in ${evalsDir}`);
 
   const cases = corpusFiles.flatMap((file) => {
     const parsed: unknown = JSON.parse(readFileSync(file, "utf-8"));
@@ -93,14 +106,20 @@ export const prepareLiveBenchmark = (rootDir = "."): LiveBenchmarkPreflight => {
     return entries as CorpusCase[];
   });
   const answerCases = cases.filter(
-    (testCase) => testCase.eval_type === "command_correctness" || testCase.eval_type === "answer_quality"
+    (testCase) =>
+      testCase.eval_type === "command_correctness" ||
+      testCase.eval_type === "answer_quality",
   ).length;
-  const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf-8")) as {
+  const packageJson = JSON.parse(
+    readFileSync(join(root, "package.json"), "utf-8"),
+  ) as {
     devDependencies?: Record<string, string>;
   };
   const promptfooVersion = packageJson.devDependencies?.promptfoo;
   if (promptfooVersion !== "0.123.1") {
-    throw new Error(`Expected promptfoo 0.123.1, found ${promptfooVersion ?? "no pinned version"}`);
+    throw new Error(
+      `Expected promptfoo 0.123.1, found ${promptfooVersion ?? "no pinned version"}`,
+    );
   }
   const skillFiles = listedFilesRecursive(join(root, "skills"), ".md");
   const evaluationCodeFiles = [
@@ -109,36 +128,73 @@ export const prepareLiveBenchmark = (rootDir = "."): LiveBenchmarkPreflight => {
     join(root, "scripts", "evals", "patch-version.cjs"),
   ];
   const answerConfigPath = join(root, "promptfooconfig.yaml");
-  const routerConfigPath = join(generatedDir, "promptfooconfig.router.generated.yaml");
-  const answerTestsPath = join(generatedDir, "promptfoo-answer-tests.generated.yaml");
-  const routerTestsPath = join(generatedDir, "promptfoo-router-tests.generated.yaml");
+  const routerConfigPath = join(
+    generatedDir,
+    "promptfooconfig.router.generated.yaml",
+  );
+  const answerTestsPath = join(
+    generatedDir,
+    "promptfoo-answer-tests.generated.yaml",
+  );
+  const routerTestsPath = join(
+    generatedDir,
+    "promptfoo-router-tests.generated.yaml",
+  );
   const answerConfig = readRequired(answerConfigPath);
   const routerConfig = readRequired(routerConfigPath);
   const answerTests = readRequired(answerTestsPath);
   const routerTests = readRequired(routerTestsPath);
-  const countGeneratedTests = (content: string): number => content.match(/^  - description:/gm)?.length ?? 0;
-  if (countGeneratedTests(answerTests) !== answerCases || countGeneratedTests(routerTests) !== cases.length) {
-    throw new Error("Generated Promptfoo test counts do not match the checked-in corpus");
+  const countGeneratedTests = (content: string): number =>
+    content.match(/^  - description:/gm)?.length ?? 0;
+  if (
+    countGeneratedTests(answerTests) !== answerCases ||
+    countGeneratedTests(routerTests) !== cases.length
+  ) {
+    throw new Error(
+      "Generated Promptfoo test counts do not match the checked-in corpus",
+    );
   }
-  if (!answerConfig.includes("tests: file://eval_results/promptfoo-answer-tests.generated.yaml")) {
-    throw new Error("Answer configuration does not reference the generated answer tests");
+  if (
+    !answerConfig.includes(
+      "tests: file://eval_results/promptfoo-answer-tests.generated.yaml",
+    )
+  ) {
+    throw new Error(
+      "Answer configuration does not reference the generated answer tests",
+    );
   }
-  if (!routerConfig.includes("tests: file://promptfoo-router-tests.generated.yaml")) {
-    throw new Error("Router configuration does not reference the generated router tests");
+  if (
+    !routerConfig.includes(
+      "tests: file://promptfoo-router-tests.generated.yaml",
+    )
+  ) {
+    throw new Error(
+      "Router configuration does not reference the generated router tests",
+    );
   }
   const answerProviders = yamlValues(answerConfig, "id");
   const routerProviders = yamlValues(routerConfig, "id");
   const answerPrompts = yamlValues(answerConfig, "label").length;
   const routerPrompts = yamlValues(routerConfig, "label").length;
-  if (answerProviders.length === 0 || answerPrompts === 0 || routerProviders.length === 0 || routerPrompts === 0) {
-    throw new Error("Promptfoo configurations must declare at least one prompt and provider");
+  if (
+    answerProviders.length === 0 ||
+    answerPrompts === 0 ||
+    routerProviders.length === 0 ||
+    routerPrompts === 0
+  ) {
+    throw new Error(
+      "Promptfoo configurations must declare at least one prompt and provider",
+    );
   }
 
   const generatedInputs = {
     "promptfooconfig.yaml": fileSha256(answerConfigPath),
-    "eval_results/promptfooconfig.router.generated.yaml": fileSha256(routerConfigPath),
-    "eval_results/promptfoo-answer-tests.generated.yaml": fileSha256(answerTestsPath),
-    "eval_results/promptfoo-router-tests.generated.yaml": fileSha256(routerTestsPath),
+    "eval_results/promptfooconfig.router.generated.yaml":
+      fileSha256(routerConfigPath),
+    "eval_results/promptfoo-answer-tests.generated.yaml":
+      fileSha256(answerTestsPath),
+    "eval_results/promptfoo-router-tests.generated.yaml":
+      fileSha256(routerTestsPath),
   };
   const answerRequests = answerCases * answerPrompts * answerProviders.length;
   const routerRequests = cases.length * routerPrompts * routerProviders.length;
@@ -172,7 +228,10 @@ export const prepareLiveBenchmark = (rootDir = "."): LiveBenchmarkPreflight => {
   };
 };
 
-export const writeLiveBenchmarkPreflight = (outputFile: string, rootDir = "."): LiveBenchmarkPreflight => {
+export const writeLiveBenchmarkPreflight = (
+  outputFile: string,
+  rootDir = ".",
+): LiveBenchmarkPreflight => {
   const result = prepareLiveBenchmark(rootDir);
   mkdirSync(dirname(resolve(outputFile)), { recursive: true });
   writeFileSync(outputFile, `${JSON.stringify(result, null, 2)}\n`);
@@ -182,15 +241,26 @@ export const writeLiveBenchmarkPreflight = (outputFile: string, rootDir = "."): 
 if (import.meta.main) {
   const program = new Command()
     .option("--root-dir <dir>", "Repository root", ".")
-    .option("--output-file <path>", "Preflight JSON output", "eval_results/live-preflight.json")
+    .option(
+      "--output-file <path>",
+      "Preflight JSON output",
+      "eval_results/live-preflight.json",
+    )
     .parse(process.argv);
   const options = program.opts<{ rootDir: string; outputFile: string }>();
   try {
-    const result = writeLiveBenchmarkPreflight(options.outputFile, options.rootDir);
-    console.log(`Planned ${result.total_planned_requests} model requests across ${result.corpus.cases} corpus cases.`);
+    const result = writeLiveBenchmarkPreflight(
+      options.outputFile,
+      options.rootDir,
+    );
+    console.log(
+      `Planned ${result.total_planned_requests} model requests across ${result.corpus.cases} corpus cases.`,
+    );
     console.log(`Corpus SHA-256: ${result.corpus.sha256}`);
   } catch (error) {
-    console.error(`Live benchmark preflight failed: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Live benchmark preflight failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(1);
   }
 }

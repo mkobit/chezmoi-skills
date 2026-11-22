@@ -7,7 +7,11 @@ import { Command } from "commander";
 const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
-  eval_type: z.enum(["trigger_matching", "skill_selection", "command_correctness"]),
+  eval_type: z.enum([
+    "trigger_matching",
+    "skill_selection",
+    "command_correctness",
+  ]),
   target_skill: z.string(),
   input: z.object({
     user_prompt: z.string(),
@@ -42,12 +46,32 @@ const program = new Command();
 
 program
   .name("extract-transcript-evals")
-  .description("Extract structured evaluation test cases from transcript JSONL log files")
-  .option("-i, --input <path>", "Path to transcript JSONL file or directory containing transcripts")
-  .option("-o, --out-dir <dir>", "Directory for output evaluation test cases", "tests/evals")
-  .option("-s, --target-skill <skill>", "Target skill name for extracted test cases", "chezmoi-cli-commands")
-  .option("-p, --id-prefix <prefix>", "ID prefix for generated test cases", "TC-EXTRACTED")
-  .option("--dry-run", "Output extracted test cases to stdout without writing files")
+  .description(
+    "Extract structured evaluation test cases from transcript JSONL log files",
+  )
+  .option(
+    "-i, --input <path>",
+    "Path to transcript JSONL file or directory containing transcripts",
+  )
+  .option(
+    "-o, --out-dir <dir>",
+    "Directory for output evaluation test cases",
+    "tests/evals",
+  )
+  .option(
+    "-s, --target-skill <skill>",
+    "Target skill name for extracted test cases",
+    "chezmoi-cli-commands",
+  )
+  .option(
+    "-p, --id-prefix <prefix>",
+    "ID prefix for generated test cases",
+    "TC-EXTRACTED",
+  )
+  .option(
+    "--dry-run",
+    "Output extracted test cases to stdout without writing files",
+  )
   .parse(process.argv);
 
 const options = program.opts();
@@ -58,8 +82,14 @@ const extractUserPromptText = (content: string): string => {
   if (requestMatch) {
     text = requestMatch[1];
   }
-  text = text.replace(/<ADDITIONAL_METADATA>[\s\S]*?<\/ADDITIONAL_METADATA>/g, "");
-  text = text.replace(/<USER_SETTINGS_CHANGE>[\s\S]*?<\/USER_SETTINGS_CHANGE>/g, "");
+  text = text.replace(
+    /<ADDITIONAL_METADATA>[\s\S]*?<\/ADDITIONAL_METADATA>/g,
+    "",
+  );
+  text = text.replace(
+    /<USER_SETTINGS_CHANGE>[\s\S]*?<\/USER_SETTINGS_CHANGE>/g,
+    "",
+  );
   return text.trim();
 };
 
@@ -67,7 +97,9 @@ const extractChezmoiCommand = (step: TranscriptStep): string | null => {
   if (!step.tool_calls) return null;
   for (const call of step.tool_calls) {
     if (call.name === "run_command" && call.args) {
-      const rawCmd = (call.args.CommandLine || call.args.command_line || "") as string;
+      const rawCmd = (call.args.CommandLine ||
+        call.args.command_line ||
+        "") as string;
       const cleanCmd = rawCmd.replace(/^"|"$/g, "").trim();
       if (cleanCmd.includes("chezmoi")) {
         const match = cleanCmd.match(/(chezmoi\s+[^\&\;\|]+)/);
@@ -80,7 +112,11 @@ const extractChezmoiCommand = (step: TranscriptStep): string | null => {
   return null;
 };
 
-export const parseTranscript = (jsonlContent: string, targetSkill: string, idPrefix: string): TestCase[] => {
+export const parseTranscript = (
+  jsonlContent: string,
+  targetSkill: string,
+  idPrefix: string,
+): TestCase[] => {
   const lines = jsonlContent.split("\n").filter((l) => l.trim().length > 0);
   const steps: TranscriptStep[] = [];
 
@@ -100,7 +136,11 @@ export const parseTranscript = (jsonlContent: string, targetSkill: string, idPre
     if (step.type === "USER_INPUT" && step.content) {
       const promptText = extractUserPromptText(step.content);
       if (!promptText || promptText.length < 5) continue;
-      if (promptText.startsWith("this is the new continu") || promptText.includes("Continuation prompt:")) continue;
+      if (
+        promptText.startsWith("this is the new continu") ||
+        promptText.includes("Continuation prompt:")
+      )
+        continue;
 
       let extractedCmd: string | null = null;
       for (let j = i + 1; j < Math.min(i + 5, steps.length); j++) {
@@ -116,7 +156,9 @@ export const parseTranscript = (jsonlContent: string, targetSkill: string, idPre
       count++;
 
       if (extractedCmd) {
-        const flags = extractedCmd.split(/\s+/).filter((arg) => arg.startsWith("-"));
+        const flags = extractedCmd
+          .split(/\s+/)
+          .filter((arg) => arg.startsWith("-"));
         const tc: TestCase = {
           id,
           name: `Extracted command correctness for ${extractedCmd.split(/\s+/).slice(0, 2).join(" ")}`,
@@ -136,7 +178,10 @@ export const parseTranscript = (jsonlContent: string, targetSkill: string, idPre
         if (validation.success) {
           testCases.push(validation.data);
         }
-      } else if (promptText.toLowerCase().includes("chezmoi") || promptText.toLowerCase().includes("dotfile")) {
+      } else if (
+        promptText.toLowerCase().includes("chezmoi") ||
+        promptText.toLowerCase().includes("dotfile")
+      ) {
         const tc: TestCase = {
           id,
           name: `Extracted trigger matching for user request`,
@@ -174,7 +219,9 @@ const main = async () => {
   }
 
   const filesToProcess: string[] = [];
-  const statInfo = await readdir(inputPath, { withFileTypes: true }).catch(() => null);
+  const statInfo = await readdir(inputPath, { withFileTypes: true }).catch(
+    () => null,
+  );
 
   if (statInfo) {
     for (const entry of statInfo) {
@@ -194,11 +241,17 @@ const main = async () => {
   const allTestCases: TestCase[] = [];
   for (const filePath of filesToProcess) {
     const rawContent = await readFile(filePath, "utf-8");
-    const extracted = parseTranscript(rawContent, options.targetSkill, options.idPrefix);
+    const extracted = parseTranscript(
+      rawContent,
+      options.targetSkill,
+      options.idPrefix,
+    );
     allTestCases.push(...extracted);
   }
 
-  console.log(`Extracted ${allTestCases.length} eval test cases from ${filesToProcess.length} transcript file(s).`);
+  console.log(
+    `Extracted ${allTestCases.length} eval test cases from ${filesToProcess.length} transcript file(s).`,
+  );
 
   if (options.dryRun) {
     console.log(JSON.stringify(allTestCases, null, 2));

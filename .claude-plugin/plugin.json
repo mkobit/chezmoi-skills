@@ -8,9 +8,5 @@
   },
   "repository": "https://github.com/mkobit/chezmoi-skills",
   "license": "MIT",
-  "keywords": [
-    "chezmoi",
-    "dotfiles",
-    "homedir"
-  ]
+  "keywords": ["chezmoi", "dotfiles", "homedir"]
 }

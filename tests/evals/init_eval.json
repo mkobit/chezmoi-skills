@@ -62,13 +62,8 @@
     "expected": {
       "exact_command": "chezmoi init --apply https://github.com/username/dotfiles.git",
       "command_regex": "^chezmoi init --apply https://github\\.com/[^/]+/dotfiles\\.git$",
-      "required_flags": [
-        "--apply"
-      ],
-      "forbidden_flags": [
-        "--purge",
-        "--one-shot"
-      ]
+      "required_flags": ["--apply"],
+      "forbidden_flags": ["--purge", "--one-shot"]
     },
     "token_budget": 500
   },
@@ -83,13 +78,8 @@
     "expected": {
       "exact_command": "chezmoi init --one-shot --purge https://github.com/username/dotfiles.git",
       "command_regex": "^chezmoi init --one-shot --purge .+$",
-      "required_flags": [
-        "--one-shot",
-        "--purge"
-      ],
-      "forbidden_flags": [
-        "--promptBool"
-      ]
+      "required_flags": ["--one-shot", "--purge"],
+      "forbidden_flags": ["--promptBool"]
     },
     "token_budget": 500
   },
@@ -119,9 +109,7 @@
     "expected": {
       "exact_command": "chezmoi init --ssh username",
       "command_regex": "^chezmoi init --ssh [^\\s]+$",
-      "required_flags": [
-        "--ssh"
-      ]
+      "required_flags": ["--ssh"]
     },
     "token_budget": 500
   },
@@ -151,9 +139,7 @@
     "expected": {
       "exact_command": "chezmoi init --branch main --apply username",
       "command_regex": "^chezmoi init --branch [^\\s]+ --apply [^\\s]+$",
-      "required_flags": [
-        "--branch"
-      ]
+      "required_flags": ["--branch"]
     },
     "token_budget": 500
   }
