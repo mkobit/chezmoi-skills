@@ -8,6 +8,7 @@ import {
   validateVersionSync,
 } from "./manifests";
 import { validateContractCoverage } from "./coverage";
+import { validateDuplicateKeys } from "./duplicate-keys";
 import { reportTokenEfficiency } from "./tokens";
 
 export const handleResults = (results: ValidationResult[]): boolean => {
@@ -44,6 +45,7 @@ export const run = async (): Promise<void> => {
     await validateMarketplaceSkillParity(claudePluginDir);
   const versionResults = await validateVersionSync(claudePluginDir);
   const coverageResults = await validateContractCoverage(claudePluginDir);
+  const duplicateKeyResults = await validateDuplicateKeys();
 
   const failed = handleResults([
     ...skillResults,
@@ -52,6 +54,7 @@ export const run = async (): Promise<void> => {
     ...marketplaceSkillResults,
     ...versionResults,
     ...coverageResults,
+    ...duplicateKeyResults,
   ]);
 
   if (failed) {
