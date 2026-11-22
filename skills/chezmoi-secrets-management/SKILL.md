@@ -31,3 +31,7 @@ Password manager functions can be used directly in `chezmoi.toml.tmpl`:
 - Consult [password-managers.md](references/password-managers.md) for 1Password, Bitwarden, Vault, and KeePassXC function signatures and examples.
 - Consult [secret-providers.md](references/secret-providers.md) for pass, gopass, OS keyring, generic CLI tools, and cloud secret functions.
 - Consult [encryption.md](references/encryption.md) for `age` and `gpg` setup guides and naming patterns.
+
+## Related skills
+
+- Consult `chezmoi-templating` for conditional secret lookups and template readability.

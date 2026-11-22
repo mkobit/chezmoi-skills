@@ -31,3 +31,4 @@ sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply user/dotfiles
 
 - Consult `chezmoi-cli-commands` for global flags (`--source`, `--destination`) and post-init operations (`apply`, `diff`, `doctor`, `managed`).
 - Consult `chezmoi-configuration` for configuring `sourceDir` and top-level options.
+- Consult `chezmoi-templating` for `.chezmoi.<format>.tmpl` init template syntax and readability.

@@ -32,3 +32,4 @@ chezmoi init --prompt                                 # rerun configuration prom
 
 - Consult `chezmoi-secrets-management` for `encryption` (`age` or `gpg`) setup.
 - Consult `chezmoi-machine-config` for machine-specific configuration templates (`.chezmoi.$FORMAT.tmpl`).
+- Consult `chezmoi-templating` for templated configuration file syntax and readability.
