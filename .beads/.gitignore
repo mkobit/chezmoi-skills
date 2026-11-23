@@ -65,6 +65,9 @@ dolt-pprof/
 # Backup data (auto-exported JSONL, local-only)
 backup/
 
+# Git hooks (installed locally via bd hooks install --beads)
+hooks/
+
 # Per-project environment file (Dolt connection config, GH#2520)
 .env
 
