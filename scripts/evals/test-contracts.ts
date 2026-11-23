@@ -2,8 +2,22 @@ import { existsSync } from "fs";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { join, relative } from "path";
 import matter from "gray-matter";
-import { z } from "zod";
 import { Command } from "commander";
+import {
+  AnswerQualitySchema,
+  TestCaseSchema,
+  type TestCase,
+} from "./corpus.ts";
+
+export { AnswerQualitySchema, TestCaseSchema, type TestCase };
+
+interface CliOptions {
+  skill?: string;
+  category?: string;
+  evalsDir: string;
+  outDir: string;
+  skillsDir: string;
+}
 
 const program = new Command();
 
@@ -20,56 +34,7 @@ program
     "Directory for static contract results",
     "eval_results",
   )
-  .option("--skills-dir <dir>", "Directory containing skills", "skills")
-  .parse(process.argv);
-
-const options = program.opts();
-
-const AnswerQualitySchema = z
-  .object({
-    required_concepts: z.array(z.string()).min(1).optional(),
-    forbidden_claims: z.array(z.string()).min(1).optional(),
-    clarification: z.enum(["required", "forbidden"]).optional(),
-    safety_expectations: z.array(z.string()).min(1).optional(),
-  })
-  .refine(
-    (expectation) =>
-      expectation.required_concepts !== undefined ||
-      expectation.forbidden_claims !== undefined ||
-      expectation.clarification !== undefined ||
-      expectation.safety_expectations !== undefined,
-    "Answer quality expectations must include at least one assertion.",
-  );
-
-const TestCaseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  eval_type: z.enum([
-    "trigger_matching",
-    "skill_selection",
-    "command_correctness",
-    "answer_quality",
-  ]),
-  target_skill: z.string(),
-  input: z.object({
-    user_prompt: z.string(),
-    context_files: z.array(z.string()).optional(),
-  }),
-  expected: z.object({
-    should_trigger: z.boolean().optional(),
-    selected_skill: z.string().optional(),
-    selected_skills: z.array(z.string()).min(1).optional(),
-    allow_clarification: z.boolean().optional(),
-    exact_command: z.string().optional(),
-    command_regex: z.string().optional(),
-    required_flags: z.array(z.string()).optional(),
-    forbidden_flags: z.array(z.string()).optional(),
-    answer_quality: AnswerQualitySchema.optional(),
-  }),
-  token_budget: z.number().optional(),
-});
-
-type TestCase = z.infer<typeof TestCaseSchema>;
+  .option("--skills-dir <dir>", "Directory containing skills", "skills");
 
 interface SkillSource {
   name: string;
@@ -419,7 +384,7 @@ const generateMarkdownSummary = (
 
 These contracts validate the relationship between the curated corpus and the checked-in skill source.
 They do not execute a model or claim to measure model routing or command-generation quality.
-Use the Promptfoo live evaluation for behavioral results.
+Use \`bun run eval:local\` for harness-driven behavioral results.
 
 - Execution timestamp: \`${timestamp}\`
 - Duration: \`${totalMs}ms\`
@@ -443,7 +408,7 @@ ${detailRows}
 `;
 };
 
-const run = async () => {
+const run = async (options: CliOptions) => {
   let testCases = await loadTestCases(options.evalsDir);
   if (options.skill)
     testCases = testCases.filter(
@@ -521,4 +486,8 @@ const run = async () => {
   if (hasFailures) process.exit(1);
 };
 
-run();
+if (import.meta.main) {
+  program.parse(process.argv);
+  const options = program.opts<CliOptions>();
+  run(options);
+}

@@ -4,6 +4,7 @@
     "name": "Skill selection for Go templates and Sprig functions",
     "eval_type": "skill_selection",
     "target_skill": "chezmoi-templating",
+    "smoke": true,
     "input": {
       "user_prompt": "how do i manipulate strings and render values dynamically in my chezmoi templates"
     },

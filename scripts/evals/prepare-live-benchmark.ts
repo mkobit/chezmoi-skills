@@ -1,13 +1,12 @@
-import { createHash } from "crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "fs";
-import { dirname, join, relative, resolve } from "path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { dirname, join, resolve } from "path";
 import { Command } from "commander";
+import {
+  corpusHash,
+  fileSha256,
+  listedFiles,
+  listedFilesRecursive,
+} from "./hash.ts";
 
 interface CorpusCase {
   eval_type: string;
@@ -41,40 +40,6 @@ export interface LiveBenchmarkPreflight {
   };
   total_planned_requests: number;
 }
-
-const sha256 = (content: string | Uint8Array): string =>
-  createHash("sha256").update(content).digest("hex");
-
-const fileSha256 = (path: string): string => sha256(readFileSync(path));
-
-const listedFiles = (directory: string, suffix: string): string[] =>
-  readdirSync(directory, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(suffix))
-    .map((entry) => join(directory, entry.name))
-    .sort();
-
-const listedFilesRecursive = (directory: string, suffix: string): string[] =>
-  readdirSync(directory, { withFileTypes: true })
-    .flatMap((entry) => {
-      const path = join(directory, entry.name);
-      return entry.isDirectory()
-        ? listedFilesRecursive(path, suffix)
-        : entry.isFile() && entry.name.endsWith(suffix)
-          ? [path]
-          : [];
-    })
-    .sort();
-
-const corpusHash = (files: string[], rootDir: string): string => {
-  const hash = createHash("sha256");
-  for (const file of files) {
-    hash.update(relative(rootDir, file));
-    hash.update("\0");
-    hash.update(readFileSync(file));
-    hash.update("\0");
-  }
-  return hash.digest("hex");
-};
 
 const yamlValues = (content: string, key: string): string[] => {
   const values: string[] = [];
