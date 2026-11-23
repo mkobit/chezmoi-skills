@@ -29,8 +29,10 @@ export class ConfigError extends Error {
   }
 }
 
+export type HarnessName = "codex" | "agy";
+
 export interface RunOptions {
-  harness: string;
+  harness: HarnessName;
   evalsDir: string;
   skillsDir: string;
   outDir: string;
@@ -56,7 +58,7 @@ export interface RunSummary {
   timestamp: string;
   commit_sha: string;
   git_dirty: boolean;
-  harness_name: "codex";
+  harness_name: HarnessName;
   harness_version: string;
   model_id: string | null;
   skill_source_sha256: string;
@@ -71,15 +73,24 @@ export interface RunSummary {
   cases: CaseResult[];
 }
 
-export interface ParsedCodexTrace {
+export interface BaselineComparison {
+  new_failures: string[];
+  new_passes: string[];
+  unchanged_failures: string[];
+  drift_warnings: string[];
+}
+
+export interface ParsedHarnessTrace {
   trace: NormalizedTrace;
   authOrRateLimitError: string | null;
   usage?: Record<string, unknown>;
   modelId?: string | null;
 }
 
+export type ParsedCodexTrace = ParsedHarnessTrace;
+
 const AUTH_OR_RATE_LIMIT_RE =
-  /401|unauthorized|invalid.*auth|rate.?limit|429|quota/i;
+  /401|unauthorized|invalid.*auth|authentication.*(?:fail|required|timed out)|rate.?limit|429|quota/i;
 const SKILL_DISCOVERY_RE = /\.agents\/skills\/([^/\s"'`]+)\/SKILL\.md/g;
 const REFERENCE_READ_RE =
   /\.agents\/skills\/[^/\s"'`]+\/(references\/[^\s"'`]+\.md)/g;
@@ -136,6 +147,37 @@ export const checkCodexPreflight = (): { harness_version: string } => {
 };
 
 /**
+ * Verifies that the `agy` CLI is installed and supports print-mode stream-json output.
+ */
+export const checkAgyPreflight = (): { harness_version: string } => {
+  const versionResult = runSyncCommand(["agy", "--version"]);
+  if (versionResult.exitCode !== 0) {
+    throw new ConfigError(
+      `agy --version failed (exit ${versionResult.exitCode}): ${versionResult.stderr.trim() || versionResult.stdout.trim()}`,
+    );
+  }
+
+  const helpResult = runSyncCommand(["agy", "--help"]);
+  if (helpResult.exitCode !== 0) {
+    throw new ConfigError(
+      `agy --help failed (exit ${helpResult.exitCode}): ${helpResult.stderr.trim() || helpResult.stdout.trim()}`,
+    );
+  }
+
+  const helpText = `${helpResult.stdout}\n${helpResult.stderr}`;
+  for (const flag of ["--print", "--output-format"]) {
+    if (!helpText.includes(flag)) {
+      throw new ConfigError(
+        `agy --help does not advertise required flag ${flag}.`,
+      );
+    }
+  }
+
+  const harnessVersion = versionResult.stdout.trim() || "unknown";
+  return { harness_version: harnessVersion };
+};
+
+/**
  * Resolves and verifies the existence of the Codex `auth.json` credential file.
  */
 export const resolveAuthJsonPath = (): string => {
@@ -149,6 +191,24 @@ export const resolveAuthJsonPath = (): string => {
     throw new ConfigError(`Codex auth.json not found at ${authPath}.`);
   }
   return authPath;
+};
+
+/**
+ * Resolves and verifies the existence of the Antigravity OAuth token file.
+ */
+export const resolveAgyAuthTokenPath = (): string => {
+  const baseHome = process.env.HOME?.trim() || homedir();
+  const tokenPath = join(
+    baseHome,
+    ".gemini",
+    "antigravity-cli",
+    "antigravity-oauth-token",
+  );
+
+  if (!existsSync(tokenPath)) {
+    throw new ConfigError(`Antigravity OAuth token not found at ${tokenPath}.`);
+  }
+  return tokenPath;
 };
 
 /**
@@ -344,6 +404,62 @@ const checkForbiddenReference = (
   }
 };
 
+const recordSkillAndReferenceMatches = (
+  value: string,
+  discoveredSkills: string[],
+  referencesRead: string[],
+): void => {
+  for (const match of value.matchAll(SKILL_DISCOVERY_RE)) {
+    if (match[1]) addUnique(discoveredSkills, match[1]);
+  }
+  for (const match of value.matchAll(REFERENCE_READ_RE)) {
+    if (match[1]) addUnique(referencesRead, match[1]);
+  }
+};
+
+const parseShimLog = (
+  shimLogJsonl: string,
+  commandsInvoked: string[],
+  traceViolations: string[],
+  mockCalls: MockCallRecord[],
+): void => {
+  for (const line of shimLogJsonl.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    let entry: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (!parsed || typeof parsed !== "object") continue;
+      entry = parsed as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+
+    const argv = Array.isArray(entry.argv)
+      ? entry.argv.filter((arg): arg is string => typeof arg === "string")
+      : [];
+    const outcome = (
+      typeof entry.outcome === "string" ? entry.outcome : "unmocked_fallback"
+    ) as MockCallOutcome;
+    const exitCode = typeof entry.exit_code === "number" ? entry.exit_code : 1;
+
+    mockCalls.push({
+      command: "chezmoi",
+      args: argv,
+      outcome,
+      exit_code: exitCode,
+    });
+
+    const invoked = `chezmoi ${argv.join(" ")}`.trim();
+    addUnique(commandsInvoked, invoked);
+
+    if (outcome === "cap_exceeded") {
+      addUnique(traceViolations, "chezmoi shim call cap (25) exceeded");
+    }
+  }
+};
+
 /**
  * Parses `codex exec --json` JSONL events and `shim.jsonl` into a `NormalizedTrace`.
  */
@@ -351,7 +467,7 @@ export const parseCodexTrace = (
   rawJsonl: string,
   shimLogJsonl: string,
   opts: { metaDir: string; repoEvalsDir: string; durationMs: number },
-): ParsedCodexTrace => {
+): ParsedHarnessTrace => {
   const discoveredSkills: string[] = [];
   const referencesRead: string[] = [];
   const commandsInvoked: string[] = [];
@@ -394,13 +510,11 @@ export const parseCodexTrace = (
       ) {
         const command = itemObj.command;
         commandsInvoked.push(command);
-
-        for (const match of command.matchAll(SKILL_DISCOVERY_RE)) {
-          if (match[1]) addUnique(discoveredSkills, match[1]);
-        }
-        for (const match of command.matchAll(REFERENCE_READ_RE)) {
-          if (match[1]) addUnique(referencesRead, match[1]);
-        }
+        recordSkillAndReferenceMatches(
+          command,
+          discoveredSkills,
+          referencesRead,
+        );
         checkForbiddenReference(
           command,
           opts.metaDir,
@@ -451,41 +565,7 @@ export const parseCodexTrace = (
     }
   }
 
-  for (const line of shimLogJsonl.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    let entry: Record<string, unknown>;
-    try {
-      const parsed: unknown = JSON.parse(trimmed);
-      if (!parsed || typeof parsed !== "object") continue;
-      entry = parsed as Record<string, unknown>;
-    } catch {
-      continue;
-    }
-
-    const argv = Array.isArray(entry.argv)
-      ? entry.argv.filter((arg): arg is string => typeof arg === "string")
-      : [];
-    const outcome = (
-      typeof entry.outcome === "string" ? entry.outcome : "unmocked_fallback"
-    ) as MockCallOutcome;
-    const exitCode = typeof entry.exit_code === "number" ? entry.exit_code : 1;
-
-    mockCalls.push({
-      command: "chezmoi",
-      args: argv,
-      outcome,
-      exit_code: exitCode,
-    });
-
-    const invoked = `chezmoi ${argv.join(" ")}`.trim();
-    addUnique(commandsInvoked, invoked);
-
-    if (outcome === "cap_exceeded") {
-      addUnique(traceViolations, "chezmoi shim call cap (25) exceeded");
-    }
-  }
+  parseShimLog(shimLogJsonl, commandsInvoked, traceViolations, mockCalls);
 
   return {
     trace: {
@@ -499,6 +579,172 @@ export const parseCodexTrace = (
     authOrRateLimitError,
     ...(usage ? { usage } : {}),
     ...(modelId !== null ? { modelId } : {}),
+  };
+};
+
+const AGY_PATH_PARAM_KEYS = [
+  "Path",
+  "AbsolutePath",
+  "DirectoryPath",
+  "SearchPath",
+  "TargetFile",
+] as const;
+
+/**
+ * Parses `agy --output-format stream-json` NDJSON events and `shim.jsonl` into a `NormalizedTrace`.
+ */
+export const parseAgyTrace = (
+  rawJsonl: string,
+  shimLogJsonl: string,
+  opts: { metaDir: string; repoEvalsDir: string; durationMs: number },
+): ParsedHarnessTrace => {
+  const discoveredSkills: string[] = [];
+  const referencesRead: string[] = [];
+  const commandsInvoked: string[] = [];
+  const traceViolations: string[] = [];
+  const mockCalls: MockCallRecord[] = [];
+  let finalResponse = "";
+  let streamedResponse = "";
+  let authOrRateLimitError: string | null = null;
+  let usage: Record<string, unknown> | undefined;
+
+  for (const line of rawJsonl.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    let event: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (!parsed || typeof parsed !== "object") continue;
+      event = parsed as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+
+    const eventType = event.event;
+    if (
+      eventType === "step_update" &&
+      event.step_update &&
+      typeof event.step_update === "object"
+    ) {
+      const step = event.step_update as Record<string, unknown>;
+      if (step.step_type === "agent_response") {
+        if (typeof step.text_delta === "string") {
+          streamedResponse += step.text_delta;
+        }
+        if (step.usage && typeof step.usage === "object") {
+          usage = step.usage as Record<string, unknown>;
+        }
+      } else if (
+        step.step_type === "tool" &&
+        step.state === "DONE" &&
+        step.tool_info &&
+        typeof step.tool_info === "object"
+      ) {
+        const toolInfo = step.tool_info as Record<string, unknown>;
+        const toolName =
+          typeof step.tool_name === "string"
+            ? step.tool_name
+            : typeof toolInfo.name === "string"
+              ? toolInfo.name
+              : "";
+        const params =
+          toolInfo.parameters && typeof toolInfo.parameters === "object"
+            ? (toolInfo.parameters as Record<string, unknown>)
+            : {};
+
+        if (
+          toolName === "run_command" &&
+          typeof params.CommandLine === "string"
+        ) {
+          const command = params.CommandLine;
+          commandsInvoked.push(command);
+          recordSkillAndReferenceMatches(
+            command,
+            discoveredSkills,
+            referencesRead,
+          );
+          checkForbiddenReference(
+            command,
+            opts.metaDir,
+            opts.repoEvalsDir,
+            traceViolations,
+            "Command",
+          );
+        } else {
+          for (const key of AGY_PATH_PARAM_KEYS) {
+            const val = params[key];
+            if (typeof val !== "string") continue;
+            if (
+              toolName === "read_file" ||
+              toolName === "view_file" ||
+              toolName === "list_dir" ||
+              toolName === "find_by_name" ||
+              toolName === "grep_search"
+            ) {
+              recordSkillAndReferenceMatches(
+                val,
+                discoveredSkills,
+                referencesRead,
+              );
+            }
+            checkForbiddenReference(
+              val,
+              opts.metaDir,
+              opts.repoEvalsDir,
+              traceViolations,
+              `Tool ${toolName || "path"}`,
+            );
+          }
+        }
+      }
+    } else if (
+      eventType === "result" &&
+      event.result &&
+      typeof event.result === "object"
+    ) {
+      const res = event.result as Record<string, unknown>;
+      if (typeof res.response === "string") {
+        finalResponse = res.response;
+      }
+      if (res.usage && typeof res.usage === "object") {
+        usage = res.usage as Record<string, unknown>;
+      }
+      if (res.status !== undefined && res.status !== "SUCCESS") {
+        const message =
+          typeof res.error === "string"
+            ? res.error
+            : typeof res.message === "string"
+              ? res.message
+              : JSON.stringify(res);
+        if (AUTH_OR_RATE_LIMIT_RE.test(message)) {
+          authOrRateLimitError = message;
+        }
+      }
+    } else if (eventType === "error") {
+      const message =
+        typeof event.message === "string"
+          ? event.message
+          : JSON.stringify(event);
+      if (AUTH_OR_RATE_LIMIT_RE.test(message)) {
+        authOrRateLimitError = message;
+      }
+    }
+  }
+
+  parseShimLog(shimLogJsonl, commandsInvoked, traceViolations, mockCalls);
+
+  return {
+    trace: {
+      discovered_skills: discoveredSkills,
+      references_read: referencesRead,
+      commands_invoked: commandsInvoked,
+      final_response: finalResponse || streamedResponse,
+      trace_violations: traceViolations,
+      mock_calls: mockCalls,
+    },
+    authOrRateLimitError,
+    ...(usage ? { usage } : {}),
   };
 };
 
@@ -526,52 +772,43 @@ const getGitMetadata = (): { commitSha: string; gitDirty: boolean } => {
   }
 };
 
-const runCodexCase = async (
-  testCase: TestCase,
-  workspace: CaseWorkspace,
-  codexHomeDir: string,
-  timeoutMs: number,
-): Promise<{
+interface CaseExecResult {
   rawJsonl: string;
   stderr: string;
   exitCode: number;
   timedOut: boolean;
   durationMs: number;
-}> => {
+}
+
+const buildIsolatedCaseEnv = (
+  workspace: CaseWorkspace,
+  extraEnv: Record<string, string> = {},
+): Record<string, string | undefined> => ({
+  ...process.env,
+  HOME: workspace.workDir,
+  XDG_CONFIG_HOME: join(workspace.caseDir, "xdg_config"),
+  XDG_DATA_HOME: join(workspace.caseDir, "xdg_data"),
+  CHEZMOI_CONFIG_FILE: join(workspace.caseDir, "chezmoi.toml"),
+  CHEZMOI_SOURCE_DIR: join(workspace.workDir, "source"),
+  CHEZMOI_SHIM_RULES: workspace.rulesPath,
+  CHEZMOI_SHIM_LOG: workspace.shimLogPath,
+  PATH: `${workspace.metaBinDir}:${process.env.PATH ?? ""}`,
+  ...extraEnv,
+});
+
+const spawnWithTimeout = async (
+  cmd: string[],
+  cwd: string,
+  env: Record<string, string | undefined>,
+  timeoutMs: number,
+): Promise<CaseExecResult> => {
   const startedAt = Date.now();
-  const proc = Bun.spawn(
-    [
-      "codex",
-      "exec",
-      "--json",
-      "-C",
-      workspace.workDir,
-      "-s",
-      "workspace-write",
-      "--ephemeral",
-      "--ignore-user-config",
-      "--ignore-rules",
-      "--skip-git-repo-check",
-      testCase.input.user_prompt,
-    ],
-    {
-      cwd: workspace.workDir,
-      stdout: "pipe",
-      stderr: "pipe",
-      env: {
-        ...process.env,
-        CODEX_HOME: codexHomeDir,
-        HOME: workspace.workDir,
-        XDG_CONFIG_HOME: join(workspace.caseDir, "xdg_config"),
-        XDG_DATA_HOME: join(workspace.caseDir, "xdg_data"),
-        CHEZMOI_CONFIG_FILE: join(workspace.caseDir, "chezmoi.toml"),
-        CHEZMOI_SOURCE_DIR: join(workspace.workDir, "source"),
-        CHEZMOI_SHIM_RULES: workspace.rulesPath,
-        CHEZMOI_SHIM_LOG: workspace.shimLogPath,
-        PATH: `${workspace.metaBinDir}:${process.env.PATH ?? ""}`,
-      },
-    },
-  );
+  const proc = Bun.spawn(cmd, {
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+    env,
+  });
 
   let timedOut = false;
   const timer = setTimeout(() => {
@@ -595,11 +832,57 @@ const runCodexCase = async (
   };
 };
 
+const runCodexCase = (
+  testCase: TestCase,
+  workspace: CaseWorkspace,
+  codexHomeDir: string,
+  timeoutMs: number,
+): Promise<CaseExecResult> =>
+  spawnWithTimeout(
+    [
+      "codex",
+      "exec",
+      "--json",
+      "-C",
+      workspace.workDir,
+      "-s",
+      "workspace-write",
+      "--ephemeral",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "--skip-git-repo-check",
+      testCase.input.user_prompt,
+    ],
+    workspace.workDir,
+    buildIsolatedCaseEnv(workspace, { CODEX_HOME: codexHomeDir }),
+    timeoutMs,
+  );
+
+const runAgyCase = (
+  testCase: TestCase,
+  workspace: CaseWorkspace,
+  agyHomeDir: string,
+  timeoutMs: number,
+): Promise<CaseExecResult> =>
+  spawnWithTimeout(
+    [
+      "agy",
+      "--output-format",
+      "stream-json",
+      "--dangerously-skip-permissions",
+      `--print=${testCase.input.user_prompt}`,
+    ],
+    workspace.workDir,
+    buildIsolatedCaseEnv(workspace, { HOME: agyHomeDir }),
+    timeoutMs,
+  );
+
 /**
  * Builds the `RunSummary` object from completed case results and repository metadata.
  */
 export const buildRunSummary = (params: {
   timestamp: string;
+  harnessName?: HarnessName;
   harnessVersion: string;
   modelId: string | null;
   skillsDir: string;
@@ -628,7 +911,7 @@ export const buildRunSummary = (params: {
     timestamp: params.timestamp,
     commit_sha: commitSha,
     git_dirty: gitDirty,
-    harness_name: "codex",
+    harness_name: params.harnessName ?? "codex",
     harness_version: params.harnessVersion,
     model_id: params.modelId,
     skill_source_sha256: skillSourceSha256,
@@ -645,30 +928,134 @@ export const buildRunSummary = (params: {
 };
 
 /**
- * Executes the selected eval cases against the Codex harness and writes run artifacts.
+ * Loads and validates a baseline `summary.json` artifact for run comparison.
+ */
+export const loadBaselineSummary = (baselinePath: string): RunSummary => {
+  if (!existsSync(baselinePath)) {
+    throw new ConfigError(`Baseline summary not found at ${baselinePath}.`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(baselinePath, "utf-8"));
+  } catch (error) {
+    throw new ConfigError(
+      `Failed to parse baseline summary ${baselinePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new ConfigError(
+      `Invalid baseline summary ${baselinePath}: expected JSON object.`,
+    );
+  }
+
+  const record = parsed as Record<string, unknown>;
+  if (record.schema_version !== "1" || !Array.isArray(record.cases)) {
+    throw new ConfigError(
+      `Invalid baseline summary ${baselinePath}: expected schema_version "1" and cases array.`,
+    );
+  }
+
+  return parsed as RunSummary;
+};
+
+/**
+ * Compares a completed `RunSummary` against a baseline `RunSummary`.
+ */
+export const compareAgainstBaseline = (
+  current: RunSummary,
+  baseline: RunSummary,
+): BaselineComparison => {
+  const baselineMap = new Map<string, CaseResult>();
+  for (const item of baseline.cases) {
+    baselineMap.set(item.id, item);
+  }
+
+  const newFailures: string[] = [];
+  const newPasses: string[] = [];
+  const unchangedFailures: string[] = [];
+
+  for (const item of current.cases) {
+    const prev = baselineMap.get(item.id);
+    if (!item.passed) {
+      if (prev && !prev.passed) {
+        unchangedFailures.push(item.id);
+      } else {
+        newFailures.push(item.id);
+      }
+    } else if (prev && !prev.passed) {
+      newPasses.push(item.id);
+    }
+  }
+
+  const driftWarnings: string[] = [];
+  if (baseline.corpus_sha256 !== current.corpus_sha256) {
+    driftWarnings.push(
+      `corpus_sha256 drift: baseline=${baseline.corpus_sha256} current=${current.corpus_sha256}`,
+    );
+  }
+  if (baseline.harness_name !== current.harness_name) {
+    driftWarnings.push(
+      `harness_name drift: baseline=${baseline.harness_name} current=${current.harness_name}`,
+    );
+  }
+  if (baseline.harness_version !== current.harness_version) {
+    driftWarnings.push(
+      `harness_version drift: baseline=${baseline.harness_version} current=${current.harness_version}`,
+    );
+  }
+
+  return {
+    new_failures: newFailures,
+    new_passes: newPasses,
+    unchanged_failures: unchangedFailures,
+    drift_warnings: driftWarnings,
+  };
+};
+
+/**
+ * Executes the selected eval cases against the configured harness and writes run artifacts.
  */
 export const runEvalSuite = async (
   cases: TestCase[],
   corpusFiles: string[],
   options: RunOptions,
 ): Promise<{ summary: RunSummary; runOutDir: string }> => {
-  if (options.harness !== "codex") {
+  if (options.harness !== "codex" && options.harness !== "agy") {
     throw new ConfigError(`Unsupported harness: "${options.harness}".`);
   }
 
-  const { harness_version: harnessVersion } = checkCodexPreflight();
-  const authPath = resolveAuthJsonPath();
+  const { harness_version: harnessVersion } =
+    options.harness === "codex" ? checkCodexPreflight() : checkAgyPreflight();
 
   const runId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   const runRoot = `/tmp/chezmoi-evals-${runId}`;
-  const codexHomeDir = join(runRoot, "codex_home");
-  mkdirSync(codexHomeDir, { recursive: true, mode: 0o700 });
+  mkdirSync(runRoot, { recursive: true, mode: 0o700 });
   chmodSync(runRoot, 0o700);
-  chmodSync(codexHomeDir, 0o700);
 
-  const targetAuthPath = join(codexHomeDir, "auth.json");
-  cpSync(authPath, targetAuthPath);
-  chmodSync(targetAuthPath, 0o600);
+  let codexHomeDir = "";
+  let agyHomeDir = "";
+  if (options.harness === "codex") {
+    const authPath = resolveAuthJsonPath();
+    codexHomeDir = join(runRoot, "codex_home");
+    mkdirSync(codexHomeDir, { recursive: true, mode: 0o700 });
+    chmodSync(codexHomeDir, 0o700);
+
+    const targetAuthPath = join(codexHomeDir, "auth.json");
+    cpSync(authPath, targetAuthPath);
+    chmodSync(targetAuthPath, 0o600);
+  } else {
+    const tokenPath = resolveAgyAuthTokenPath();
+    agyHomeDir = join(runRoot, "agy_home");
+    const agyCliDir = join(agyHomeDir, ".gemini", "antigravity-cli");
+    mkdirSync(agyCliDir, { recursive: true, mode: 0o700 });
+    chmodSync(agyHomeDir, 0o700);
+
+    const targetTokenPath = join(agyCliDir, "antigravity-oauth-token");
+    cpSync(tokenPath, targetTokenPath);
+    chmodSync(targetTokenPath, 0o600);
+  }
 
   const cleanup = (): void => {
     if (!options.keepWorkdir) {
@@ -708,12 +1095,20 @@ export const runEvalSuite = async (
         testCase,
         options.skillsDir,
       );
-      const execResult = await runCodexCase(
-        testCase,
-        workspace,
-        codexHomeDir,
-        options.timeoutMs,
-      );
+      const execResult =
+        options.harness === "codex"
+          ? await runCodexCase(
+              testCase,
+              workspace,
+              codexHomeDir,
+              options.timeoutMs,
+            )
+          : await runAgyCase(
+              testCase,
+              workspace,
+              agyHomeDir,
+              options.timeoutMs,
+            );
 
       const shimLogJsonl = existsSync(workspace.shimLogPath)
         ? readFileSync(workspace.shimLogPath, "utf-8")
@@ -727,23 +1122,27 @@ export const runEvalSuite = async (
       mkdirSync(caseArtifactDir, { recursive: true });
       await Promise.all([
         writeFile(
-          join(caseArtifactDir, "codex-events.jsonl"),
+          join(caseArtifactDir, `${options.harness}-events.jsonl`),
           execResult.rawJsonl,
           "utf-8",
         ),
         writeFile(
-          join(caseArtifactDir, "codex-stderr.log"),
+          join(caseArtifactDir, `${options.harness}-stderr.log`),
           execResult.stderr,
           "utf-8",
         ),
         writeFile(join(caseArtifactDir, "shim.jsonl"), shimLogJsonl, "utf-8"),
       ]);
 
-      const parsed = parseCodexTrace(execResult.rawJsonl, shimLogJsonl, {
+      const traceOpts = {
         metaDir: workspace.metaDir,
         repoEvalsDir: options.evalsDir,
         durationMs: execResult.durationMs,
-      });
+      };
+      const parsed =
+        options.harness === "codex"
+          ? parseCodexTrace(execResult.rawJsonl, shimLogJsonl, traceOpts)
+          : parseAgyTrace(execResult.rawJsonl, shimLogJsonl, traceOpts);
 
       if (parsed.modelId && !detectedModelId) {
         detectedModelId = parsed.modelId;
@@ -758,7 +1157,7 @@ export const runEvalSuite = async (
         reason = `Timed out after ${options.timeoutMs}ms`;
       } else if (execResult.exitCode !== 0 && passed) {
         passed = false;
-        reason = `codex exec exited with code ${execResult.exitCode}`;
+        reason = `${options.harness} exited with code ${execResult.exitCode}`;
       }
 
       results.push({
@@ -796,6 +1195,7 @@ export const runEvalSuite = async (
 
   const summary = buildRunSummary({
     timestamp,
+    harnessName: options.harness,
     harnessVersion,
     modelId: detectedModelId,
     skillsDir: options.skillsDir,

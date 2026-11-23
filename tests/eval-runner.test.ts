@@ -14,7 +14,10 @@ import { runCli } from "../scripts/evals/cli.ts";
 import type { TestCase } from "../scripts/evals/corpus.ts";
 import {
   buildRunSummary,
+  compareAgainstBaseline,
   generateChezmoiShimScript,
+  loadBaselineSummary,
+  parseAgyTrace,
   parseCodexTrace,
   prepareCaseWorkspace,
 } from "../scripts/evals/runner.ts";
@@ -173,6 +176,123 @@ describe("parseCodexTrace", () => {
       durationMs: 10,
     });
     expect(rateParsed.authOrRateLimitError).toContain("429 rate limit");
+  });
+});
+
+describe("parseAgyTrace", () => {
+  it("extracts skills, references, commands, final response, and usage from agy stream-json", () => {
+    const rawJsonl = [
+      JSON.stringify({
+        event: "init",
+        conversation_id: "conv-1",
+      }),
+      JSON.stringify({
+        event: "step_update",
+        step_update: {
+          step_index: 1,
+          state: "DONE",
+          step_type: "tool",
+          tool_name: "read_file",
+          tool_info: {
+            name: "read_file",
+            parameters: {
+              Path: "/tmp/work/.agents/skills/chezmoi-cli-commands/SKILL.md",
+            },
+          },
+        },
+      }),
+      JSON.stringify({
+        event: "step_update",
+        step_update: {
+          step_index: 2,
+          state: "DONE",
+          step_type: "tool",
+          tool_name: "view_file",
+          tool_info: {
+            name: "view_file",
+            parameters: {
+              AbsolutePath:
+                "/tmp/work/.agents/skills/chezmoi-cli-commands/references/diff.md",
+            },
+          },
+        },
+      }),
+      JSON.stringify({
+        event: "step_update",
+        step_update: {
+          step_index: 3,
+          state: "DONE",
+          step_type: "tool",
+          tool_name: "run_command",
+          tool_info: {
+            name: "run_command",
+            parameters: { CommandLine: "chezmoi diff --exclude=scripts" },
+          },
+        },
+      }),
+      JSON.stringify({
+        event: "result",
+        result: {
+          conversation_id: "conv-1",
+          status: "SUCCESS",
+          response: "Run `chezmoi diff --exclude=scripts`.",
+          usage: { input_tokens: 150, output_tokens: 40 },
+        },
+      }),
+    ].join("\n");
+
+    const parsed = parseAgyTrace(rawJsonl, "", {
+      metaDir: "/tmp/run/cases/c1/meta",
+      repoEvalsDir: "tests/evals",
+      durationMs: 500,
+    });
+
+    expect(parsed.authOrRateLimitError).toBeNull();
+    expect(parsed.usage).toEqual({ input_tokens: 150, output_tokens: 40 });
+    expect(parsed.trace.discovered_skills).toEqual(["chezmoi-cli-commands"]);
+    expect(parsed.trace.references_read).toEqual(["references/diff.md"]);
+    expect(parsed.trace.commands_invoked).toEqual([
+      "chezmoi diff --exclude=scripts",
+    ]);
+    expect(parsed.trace.final_response).toBe(
+      "Run `chezmoi diff --exclude=scripts`.",
+    );
+    expect(parsed.trace.trace_violations).toEqual([]);
+  });
+
+  it("flags trace_violations and detects auth or rate-limit errors in agy stream-json", () => {
+    const rawJsonl = [
+      JSON.stringify({
+        event: "step_update",
+        step_update: {
+          step_index: 1,
+          state: "DONE",
+          step_type: "tool",
+          tool_name: "read_file",
+          tool_info: {
+            name: "read_file",
+            parameters: { Path: "/tmp/run/cases/c1/meta/rules.json" },
+          },
+        },
+      }),
+      JSON.stringify({
+        event: "result",
+        result: {
+          status: "ERROR",
+          error: "429 rate limit exceeded",
+        },
+      }),
+    ].join("\n");
+
+    const parsed = parseAgyTrace(rawJsonl, "", {
+      metaDir: "/tmp/run/cases/c1/meta",
+      repoEvalsDir: "tests/evals",
+      durationMs: 100,
+    });
+
+    expect(parsed.trace.trace_violations.length).toBe(1);
+    expect(parsed.trace.trace_violations[0]).toContain("meta directory");
+    expect(parsed.authOrRateLimitError).toContain("429 rate limit");
   });
 });
 
@@ -404,6 +524,27 @@ describe("eval CLI", () => {
     ]);
     expect(dryRunExit).toBe(0);
 
+    const agyDryRunExit = await runCli([
+      "bun",
+      "cli.ts",
+      "run",
+      "--harness",
+      "agy",
+      "--dry-run",
+      "--smoke",
+    ]);
+    expect(agyDryRunExit).toBe(0);
+
+    const badBaselineExit = await runCli([
+      "bun",
+      "cli.ts",
+      "run",
+      "--baseline",
+      "/tmp/nonexistent-baseline-summary.json",
+      "--dry-run",
+    ]);
+    expect(badBaselineExit).toBe(2);
+
     const badHarnessExit = await runCli([
       "bun",
       "cli.ts",
@@ -436,5 +577,106 @@ describe("eval CLI", () => {
       dir,
     ]);
     expect(exitCode).toBe(2);
+  });
+});
+
+describe("baseline comparison", () => {
+  it("reports new_failures, new_passes, unchanged_failures, and drift warnings", () => {
+    const dir = makeTempDir("chezmoi-baseline-");
+    const baselinePath = join(dir, "baseline.json");
+
+    const makeSummary = (
+      overrides: Partial<ReturnType<typeof buildRunSummary>>,
+    ) => ({
+      schema_version: "1" as const,
+      timestamp: "2026-11-22T00:00:00.000Z",
+      commit_sha: "abc123",
+      git_dirty: false,
+      harness_name: "codex" as const,
+      harness_version: "codex-cli 0.169.0",
+      model_id: null,
+      skill_source_sha256: "a".repeat(64),
+      corpus_sha256: "b".repeat(64),
+      aborted_early: false,
+      abort_reason: null,
+      total_cases: 3,
+      passed_cases: 2,
+      failed_cases: 1,
+      failed_case_ids: ["TC-2"],
+      unmocked_fallback_count: 0,
+      cases: [
+        {
+          id: "TC-1",
+          name: "Pass -> Fail",
+          eval_type: "trigger_matching" as const,
+          target_skill: "chezmoi-cli-commands",
+          passed: true,
+          duration_ms: 10,
+          assertions: [],
+          trace: {
+            discovered_skills: [],
+            references_read: [],
+            commands_invoked: [],
+            final_response: "",
+            trace_violations: [],
+          },
+        },
+        {
+          id: "TC-2",
+          name: "Fail -> Pass",
+          eval_type: "trigger_matching" as const,
+          target_skill: "chezmoi-cli-commands",
+          passed: false,
+          duration_ms: 10,
+          assertions: [],
+          trace: {
+            discovered_skills: [],
+            references_read: [],
+            commands_invoked: [],
+            final_response: "",
+            trace_violations: [],
+          },
+        },
+        {
+          id: "TC-3",
+          name: "Fail -> Fail",
+          eval_type: "trigger_matching" as const,
+          target_skill: "chezmoi-cli-commands",
+          passed: false,
+          duration_ms: 10,
+          assertions: [],
+          trace: {
+            discovered_skills: [],
+            references_read: [],
+            commands_invoked: [],
+            final_response: "",
+            trace_violations: [],
+          },
+        },
+      ],
+      ...overrides,
+    });
+
+    const baseline = makeSummary({});
+    writeFileSync(baselinePath, JSON.stringify(baseline), "utf-8");
+    const loaded = loadBaselineSummary(baselinePath);
+
+    const current = makeSummary({
+      corpus_sha256: "c".repeat(64),
+      harness_version: "codex-cli 0.170.0",
+      cases: [
+        { ...baseline.cases[0]!, passed: false },
+        { ...baseline.cases[1]!, passed: true },
+        { ...baseline.cases[2]!, passed: false },
+      ],
+    });
+
+    const diff = compareAgainstBaseline(current, loaded);
+    expect(diff.new_failures).toEqual(["TC-1"]);
+    expect(diff.new_passes).toEqual(["TC-2"]);
+    expect(diff.unchanged_failures).toEqual(["TC-3"]);
+    expect(diff.drift_warnings).toHaveLength(2);
+    expect(diff.drift_warnings[0]).toContain("corpus_sha256 drift");
+    expect(diff.drift_warnings[1]).toContain("harness_version drift");
   });
 });

@@ -104,8 +104,7 @@
       "user_prompt": "How do I view diffs between my chezmoi source state and destination files without running scripts?"
     },
     "expected": {
-      "exact_command": "chezmoi diff --exclude scripts",
-      "command_regex": "^chezmoi diff --exclude scripts$",
+      "command_regex": "^chezmoi diff --exclude(?:=|\\s+)scripts(?:\\s|$)",
       "required_flags": ["--exclude"],
       "forbidden_flags": ["--force"],
       "required_references": ["references/diff.md"],

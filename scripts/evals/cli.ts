@@ -1,6 +1,12 @@
 import { Command, CommanderError } from "commander";
 import { filterCases, loadCorpus } from "./corpus.ts";
-import { ConfigError, runEvalSuite } from "./runner.ts";
+import {
+  compareAgainstBaseline,
+  ConfigError,
+  type HarnessName,
+  loadBaselineSummary,
+  runEvalSuite,
+} from "./runner.ts";
 
 interface RunCliOptions {
   harness: string;
@@ -8,6 +14,7 @@ interface RunCliOptions {
   case?: string;
   smoke?: boolean;
   dryRun?: boolean;
+  baseline?: string;
   timeout: string;
   keepWorkdir?: boolean;
   evalsDir: string;
@@ -67,11 +74,15 @@ export const runCli = async (argv: string[]): Promise<number> => {
   program
     .command("run")
     .description("Run eval cases against a coding agent harness")
-    .option("--harness <name>", "Harness to execute", "codex")
+    .option("--harness <name>", "Harness to execute (codex or agy)", "codex")
     .option("--skill <skill>", "Filter cases by target_skill")
     .option("--case <id>", "Filter cases by case id")
     .option("--smoke", "Run only smoke-tagged cases")
     .option("--dry-run", "List matched cases without running the harness")
+    .option(
+      "--baseline <summary.json>",
+      "Compare run results against a baseline summary.json",
+    )
     .option("--timeout <ms>", "Per-case timeout in milliseconds", "90000")
     .option("--keep-workdir", "Preserve isolated temporary workdir after run")
     .option("--evals-dir <dir>", "Path to eval corpus directory", "tests/evals")
@@ -82,13 +93,18 @@ export const runCli = async (argv: string[]): Promise<number> => {
       "eval_results",
     )
     .action(async (opts: RunCliOptions) => {
-      if (opts.harness !== "codex") {
+      if (opts.harness !== "codex" && opts.harness !== "agy") {
         throw new ConfigError(
-          `Unsupported harness "${opts.harness}". Only "codex" is supported.`,
+          `Unsupported harness "${opts.harness}". Supported harnesses: codex, agy.`,
         );
       }
+      const harness: HarnessName = opts.harness;
 
       const timeoutMs = parsePositiveInt(opts.timeout, "--timeout");
+      const baseline =
+        opts.baseline !== undefined
+          ? loadBaselineSummary(opts.baseline)
+          : undefined;
 
       let cases;
       let files: string[];
@@ -118,7 +134,7 @@ export const runCli = async (argv: string[]): Promise<number> => {
       }
 
       const { summary, runOutDir } = await runEvalSuite(matched, files, {
-        harness: opts.harness,
+        harness,
         evalsDir: opts.evalsDir,
         skillsDir: opts.skillsDir,
         outDir: opts.outDir,
@@ -132,6 +148,27 @@ export const runCli = async (argv: string[]): Promise<number> => {
       console.log(`Artifacts written to ${runOutDir}`);
       if (summary.aborted_early) {
         console.error(`Aborted early: ${summary.abort_reason}`);
+      }
+
+      if (baseline) {
+        const diff = compareAgainstBaseline(summary, baseline);
+        for (const warning of diff.drift_warnings) {
+          console.warn(`Warning: ${warning}`);
+        }
+        console.log(
+          `Baseline diff: ${diff.new_failures.length} new failure(s), ${diff.new_passes.length} new pass(es), ${diff.unchanged_failures.length} unchanged failure(s).`,
+        );
+        if (diff.new_failures.length > 0) {
+          console.log(`  new_failures: ${diff.new_failures.join(", ")}`);
+        }
+        if (diff.new_passes.length > 0) {
+          console.log(`  new_passes: ${diff.new_passes.join(", ")}`);
+        }
+        if (diff.unchanged_failures.length > 0) {
+          console.log(
+            `  unchanged_failures: ${diff.unchanged_failures.join(", ")}`,
+          );
+        }
       }
 
       exitCode = summary.failed_cases > 0 || summary.aborted_early ? 1 : 0;
