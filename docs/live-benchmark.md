@@ -10,9 +10,9 @@ This project keeps continuous integration credential-free and runs live agent ev
 
 | Lane | Cadence | Measurement | Status |
 | --- | --- | --- | --- |
-| Static CI validation | Every pull request | Markdown, spelling, formatting, typecheck, skill manifests, corpus schema (`eval:validate`), contract checks (`test:contracts`), and unit tests (`bun test`) | Active in GitHub Actions |
-| Local harness smoke run | On demand after skill or corpus edits | Skill discovery, reference reads, mocked `chezmoi` command invocations, and answer quality via `codex` or `agy` | Active via `bun run eval:local --smoke` |
-| Targeted or full local harness run | Before major releases or targeted skill refactors | Filtered or full corpus execution against `codex` or `agy` with baseline comparison | Active via `bun run eval:local` |
+| Static CI validation | Every pull request | Markdown, spelling, formatting, typecheck, skill manifests, corpus schema (`validate:evals`), contract checks (`validate:contracts`), and unit tests (`bun test`) | Active in GitHub Actions |
+| Local harness smoke run | On demand after skill or corpus edits | Skill discovery, reference reads, mocked `chezmoi` command invocations, and answer quality via `codex` or `agy` | Active via `bun run eval:live --smoke` |
+| Targeted or full local harness run | Before major releases or targeted skill refactors | Filtered or full corpus execution against `codex` or `agy` with baseline comparison | Active via `bun run eval:live` |
 
 Do not automate personal `codex` or `agy` allowances in scheduled jobs, background daemons, or CI workflows.
 
@@ -24,18 +24,18 @@ The runner isolates each case in a temporary `/tmp/chezmoi-evals-<run_id>/cases/
 
 ```sh
 # Preview matched cases without invoking a harness
-bun run eval:local --smoke --dry-run
+bun run eval:live --smoke --dry-run
 
 # Run smoke cases with codex (default) or agy
-bun run eval:local --smoke
-bun run eval:local --harness agy --smoke
+bun run eval:live --smoke
+bun run eval:live --harness agy --smoke
 
 # Filter by skill or case ID
-bun run eval:local --skill chezmoi-templating
-bun run eval:local --case TC-CLI-CMD-001
+bun run eval:live --skill chezmoi-templating
+bun run eval:live --case TC-CLI-CMD-001
 
 # Compare against a prior summary.json
-bun run eval:local --smoke --baseline eval_results/runs/<timestamp>/summary.json
+bun run eval:live --smoke --baseline eval_results/runs/<timestamp>/summary.json
 ```
 
 Each run writes `summary.json` (`schema_version: "1"`) and per-case logs under `eval_results/runs/<timestamp>/`.
