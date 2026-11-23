@@ -14,6 +14,7 @@ export { AnswerQualitySchema, TestCaseSchema, type TestCase };
 interface CliOptions {
   skill?: string;
   category?: string;
+  origin?: string;
   evalsDir: string;
   outDir: string;
   skillsDir: string;
@@ -24,6 +25,10 @@ const program = new Command();
 program
   .option("--skill <skill>", "Filter evaluation by target skill")
   .option("--category <category>", "Filter evaluation by eval_type category")
+  .option(
+    "--origin <origin>",
+    "Filter evaluation by origin (contrived or distilled)",
+  )
   .option(
     "--evals-dir <dir>",
     "Directory containing evaluation test suites",
@@ -417,6 +422,10 @@ const run = async (options: CliOptions) => {
   if (options.category)
     testCases = testCases.filter(
       (testCase) => testCase.eval_type === options.category,
+    );
+  if (options.origin)
+    testCases = testCases.filter(
+      (testCase) => testCase.origin === options.origin,
     );
 
   if (testCases.length === 0) {

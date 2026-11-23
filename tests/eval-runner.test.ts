@@ -564,6 +564,26 @@ describe("eval CLI", () => {
       "--dry-run",
     ]);
     expect(badTimeoutExit).toBe(2);
+
+    const distilledDryRunExit = await runCli([
+      "bun",
+      "cli.ts",
+      "run",
+      "--origin",
+      "distilled",
+      "--dry-run",
+    ]);
+    expect(distilledDryRunExit).toBe(0);
+
+    const badOriginExit = await runCli([
+      "bun",
+      "cli.ts",
+      "run",
+      "--origin",
+      "unknown",
+      "--dry-run",
+    ]);
+    expect(badOriginExit).toBe(2);
   });
 
   it("returns exit code 2 from validate when corpus is invalid", async () => {

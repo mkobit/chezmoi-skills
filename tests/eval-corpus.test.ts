@@ -192,6 +192,20 @@ describe("loadCorpus and filterCases", () => {
       }),
     ).toEqual([]);
   });
+
+  it("filters cases by origin", () => {
+    const cases = [
+      makeCase({ id: "c1", origin: "contrived" }),
+      makeCase({ id: "c2", origin: "distilled" }),
+    ];
+
+    expect(
+      filterCases(cases, { origin: "distilled" }).map((c) => c.id),
+    ).toEqual(["c2"]);
+    expect(
+      filterCases(cases, { origin: "contrived" }).map((c) => c.id),
+    ).toEqual(["c1"]);
+  });
 });
 
 describe("Trace-backed assertions", () => {
