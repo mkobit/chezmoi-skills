@@ -56,13 +56,15 @@ Install locked dependencies with `bun install --frozen-lockfile`.
 
 Run the structural checks with `mise run validate`.
 
-Run deterministic contract tests with `mise run test:contracts`.
+Run static eval contract checks with `mise run validate:contracts`.
 
 Run unit tests with `mise run test`.
 
 Run all linters with `mise run lint`.
 
-Generate and validate the Promptfoo suites with `bun run eval:validate`; this path does not call providers.
+Validate the eval corpus schema offline with `mise run validate:evals`; this path does not call models.
+
+Run live model-calling evaluations against `codex` or `agy` with `bun run eval:live`.
 
 Credentialed evaluations are sparse, manual, and reviewed, and they are not routine continuous-integration or release checks.
 

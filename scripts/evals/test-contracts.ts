@@ -384,7 +384,7 @@ const generateMarkdownSummary = (
 
 These contracts validate the relationship between the curated corpus and the checked-in skill source.
 They do not execute a model or claim to measure model routing or command-generation quality.
-Use \`bun run eval:local\` for harness-driven behavioral results.
+Use \`bun run eval:live\` for harness-driven behavioral results.
 
 - Execution timestamp: \`${timestamp}\`
 - Duration: \`${totalMs}ms\`

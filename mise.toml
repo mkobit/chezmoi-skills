@@ -18,14 +18,22 @@ run = "sbx env plan .sbx/sbxenv.yaml && sbx env plan .sbx/sbxenv.agy.yaml && sbx
 description = "Validate skills schema and Claude plugin configurations"
 run = "bun run scripts/skills/validate/index.ts --claude-plugin-dir=.claude-plugin"
 
-[tasks."test:contracts"]
-description = "Run Tier 2 deterministic mock contract tests"
+[tasks."validate:evals"]
+description = "Validate eval corpus JSON files against the schema (offline)"
+run = "bun run scripts/evals/cli.ts validate"
+
+[tasks."validate:contracts"]
+description = "Run static corpus-to-skill contract checks (offline)"
 run = "bun run scripts/evals/test-contracts.ts"
 
 [tasks.test]
 description = "Run unit tests"
 run = "bun test"
-depends = ["test:contracts"]
+depends = ["validate:contracts"]
+
+[tasks."eval:live"]
+description = "Run live model-calling evals via codex or agy"
+run = "bun run scripts/evals/cli.ts run"
 
 [tasks."lint:md"]
 description = "Lint markdown files"
