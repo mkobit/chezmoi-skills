@@ -1,5 +1,5 @@
 import { Command, CommanderError } from "commander";
-import { filterCases, loadCorpus } from "./corpus.ts";
+import { filterCases, loadCorpus, type TestCase } from "./corpus.ts";
 import {
   compareAgainstBaseline,
   ConfigError,
@@ -13,6 +13,7 @@ interface RunCliOptions {
   skill?: string;
   case?: string;
   smoke?: boolean;
+  origin?: string;
   dryRun?: boolean;
   baseline?: string;
   timeout: string;
@@ -78,6 +79,10 @@ export const runCli = async (argv: string[]): Promise<number> => {
     .option("--skill <skill>", "Filter cases by target_skill")
     .option("--case <id>", "Filter cases by case id")
     .option("--smoke", "Run only smoke-tagged cases")
+    .option(
+      "--origin <origin>",
+      "Filter cases by origin (contrived or distilled)",
+    )
     .option("--dry-run", "List matched cases without running the harness")
     .option(
       "--baseline <summary.json>",
@@ -100,6 +105,16 @@ export const runCli = async (argv: string[]): Promise<number> => {
       }
       const harness: HarnessName = opts.harness;
 
+      let origin: TestCase["origin"] | undefined;
+      if (opts.origin !== undefined) {
+        if (opts.origin !== "contrived" && opts.origin !== "distilled") {
+          throw new ConfigError(
+            `Unsupported origin "${opts.origin}". Supported origins: contrived, distilled.`,
+          );
+        }
+        origin = opts.origin;
+      }
+
       const timeoutMs = parsePositiveInt(opts.timeout, "--timeout");
       const baseline =
         opts.baseline !== undefined
@@ -120,6 +135,7 @@ export const runCli = async (argv: string[]): Promise<number> => {
         ...(opts.skill !== undefined ? { skill: opts.skill } : {}),
         ...(opts.case !== undefined ? { caseId: opts.case } : {}),
         ...(opts.smoke ? { smoke: true } : {}),
+        ...(origin !== undefined ? { origin } : {}),
       });
 
       if (opts.dryRun) {

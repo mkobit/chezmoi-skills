@@ -114,6 +114,7 @@ export interface CorpusFilter {
   skill?: string;
   caseId?: string;
   smoke?: boolean;
+  origin?: TestCase["origin"];
 }
 
 export const loadCorpus = async (
@@ -157,6 +158,8 @@ export const filterCases = (
     if (filter.caseId !== undefined && testCase.id !== filter.caseId)
       return false;
     if (filter.smoke !== undefined && Boolean(testCase.smoke) !== filter.smoke)
+      return false;
+    if (filter.origin !== undefined && testCase.origin !== filter.origin)
       return false;
     return true;
   });

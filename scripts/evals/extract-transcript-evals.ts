@@ -1,34 +1,8 @@
 import { existsSync } from "fs";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
-import { z } from "zod";
 import { Command } from "commander";
-
-const TestCaseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  eval_type: z.enum([
-    "trigger_matching",
-    "skill_selection",
-    "command_correctness",
-  ]),
-  target_skill: z.string(),
-  input: z.object({
-    user_prompt: z.string(),
-    context_files: z.array(z.string()).optional(),
-  }),
-  expected: z.object({
-    should_trigger: z.boolean().optional(),
-    selected_skill: z.string().optional(),
-    exact_command: z.string().optional(),
-    command_regex: z.string().optional(),
-    required_flags: z.array(z.string()).optional(),
-    forbidden_flags: z.array(z.string()).optional(),
-  }),
-  token_budget: z.number().optional(),
-});
-
-type TestCase = z.infer<typeof TestCaseSchema>;
+import { TestCaseSchema, type TestCase } from "./corpus.ts";
 
 interface TranscriptStep {
   step_index: number;
@@ -42,39 +16,64 @@ interface TranscriptStep {
   }>;
 }
 
-const program = new Command();
+const PRODUCT_CUE = /\bchezmoi\b|\bdotfiles?\b|\.chezmoi/i;
 
-program
-  .name("extract-transcript-evals")
-  .description(
-    "Extract structured evaluation test cases from transcript JSONL log files",
-  )
-  .option(
-    "-i, --input <path>",
-    "Path to transcript JSONL file or directory containing transcripts",
-  )
-  .option(
-    "-o, --out-dir <dir>",
-    "Directory for output evaluation test cases",
-    "tests/evals",
-  )
-  .option(
-    "-s, --target-skill <skill>",
-    "Target skill name for extracted test cases",
-    "chezmoi-cli-commands",
-  )
-  .option(
-    "-p, --id-prefix <prefix>",
-    "ID prefix for generated test cases",
-    "TC-EXTRACTED",
-  )
-  .option(
-    "--dry-run",
-    "Output extracted test cases to stdout without writing files",
-  )
-  .parse(process.argv);
+/**
+ * Redacts secrets, emails, and raw host home paths from extracted transcript text.
+ */
+export const sanitizeTranscriptText = (text: string): string =>
+  text
+    .replace(
+      /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/g,
+      "[REDACTED_PRIVATE_KEY]",
+    )
+    .replace(/\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g, "[REDACTED_KEY]")
+    .replace(
+      /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b|\bgithub_pat_[A-Za-z0-9_]{22,}\b/g,
+      "[REDACTED_TOKEN]",
+    )
+    .replace(
+      /\bsk-(?:proj-|ant-api\d+-)?[A-Za-z0-9_-]{20,}\b/g,
+      "[REDACTED_KEY]",
+    )
+    .replace(/\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g, "[REDACTED_TOKEN]")
+    .replace(/\bAGE-SECRET-KEY-1[0-9A-Z]{58}\b/g, "[REDACTED_KEY]")
+    .replace(
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
+      "user@example.com",
+    )
+    .replace(/\/(?:home|Users)\/[^/\s"'`]+/g, "~")
+    .replace(/[A-Za-z]:\\Users\\[^\\\s"'`]+/g, "~");
 
-const options = program.opts();
+const buildProgram = (): Command =>
+  new Command()
+    .name("extract-transcript-evals")
+    .description(
+      "Extract structured evaluation test cases from transcript JSONL log files",
+    )
+    .option(
+      "-i, --input <path>",
+      "Path to transcript JSONL file or directory containing transcripts",
+    )
+    .option(
+      "-o, --out-dir <dir>",
+      "Directory for output evaluation test cases",
+      "tests/evals",
+    )
+    .option(
+      "-s, --target-skill <skill>",
+      "Target skill name for extracted test cases",
+      "chezmoi-cli-commands",
+    )
+    .option(
+      "-p, --id-prefix <prefix>",
+      "ID prefix for generated test cases",
+      "TC-EXTRACTED",
+    )
+    .option(
+      "--dry-run",
+      "Output extracted test cases to stdout without writing files",
+    );
 
 const extractUserPromptText = (content: string): string => {
   let text = content;
@@ -116,6 +115,7 @@ export const parseTranscript = (
   jsonlContent: string,
   targetSkill: string,
   idPrefix: string,
+  startCount = 1,
 ): TestCase[] => {
   const lines = jsonlContent.split("\n").filter((l) => l.trim().length > 0);
   const steps: TranscriptStep[] = [];
@@ -129,12 +129,14 @@ export const parseTranscript = (
   }
 
   const testCases: TestCase[] = [];
-  let count = 1;
+  let count = startCount;
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     if (step?.type === "USER_INPUT" && step.content) {
-      const promptText = extractUserPromptText(step.content);
+      const promptText = sanitizeTranscriptText(
+        extractUserPromptText(step.content),
+      );
       if (!promptText || promptText.length < 5) continue;
       if (
         promptText.startsWith("this is the new continu") ||
@@ -148,15 +150,14 @@ export const parseTranscript = (
         if (!nextStep || nextStep.type === "USER_INPUT") break;
         const cmd = extractChezmoiCommand(nextStep);
         if (cmd) {
-          extractedCmd = cmd;
+          extractedCmd = sanitizeTranscriptText(cmd);
           break;
         }
       }
 
-      const id = `${idPrefix}-${String(count).padStart(3, "0")}`;
-      count++;
-
       if (extractedCmd) {
+        const id = `${idPrefix}-${String(count).padStart(3, "0")}`;
+        count++;
         const flags = extractedCmd
           .split(/\s+/)
           .filter((arg) => arg.startsWith("-"));
@@ -165,6 +166,7 @@ export const parseTranscript = (
           name: `Extracted command correctness for ${extractedCmd.split(/\s+/).slice(0, 2).join(" ")}`,
           eval_type: "command_correctness",
           target_skill: targetSkill,
+          origin: "distilled",
           input: {
             user_prompt: promptText,
           },
@@ -179,15 +181,15 @@ export const parseTranscript = (
         if (validation.success) {
           testCases.push(validation.data);
         }
-      } else if (
-        promptText.toLowerCase().includes("chezmoi") ||
-        promptText.toLowerCase().includes("dotfile")
-      ) {
+      } else if (PRODUCT_CUE.test(promptText)) {
+        const id = `${idPrefix}-${String(count).padStart(3, "0")}`;
+        count++;
         const tc: TestCase = {
           id,
-          name: `Extracted trigger matching for user request`,
+          name: "Extracted trigger matching for user request",
           eval_type: "trigger_matching",
           target_skill: targetSkill,
+          origin: "distilled",
           input: {
             user_prompt: promptText,
           },
@@ -207,16 +209,28 @@ export const parseTranscript = (
   return testCases;
 };
 
-const main = async () => {
+export const extractTranscriptEvals = async (
+  argv: string[] = process.argv,
+): Promise<number> => {
+  const program = buildProgram();
+  program.parse(argv);
+  const options = program.opts<{
+    input?: string;
+    outDir: string;
+    targetSkill: string;
+    idPrefix: string;
+    dryRun?: boolean;
+  }>();
+
   const inputPath = options.input;
   if (!inputPath) {
     console.error("Error: --input option is required.");
-    process.exit(1);
+    return 1;
   }
 
   if (!existsSync(inputPath)) {
     console.error(`Error: File or directory not found at ${inputPath}`);
-    process.exit(1);
+    return 1;
   }
 
   const filesToProcess: string[] = [];
@@ -230,13 +244,14 @@ const main = async () => {
         filesToProcess.push(join(inputPath, entry.name));
       }
     }
+    filesToProcess.sort();
   } else if (inputPath.endsWith(".jsonl")) {
     filesToProcess.push(inputPath);
   }
 
   if (filesToProcess.length === 0) {
     console.error(`Error: No .jsonl files found in ${inputPath}`);
-    process.exit(1);
+    return 1;
   }
 
   const allTestCases: TestCase[] = [];
@@ -246,6 +261,7 @@ const main = async () => {
       rawContent,
       options.targetSkill,
       options.idPrefix,
+      allTestCases.length + 1,
     );
     allTestCases.push(...extracted);
   }
@@ -256,7 +272,7 @@ const main = async () => {
 
   if (options.dryRun) {
     console.log(JSON.stringify(allTestCases, null, 2));
-    return;
+    return 0;
   }
 
   const outDir = options.outDir;
@@ -264,11 +280,13 @@ const main = async () => {
     await mkdir(outDir, { recursive: true });
   }
 
-  const outFile = join(outDir, `extracted_evals.json`);
+  const outFile = join(outDir, "extracted_evals.json");
   await writeFile(outFile, JSON.stringify(allTestCases, null, 2));
   console.log(`Saved extracted evals to ${outFile}`);
+  return 0;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+if (import.meta.main) {
+  const code = await extractTranscriptEvals(process.argv);
+  process.exit(code);
 }
