@@ -9,6 +9,8 @@ import {
 } from "./manifests";
 import { validateContractCoverage } from "./coverage";
 import { validateDuplicateKeys } from "./duplicate-keys";
+import { validateRoutingOverlap } from "./routing-overlap";
+import { validateSecurityLint } from "./security-lint";
 import { reportTokenEfficiency } from "./tokens";
 
 export const handleResults = (results: ValidationResult[]): boolean => {
@@ -46,6 +48,8 @@ export const run = async (): Promise<void> => {
   const versionResults = await validateVersionSync(claudePluginDir);
   const coverageResults = await validateContractCoverage(claudePluginDir);
   const duplicateKeyResults = await validateDuplicateKeys();
+  const routingOverlapResults = await validateRoutingOverlap(claudePluginDir);
+  const securityLintResults = await validateSecurityLint(claudePluginDir);
 
   const failed = handleResults([
     ...skillResults,
@@ -55,6 +59,8 @@ export const run = async (): Promise<void> => {
     ...versionResults,
     ...coverageResults,
     ...duplicateKeyResults,
+    ...routingOverlapResults,
+    ...securityLintResults,
   ]);
 
   if (failed) {
