@@ -20,3 +20,8 @@ Direct pushes to `main` are restricted by repository rules; always push changes 
 Never commit scratch or one-shot helper scripts (crawlers, parsers, experiments).
 Work in a temporary directory outside the repository, or delete the files before committing.
 To source upstream chezmoi documentation, clone or fetch raw files from <https://github.com/twpayne/chezmoi> (docs live under `assets/chezmoi.io/docs/`) instead of writing scraping scripts.
+
+## Issue tracking
+
+Use Beads for issue tracking.
+Run `mise exec -- bd prime` for the current Beads workflow.
