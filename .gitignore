@@ -6,3 +6,4 @@ node_modules
 eval_results
 .env.local
 .env.*.local
+.beads.gate.lock
