@@ -4,6 +4,7 @@
     "name": "Trigger matching for chezmoi add intent",
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-cli-commands",
+    "smoke": true,
     "input": {
       "user_prompt": "I want to track my ~/.bashrc file with chezmoi."
     },
@@ -17,6 +18,7 @@
     "name": "Negative trigger matching for unrelated git query",
     "eval_type": "trigger_matching",
     "target_skill": "chezmoi-cli-commands",
+    "smoke": true,
     "input": {
       "user_prompt": "How do I rebase a local git feature branch?"
     },
@@ -97,15 +99,24 @@
     "name": "Command generation for diffing changes with exclusion flag",
     "eval_type": "command_correctness",
     "target_skill": "chezmoi-cli-commands",
+    "smoke": true,
     "input": {
       "user_prompt": "How do I view diffs between my chezmoi source state and destination files without running scripts?"
     },
     "expected": {
-      "exact_command": "chezmoi diff --exclude scripts",
-      "command_regex": "^chezmoi diff --exclude scripts$",
+      "command_regex": "^chezmoi diff --exclude(?:=|\\s+)scripts(?:\\s|$)",
       "required_flags": ["--exclude"],
-      "forbidden_flags": ["--force"]
+      "forbidden_flags": ["--force"],
+      "required_references": ["references/diff.md"],
+      "allow_prose_command": true
     },
+    "mock_responses": [
+      {
+        "match_args": ["diff", "--exclude", "scripts"],
+        "stdout": "diff --git a/.bashrc b/.bashrc\n",
+        "exit_code": 0
+      }
+    ],
     "token_budget": 500
   },
   {
@@ -206,6 +217,7 @@
     "name": "Preview-first update guidance",
     "eval_type": "answer_quality",
     "target_skill": "chezmoi-cli-commands",
+    "smoke": true,
     "input": {
       "user_prompt": "I need to update a laptop, but I want to inspect every change before anything is written. Explain a safe sequence."
     },
@@ -217,6 +229,18 @@
         "safety_expectations": ["review"]
       }
     },
+    "mock_responses": [
+      {
+        "match_args": ["diff"],
+        "stdout": "",
+        "exit_code": 0
+      },
+      {
+        "match_args": ["apply", "--dry-run"],
+        "stdout": "",
+        "exit_code": 0
+      }
+    ],
     "token_budget": 650
   }
 ]

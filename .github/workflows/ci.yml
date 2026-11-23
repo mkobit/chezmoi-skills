@@ -44,10 +44,7 @@ jobs:
       - name: Run unit tests
         run: bun run test
 
-      - name: Validate Promptfoo configurations
-        env:
-          PROMPTFOO_DISABLE_TELEMETRY: "1"
-          CI: "true"
+      - name: Validate eval corpus
         run: bun run eval:validate
 
   verify-lockfile:
