@@ -106,9 +106,13 @@ const runSyncCommand = (
   cmd: string[],
 ): { exitCode: number; stdout: string; stderr: string } => {
   try {
-    const proc = Bun.spawnSync(cmd, {
+    const binary = cmd[0] ?? "";
+    const executable =
+      (binary ? Bun.which(binary, { PATH: process.env.PATH }) : null) ?? binary;
+    const proc = Bun.spawnSync([executable, ...cmd.slice(1)], {
       stdout: "pipe",
       stderr: "pipe",
+      env: process.env,
     });
     return {
       exitCode: proc.exitCode,
