@@ -27,19 +27,27 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - id: open-release-pr
+        name: Check for open release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          has_pr=$(gh pr list --repo "${{ github.repository }}" --state open --head "release-please--branches--main" --json number --jq 'length > 0')
+          echo "exists=${has_pr}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout release PR branch
-        if: ${{ steps.release.outputs.pr != '' }}
+        if: ${{ steps.open-release-pr.outputs.exists == 'true' }}
         uses: actions/checkout@v7.0.1
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          ref: release-please--branches--main
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
-        if: ${{ steps.release.outputs.pr != '' }}
+        if: ${{ steps.open-release-pr.outputs.exists == 'true' }}
         uses: $/.github/actions/setup-bun
 
       - name: Format release PR files
-        if: ${{ steps.release.outputs.pr != '' }}
+        if: ${{ steps.open-release-pr.outputs.exists == 'true' }}
         run: |
           bun run fmt
           if ! git diff --quiet; then
