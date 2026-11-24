@@ -24,6 +24,12 @@ import {
   type RunScope,
 } from "./runner.ts";
 import { runSimulationSuite } from "./simulator.ts";
+import {
+  GENERATOR_FOCUS_TYPES,
+  GeneratorFocusSchema,
+  MAX_GENERATOR_COUNT,
+  runGenerateSuite,
+} from "./generator.ts";
 
 interface RunCliOptions {
   harness: string;
@@ -91,6 +97,21 @@ interface JudgeCliOptions {
 interface ValidateCliOptions {
   evalsDir: string;
   historyFile?: string;
+}
+
+interface GenerateCliOptions {
+  harness: string;
+  model?: string;
+  skill?: string;
+  allSkills?: boolean;
+  focus: string;
+  count: string;
+  outDir?: string;
+  evalsDir: string;
+  skillsDir: string;
+  timeout: string;
+  dryRun?: boolean;
+  keepWorkdir?: boolean;
 }
 
 const parseHarness = (raw: string, flagName: string): HarnessName => {
@@ -175,7 +196,7 @@ export const runCli = async (argv: string[]): Promise<number> => {
     .option("--smoke", "Run only smoke-tagged cases")
     .option(
       "--origin <origin>",
-      "Filter cases by origin (contrived or distilled)",
+      "Filter cases by origin (contrived, distilled, or synthetic)",
     )
     .option("--dry-run", "List matched cases without running the harness")
     .option(
@@ -228,9 +249,13 @@ export const runCli = async (argv: string[]): Promise<number> => {
 
       let origin: TestCase["origin"] | undefined;
       if (opts.origin !== undefined) {
-        if (opts.origin !== "contrived" && opts.origin !== "distilled") {
+        if (
+          opts.origin !== "contrived" &&
+          opts.origin !== "distilled" &&
+          opts.origin !== "synthetic"
+        ) {
           throw new ConfigError(
-            `Unsupported origin "${opts.origin}". Supported origins: contrived, distilled.`,
+            `Unsupported origin "${opts.origin}". Supported origins: contrived, distilled, synthetic.`,
           );
         }
         origin = opts.origin;
@@ -807,6 +832,127 @@ export const runCli = async (argv: string[]): Promise<number> => {
         summary.failed_cases > 0 || summary.aborted_early || judgeFailed
           ? 1
           : 0;
+    });
+
+  program
+    .command("generate")
+    .description(
+      "Generate synthetic edge-case eval candidates into gitignored staging",
+    )
+    .option(
+      "--harness <name>",
+      "Local harness generating candidates (codex or agy)",
+      "codex",
+    )
+    .option("--model <model>", "Optional model override")
+    .option("--skill <skill>", "Target skill name under skills/")
+    .option(
+      "--all-skills",
+      "Generate across every skill sequentially (--count applied per skill)",
+    )
+    .option(
+      "--focus <type>",
+      `Focus gap (${GENERATOR_FOCUS_TYPES.join(", ")})`,
+      "flag_edge_case",
+    )
+    .option(
+      "--count <n>",
+      `Candidate cases to request per skill (1..${MAX_GENERATOR_COUNT})`,
+      "5",
+    )
+    .option(
+      "--out-dir <dir>",
+      "Staging directory inside gitignored artifacts (defaults to eval_results/generated/<timestamp>-<skill>)",
+    )
+    .option(
+      "--evals-dir <dir>",
+      "Existing corpus directory scanned for deduplication and ID allocation",
+      "tests/evals",
+    )
+    .option(
+      "--skills-dir <dir>",
+      "Skills directory read for ground-truth commands and references",
+      "skills",
+    )
+    .option(
+      "--timeout <ms>",
+      "Generator invocation timeout in milliseconds",
+      "90000",
+    )
+    .option(
+      "--dry-run",
+      "Print planned skills, existing case counts, and output path without model calls",
+    )
+    .option("--keep-workdir", "Retain temporary isolated generator workspace")
+    .action(async (opts: GenerateCliOptions) => {
+      const harness = parseHarness(opts.harness, "harness");
+      const focusResult = GeneratorFocusSchema.safeParse(opts.focus);
+      if (!focusResult.success) {
+        throw new ConfigError(
+          `Unsupported --focus "${opts.focus}". Supported focus values: ${GENERATOR_FOCUS_TYPES.join(", ")}.`,
+        );
+      }
+      const count = parsePositiveInt(opts.count, "--count");
+      if (count > MAX_GENERATOR_COUNT) {
+        throw new ConfigError(
+          `Invalid --count "${opts.count}": must be between 1 and ${MAX_GENERATOR_COUNT}.`,
+        );
+      }
+      const timeoutMs = parsePositiveInt(opts.timeout, "--timeout");
+
+      const result = await runGenerateSuite({
+        harness,
+        ...(opts.model ? { model: opts.model } : {}),
+        ...(opts.skill ? { skill: opts.skill } : {}),
+        allSkills: Boolean(opts.allSkills),
+        focus: focusResult.data,
+        count,
+        ...(opts.outDir ? { outDir: opts.outDir } : {}),
+        evalsDir: opts.evalsDir,
+        skillsDir: opts.skillsDir,
+        timeoutMs,
+        dryRun: Boolean(opts.dryRun),
+        keepWorkdir: Boolean(opts.keepWorkdir),
+      });
+
+      if (result.dryRun) {
+        console.log(`Planned synthetic generation -> ${result.outDir}`);
+        for (const plan of result.dryRunSkills ?? []) {
+          console.log(
+            `- ${plan.skill} (code=${plan.skill_code}, existing=${plan.existing_case_count}, next_id=TC-${plan.skill_code}-SYN-${String(plan.next_synthetic_suffix).padStart(3, "0")}, request=${plan.requested_count})`,
+          );
+        }
+        exitCode = 0;
+        return;
+      }
+
+      const accepted = result.acceptedRecords ?? [];
+      const rejected = result.rejectedRecords ?? [];
+      const errors = result.errors ?? [];
+      console.log(
+        `Generated ${accepted.length} accepted, ${rejected.length} rejected, ${errors.length} error(s).`,
+      );
+      for (const record of accepted) {
+        console.log(
+          `  + ${record.test_case.id} [${record.test_case.eval_type}] (${record.test_case.target_skill}): ${record.rationale}`,
+        );
+      }
+      for (const record of rejected) {
+        console.log(
+          `  - ${record.id} (${record.target_skill}) [${record.gate}]: ${record.reason}`,
+        );
+      }
+      if (result.casesPath) {
+        console.log(`Staged cases written to ${result.casesPath}`);
+      }
+      if (result.reportPath) {
+        console.log(`Review report written to ${result.reportPath}`);
+      }
+      if (result.abortedEarly) {
+        console.error(`Aborted early: ${result.abortReason}`);
+      }
+
+      exitCode = result.abortedEarly || errors.length > 0 ? 1 : 0;
     });
 
   try {

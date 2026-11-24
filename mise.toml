@@ -43,6 +43,10 @@ run = "bun run scripts/evals/cli.ts judge"
 description = "Run multi-turn simulated user evaluations"
 run = "bun run scripts/evals/cli.ts simulate"
 
+[tasks."eval:live:generate"]
+description = "Generate synthetic edge-case eval candidates"
+run = "bun run scripts/evals/cli.ts generate"
+
 [tasks."lint:md"]
 description = "Lint markdown files"
 run = "bun run markdownlint-cli2"

@@ -79,7 +79,7 @@ export const TestCaseSchema = z.object({
     "answer_quality",
   ]),
   target_skill: z.string(),
-  origin: z.enum(["contrived", "distilled"]).default("contrived"),
+  origin: z.enum(["contrived", "distilled", "synthetic"]).default("contrived"),
   smoke: z.boolean().optional(),
   input: z.object({
     user_prompt: z.string(),
