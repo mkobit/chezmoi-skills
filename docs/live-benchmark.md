@@ -36,9 +36,20 @@ bun run eval:live --case TC-CLI-CMD-001
 
 # Compare against a prior summary.json
 bun run eval:live --smoke --baseline eval_results/runs/<timestamp>/summary.json
+
+# Record an aggregate run entry to tests/evals/history.jsonl
+bun run eval:live --smoke --record-history
 ```
 
 Each run writes `summary.json` (`schema_version: "1"`) and per-case logs under `eval_results/runs/<timestamp>/`.
+
+## Longitudinal eval history
+
+Pass `--record-history` on a `full` or `--smoke` run to append a single aggregate JSONL entry to `tests/evals/history.jsonl` (override the path with `--history-file <path>`).
+
+* **Guardrails**: `--record-history` rejects `--skill`, `--case`, and `--origin` filters (exit code `2`), requires a valid git commit SHA, skips writing on `--dry-run` or `aborted_early` runs, and warns on dirty working trees while still recording completed failing suites.
+* **Deduplication**: `record_id` hashes commit SHA, dirty state, harness/model identity, `skill_source_sha256`, `corpus_sha256`, `run_scope`, and optional judge identity; duplicate entries are skipped.
+* **Validation**: `bun run validate:evals` validates every non-empty line in `tests/evals/history.jsonl` against `HistoryRecordSchema` and rejects duplicate `record_id` entries when the file exists.
 
 ## Baseline comparisons and drift warnings
 

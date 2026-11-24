@@ -31,6 +31,8 @@ export class ConfigError extends Error {
 
 export type HarnessName = "codex" | "agy";
 
+export type RunScope = "full" | "smoke" | "filtered";
+
 export interface RunOptions {
   harness: HarnessName;
   evalsDir: string;
@@ -38,6 +40,8 @@ export interface RunOptions {
   outDir: string;
   timeoutMs: number;
   keepWorkdir: boolean;
+  runScope?: RunScope;
+  skippedCases?: number;
 }
 
 export interface CaseResult {
@@ -68,6 +72,8 @@ export interface RunSummary {
   total_cases: number;
   passed_cases: number;
   failed_cases: number;
+  skipped_cases?: number;
+  run_scope?: RunScope;
   failed_case_ids: string[];
   unmocked_fallback_count: number;
   cases: CaseResult[];
@@ -748,7 +754,10 @@ export const parseAgyTrace = (
   };
 };
 
-const getGitMetadata = (): { commitSha: string; gitDirty: boolean } => {
+/**
+ * Reads the current git commit SHA and working tree dirty state.
+ */
+export const getGitMetadata = (): { commitSha: string; gitDirty: boolean } => {
   try {
     const shaProc = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
       stdout: "pipe",
@@ -891,6 +900,8 @@ export const buildRunSummary = (params: {
   abortedEarly: boolean;
   abortReason: string | null;
   cases: CaseResult[];
+  runScope?: RunScope;
+  skippedCases?: number;
 }): RunSummary => {
   const { commitSha, gitDirty } = getGitMetadata();
   const skillFiles = listedFilesRecursive(params.skillsDir, "");
@@ -921,6 +932,10 @@ export const buildRunSummary = (params: {
     total_cases: params.cases.length,
     passed_cases: params.cases.length - failedCases.length,
     failed_cases: failedCases.length,
+    ...(params.skippedCases !== undefined
+      ? { skipped_cases: params.skippedCases }
+      : {}),
+    ...(params.runScope !== undefined ? { run_scope: params.runScope } : {}),
     failed_case_ids: failedCases.map((c) => c.id),
     unmocked_fallback_count: unmockedFallbackCount,
     cases: params.cases,
@@ -1204,6 +1219,10 @@ export const runEvalSuite = async (
     abortedEarly,
     abortReason,
     cases: results,
+    ...(options.runScope !== undefined ? { runScope: options.runScope } : {}),
+    ...(options.skippedCases !== undefined
+      ? { skippedCases: options.skippedCases }
+      : {}),
   });
 
   await writeFile(
