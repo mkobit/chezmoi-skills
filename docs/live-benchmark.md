@@ -1,6 +1,6 @@
 # Evaluation strategy and local harness runner
 
-The checked-in JSON files under `tests/evals/` are the evaluation corpus source of truth.
+The checked-in JSON files under `tests/evals/` are the evaluation corpus source of truth; see [the eval corpus guide](eval-corpus.md) for adding or promoting cases.
 
 Raw harness transcripts, shim logs, and run summaries under `eval_results/` are gitignored, disposable local artifacts.
 
