@@ -305,7 +305,7 @@ describe("runSimulationSuite with mocked codex and agy harnesses", () => {
 
     writeExecutable(
       join(mockBin, "codex"),
-      `#!/usr/bin/env bun
+      `#!${process.execPath}
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "fs";
 const args = process.argv.slice(2);
 if (args[0] === "--version") { console.log("codex-cli 0.99.0"); process.exit(0); }
@@ -452,7 +452,7 @@ console.log(JSON.stringify({ type: "turn.completed", usage: { input_tokens: 20, 
 
     writeExecutable(
       join(mockBin, "agy"),
-      `#!/usr/bin/env bun
+      `#!${process.execPath}
 import { appendFileSync } from "fs";
 const args = process.argv.slice(2);
 if (args[0] === "--version") { console.log("agy 1.2.0"); process.exit(0); }
@@ -557,7 +557,7 @@ console.log(JSON.stringify({
 
     writeExecutable(
       join(mockBin, "codex"),
-      `#!/usr/bin/env bun
+      `#!${process.execPath}
 import { readFileSync } from "fs";
 const args = process.argv.slice(2);
 if (args[0] === "--version") { console.log("codex-cli 0.99.0"); process.exit(0); }
