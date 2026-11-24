@@ -32,7 +32,8 @@
         }
       ],
       "bump-minor-pre-major": true,
-      "include-v-in-tag": true,
+      "include-v-in-tag": false,
+      "pull-request-title-pattern": "chore: release ${version}",
       "skip-changelog": true,
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
