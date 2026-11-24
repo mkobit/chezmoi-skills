@@ -10,6 +10,7 @@
     "eval:live": "bun run scripts/evals/cli.ts run",
     "eval:live:judge": "bun run scripts/evals/cli.ts judge",
     "eval:live:simulate": "bun run scripts/evals/cli.ts simulate",
+    "eval:live:generate": "bun run scripts/evals/cli.ts generate",
     "lint:md": "markdownlint-cli2",
     "lint:spelling": "bun run --bun node_modules/cspell/bin.mjs \"**/*.md\"",
     "fmt": "bun fmt",

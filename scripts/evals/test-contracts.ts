@@ -27,7 +27,7 @@ program
   .option("--category <category>", "Filter evaluation by eval_type category")
   .option(
     "--origin <origin>",
-    "Filter evaluation by origin (contrived or distilled)",
+    "Filter evaluation by origin (contrived, distilled, or synthetic)",
   )
   .option(
     "--evals-dir <dir>",
@@ -41,7 +41,7 @@ program
   )
   .option("--skills-dir <dir>", "Directory containing skills", "skills");
 
-interface SkillSource {
+export interface SkillSource {
   name: string;
   description: string;
   root: string;
@@ -49,14 +49,14 @@ interface SkillSource {
   content: string;
 }
 
-interface AssertionResult {
+export interface AssertionResult {
   type: string;
   expected: unknown;
   actual?: unknown;
   passed: boolean;
 }
 
-interface TestResult {
+export interface TestResult {
   test_id: string;
   name: string;
   eval_type: string;
@@ -129,7 +129,7 @@ const markdownFiles = async (directory: string): Promise<string[]> => {
   return files;
 };
 
-const loadSkillSources = async (
+export const loadSkillSources = async (
   skillsDir: string,
 ): Promise<Record<string, SkillSource>> => {
   const skillSources: Record<string, SkillSource> = {};
@@ -198,7 +198,7 @@ const commandEvidence = (testCase: TestCase): string[] => {
   return [...terms];
 };
 
-const evaluateTestCase = (
+export const evaluateTestCase = (
   testCase: TestCase,
   skillSources: Record<string, SkillSource>,
   skillsDir: string,
