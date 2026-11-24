@@ -1,11 +1,20 @@
 import { Command, CommanderError } from "commander";
+import { existsSync } from "fs";
+import { join } from "path";
 import { filterCases, loadCorpus, type TestCase } from "./corpus.ts";
+import {
+  appendHistoryRecord,
+  buildHistoryRecord,
+  validateHistoryFile,
+} from "./history.ts";
 import {
   compareAgainstBaseline,
   ConfigError,
+  getGitMetadata,
   type HarnessName,
   loadBaselineSummary,
   runEvalSuite,
+  type RunScope,
 } from "./runner.ts";
 
 interface RunCliOptions {
@@ -21,10 +30,13 @@ interface RunCliOptions {
   evalsDir: string;
   skillsDir: string;
   outDir: string;
+  recordHistory?: boolean;
+  historyFile: string;
 }
 
 interface ValidateCliOptions {
   evalsDir: string;
+  historyFile?: string;
 }
 
 const parsePositiveInt = (raw: string, flagName: string): number => {
@@ -58,12 +70,24 @@ export const runCli = async (argv: string[]): Promise<number> => {
     .command("validate")
     .description("Validate eval corpus JSON files against the schema")
     .option("--evals-dir <dir>", "Path to eval corpus directory", "tests/evals")
+    .option(
+      "--history-file <path>",
+      "Path to eval history ledger (defaults to <evals-dir>/history.jsonl)",
+    )
     .action(async (opts: ValidateCliOptions) => {
       try {
         const { cases, files } = await loadCorpus(opts.evalsDir);
         console.log(
           `Validated ${cases.length} case(s) across ${files.length} file(s).`,
         );
+        const historyFile =
+          opts.historyFile ?? join(opts.evalsDir, "history.jsonl");
+        if (existsSync(historyFile)) {
+          const { count } = validateHistoryFile(historyFile);
+          console.log(
+            `Validated ${count} history record(s) in ${historyFile}.`,
+          );
+        }
         exitCode = 0;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -97,6 +121,15 @@ export const runCli = async (argv: string[]): Promise<number> => {
       "Path to evaluation artifacts directory",
       "eval_results",
     )
+    .option(
+      "--record-history",
+      "Append an aggregate entry to tests/evals/history.jsonl",
+    )
+    .option(
+      "--history-file <path>",
+      "Path to eval history ledger",
+      "tests/evals/history.jsonl",
+    )
     .action(async (opts: RunCliOptions) => {
       if (opts.harness !== "codex" && opts.harness !== "agy") {
         throw new ConfigError(
@@ -116,6 +149,27 @@ export const runCli = async (argv: string[]): Promise<number> => {
       }
 
       const timeoutMs = parsePositiveInt(opts.timeout, "--timeout");
+
+      if (
+        opts.recordHistory &&
+        (opts.skill !== undefined ||
+          opts.case !== undefined ||
+          opts.origin !== undefined)
+      ) {
+        throw new ConfigError(
+          "--record-history cannot be combined with --skill, --case, or --origin.",
+        );
+      }
+
+      if (opts.recordHistory) {
+        const { commitSha } = getGitMetadata();
+        if (commitSha === "unknown") {
+          throw new ConfigError(
+            "--record-history requires a valid git commit (git rev-parse HEAD failed).",
+          );
+        }
+      }
+
       const baseline =
         opts.baseline !== undefined
           ? loadBaselineSummary(opts.baseline)
@@ -149,6 +203,16 @@ export const runCli = async (argv: string[]): Promise<number> => {
         return;
       }
 
+      const runScope: RunScope =
+        opts.skill !== undefined ||
+        opts.case !== undefined ||
+        opts.origin !== undefined
+          ? "filtered"
+          : opts.smoke
+            ? "smoke"
+            : "full";
+      const skippedCases = Math.max(0, cases.length - matched.length);
+
       const { summary, runOutDir } = await runEvalSuite(matched, files, {
         harness,
         evalsDir: opts.evalsDir,
@@ -156,6 +220,8 @@ export const runCli = async (argv: string[]): Promise<number> => {
         outDir: opts.outDir,
         timeoutMs,
         keepWorkdir: Boolean(opts.keepWorkdir),
+        runScope,
+        skippedCases,
       });
 
       console.log(
@@ -164,6 +230,33 @@ export const runCli = async (argv: string[]): Promise<number> => {
       console.log(`Artifacts written to ${runOutDir}`);
       if (summary.aborted_early) {
         console.error(`Aborted early: ${summary.abort_reason}`);
+      }
+
+      if (opts.recordHistory) {
+        if (summary.aborted_early) {
+          console.warn(
+            "Skipping history recording because the run aborted early.",
+          );
+        } else {
+          if (summary.git_dirty) {
+            console.warn(
+              "Warning: git working tree is dirty; commit skill/corpus edits for clean history snapshots.",
+            );
+          }
+          const record = buildHistoryRecord({
+            summary,
+            corpusTotalCases: cases.length,
+          });
+          const { appended, recordId } = appendHistoryRecord(
+            opts.historyFile,
+            record,
+          );
+          if (appended) {
+            console.log(
+              `Recorded history entry ${recordId.slice(0, 12)} to ${opts.historyFile}.`,
+            );
+          }
+        }
       }
 
       if (baseline) {
