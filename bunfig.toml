@@ -1,4 +1,5 @@
 [fmt]
+sortPackageJson = true
 ignorePatterns = [
   "**/*.md",
   "**/*.mdx",
