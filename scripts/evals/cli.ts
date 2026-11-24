@@ -23,6 +23,7 @@ import {
   runEvalSuite,
   type RunScope,
 } from "./runner.ts";
+import { runSimulationSuite } from "./simulator.ts";
 
 interface RunCliOptions {
   harness: string;
@@ -44,6 +45,28 @@ interface RunCliOptions {
   judgeModel?: string;
   judgeRuns: string;
   judgeTimeout: string;
+  includeMultiTurn?: boolean;
+}
+
+interface SimulateCliOptions {
+  harness: string;
+  simHarness?: string;
+  simModel?: string;
+  skill?: string;
+  case?: string;
+  maxTurns?: string;
+  timeout: string;
+  caseTimeout: string;
+  judge?: boolean;
+  judgeHarness: string;
+  judgeModel?: string;
+  judgeRuns: string;
+  judgeTimeout: string;
+  dryRun?: boolean;
+  keepWorkdir?: boolean;
+  evalsDir: string;
+  skillsDir: string;
+  outDir: string;
 }
 
 interface JudgeCliOptions {
@@ -190,6 +213,10 @@ export const runCli = async (argv: string[]): Promise<number> => {
       "Per-case judge timeout in milliseconds",
       "60000",
     )
+    .option(
+      "--include-multi-turn",
+      "Include multi-turn simulation cases in this run",
+    )
     .action(async (opts: RunCliOptions) => {
       const harness = parseHarness(opts.harness, "harness");
       const judgeHarness = parseHarness(opts.judgeHarness, "judge-harness");
@@ -251,7 +278,9 @@ export const runCli = async (argv: string[]): Promise<number> => {
         ...(opts.case !== undefined ? { caseId: opts.case } : {}),
         ...(opts.smoke ? { smoke: true } : {}),
         ...(origin !== undefined ? { origin } : {}),
-      });
+      }).filter((testCase) =>
+        opts.includeMultiTurn ? true : testCase.simulation === undefined,
+      );
 
       if (opts.dryRun) {
         console.log(`Matched ${matched.length} case(s):`);
@@ -274,16 +303,82 @@ export const runCli = async (argv: string[]): Promise<number> => {
             : "full";
       const skippedCases = Math.max(0, cases.length - matched.length);
 
-      const { summary, runOutDir } = await runEvalSuite(matched, files, {
-        harness,
-        evalsDir: opts.evalsDir,
-        skillsDir: opts.skillsDir,
-        outDir: opts.outDir,
-        timeoutMs,
-        keepWorkdir: Boolean(opts.keepWorkdir),
-        runScope,
-        skippedCases,
-      });
+      const singleTurnCases = matched.filter(
+        (testCase) => testCase.simulation === undefined,
+      );
+      const simulationCases = matched.filter(
+        (testCase) => testCase.simulation !== undefined,
+      );
+
+      let summary;
+      let runOutDir;
+      if (simulationCases.length > 0 && singleTurnCases.length === 0) {
+        const simResult = await runSimulationSuite(simulationCases, files, {
+          harness,
+          evalsDir: opts.evalsDir,
+          skillsDir: opts.skillsDir,
+          outDir: opts.outDir,
+          timeoutMs,
+          caseTimeoutMs: Math.max(timeoutMs * 4, 300000),
+          keepWorkdir: Boolean(opts.keepWorkdir),
+          runScope,
+          skippedCases,
+        });
+        summary = simResult.summary!;
+        runOutDir = simResult.runOutDir!;
+      } else {
+        ({ summary, runOutDir } = await runEvalSuite(singleTurnCases, files, {
+          harness,
+          evalsDir: opts.evalsDir,
+          skillsDir: opts.skillsDir,
+          outDir: opts.outDir,
+          timeoutMs,
+          keepWorkdir: Boolean(opts.keepWorkdir),
+          runScope,
+          skippedCases,
+        }));
+        if (simulationCases.length > 0 && !summary.aborted_early) {
+          const simResult = await runSimulationSuite(simulationCases, files, {
+            harness,
+            evalsDir: opts.evalsDir,
+            skillsDir: opts.skillsDir,
+            outDir: opts.outDir,
+            timeoutMs,
+            caseTimeoutMs: Math.max(timeoutMs * 4, 300000),
+            keepWorkdir: Boolean(opts.keepWorkdir),
+            runScope,
+            skippedCases,
+          });
+          if (simResult.summary) {
+            console.log(
+              `Simulated ${simResult.summary.total_cases} case(s): ${simResult.summary.passed_cases} passed, ${simResult.summary.failed_cases} failed.`,
+            );
+            console.log(
+              `Simulation artifacts written to ${simResult.runOutDir}`,
+            );
+            summary = {
+              ...summary,
+              total_cases: summary.total_cases + simResult.summary.total_cases,
+              passed_cases:
+                summary.passed_cases + simResult.summary.passed_cases,
+              failed_cases:
+                summary.failed_cases + simResult.summary.failed_cases,
+              failed_case_ids: [
+                ...summary.failed_case_ids,
+                ...simResult.summary.failed_case_ids,
+              ],
+              unmocked_fallback_count:
+                summary.unmocked_fallback_count +
+                simResult.summary.unmocked_fallback_count,
+              aborted_early:
+                summary.aborted_early || simResult.summary.aborted_early,
+              abort_reason:
+                summary.abort_reason ?? simResult.summary.abort_reason,
+              cases: [...summary.cases, ...simResult.summary.cases],
+            };
+          }
+        }
+      }
 
       console.log(
         `Completed ${summary.total_cases} case(s): ${summary.passed_cases} passed, ${summary.failed_cases} failed.`,
@@ -534,6 +629,182 @@ export const runCli = async (argv: string[]): Promise<number> => {
         summary.failed_judged > 0 ||
         summary.error_judged > 0 ||
         summary.aborted_early
+          ? 1
+          : 0;
+    });
+
+  program
+    .command("simulate")
+    .description("Run multi-turn simulated user evaluations")
+    .option("--harness <name>", "Harness under test (codex or agy)", "codex")
+    .option(
+      "--sim-harness <name>",
+      "Harness driving the user simulator (defaults to --harness)",
+    )
+    .option("--sim-model <model>", "Optional model override for the simulator")
+    .option("--skill <skill>", "Filter simulation cases by target_skill")
+    .option("--case <id>", "Filter simulation cases by case ID")
+    .option("--max-turns <n>", "Override maximum turns (clamped to 2..8)")
+    .option(
+      "--timeout <ms>",
+      "Per-turn timeout for the evaluated agent in milliseconds",
+      "90000",
+    )
+    .option(
+      "--case-timeout <ms>",
+      "Total wall-clock timeout per case in milliseconds",
+      "300000",
+    )
+    .option(
+      "--judge",
+      "Run post-hoc LLM-as-a-judge grading after simulation completes",
+    )
+    .option(
+      "--judge-harness <name>",
+      "Harness used for --judge (codex or agy)",
+      "codex",
+    )
+    .option("--judge-model <model>", "Model override for --judge")
+    .option("--judge-runs <n>", "Repeat judge grading (1 or 3)", "1")
+    .option(
+      "--judge-timeout <ms>",
+      "Per-case judge timeout in milliseconds",
+      "60000",
+    )
+    .option(
+      "--dry-run",
+      "List matched simulation cases and turn budgets without model calls",
+    )
+    .option(
+      "--keep-workdir",
+      "Retain temporary workspaces and per-case session directories",
+    )
+    .option("--evals-dir <dir>", "Path to eval corpus directory", "tests/evals")
+    .option("--skills-dir <dir>", "Path to skills directory", "skills")
+    .option(
+      "--out-dir <dir>",
+      "Path to evaluation artifacts directory",
+      "eval_results",
+    )
+    .action(async (opts: SimulateCliOptions) => {
+      const harness = parseHarness(opts.harness, "harness");
+      const simHarness = opts.simHarness
+        ? parseHarness(opts.simHarness, "sim-harness")
+        : harness;
+      const judgeHarness = parseHarness(opts.judgeHarness, "judge-harness");
+      const judgeRuns = parseJudgeRuns(opts.judgeRuns);
+      const timeoutMs = parsePositiveInt(opts.timeout, "--timeout");
+      const caseTimeoutMs = parsePositiveInt(
+        opts.caseTimeout,
+        "--case-timeout",
+      );
+      const judgeTimeoutMs = parsePositiveInt(
+        opts.judgeTimeout,
+        "--judge-timeout",
+      );
+      const maxTurns =
+        opts.maxTurns !== undefined
+          ? parsePositiveInt(opts.maxTurns, "--max-turns")
+          : undefined;
+
+      let cases: TestCase[];
+      let files: string[];
+      try {
+        ({ cases, files } = await loadCorpus(opts.evalsDir));
+      } catch (error) {
+        throw new ConfigError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+
+      const matched = filterCases(cases, {
+        ...(opts.skill !== undefined ? { skill: opts.skill } : {}),
+        ...(opts.case !== undefined ? { caseId: opts.case } : {}),
+      }).filter((testCase) => testCase.simulation !== undefined);
+
+      const runScope: RunScope =
+        opts.skill !== undefined || opts.case !== undefined
+          ? "filtered"
+          : "full";
+      const skippedCases = Math.max(0, cases.length - matched.length);
+
+      const result = await runSimulationSuite(matched, files, {
+        harness,
+        simHarness,
+        ...(opts.simModel ? { simModel: opts.simModel } : {}),
+        ...(maxTurns !== undefined ? { maxTurns } : {}),
+        timeoutMs,
+        caseTimeoutMs,
+        dryRun: Boolean(opts.dryRun),
+        keepWorkdir: Boolean(opts.keepWorkdir),
+        evalsDir: opts.evalsDir,
+        skillsDir: opts.skillsDir,
+        outDir: opts.outDir,
+        runScope,
+        skippedCases,
+      });
+
+      if (result.dryRun) {
+        const dryCases = result.dryRunCases ?? [];
+        console.log(`Matched ${dryCases.length} simulation case(s):`);
+        for (const c of dryCases) {
+          console.log(
+            `- ${c.id} [${c.eval_type}] (${c.target_skill}, max_turns=${c.max_turns}, shim_call_cap=${c.shim_call_cap}): ${c.name}`,
+          );
+        }
+        exitCode = 0;
+        return;
+      }
+
+      const summary = result.summary!;
+      const runOutDir = result.runOutDir!;
+      console.log(
+        `Simulated ${summary.total_cases} case(s): ${summary.passed_cases} passed, ${summary.failed_cases} failed.`,
+      );
+      console.log(`Artifacts written to ${runOutDir}`);
+      if (summary.aborted_early) {
+        console.error(`Aborted early: ${summary.abort_reason}`);
+      }
+
+      let judgeFailed = false;
+      if (opts.judge) {
+        if (summary.aborted_early) {
+          console.warn(
+            "Skipping post-hoc judge because the simulation aborted early.",
+          );
+        } else {
+          const judgeResult = await runJudgeSuite({
+            runDir: runOutDir,
+            judgeHarness,
+            ...(opts.judgeModel ? { judgeModel: opts.judgeModel } : {}),
+            judgeRuns,
+            timeoutMs: judgeTimeoutMs,
+            keepWorkdir: Boolean(opts.keepWorkdir),
+            evalsDir: opts.evalsDir,
+            skillsDir: opts.skillsDir,
+          });
+          if (judgeResult.summary) {
+            console.log(
+              `Judge completed ${judgeResult.summary.total_judged} case(s): ${judgeResult.summary.passed_judged} passed, ${judgeResult.summary.failed_judged} failed, ${judgeResult.summary.error_judged} error(s).`,
+            );
+            if (judgeResult.summaryPath) {
+              console.log(
+                `Judge summary written to ${judgeResult.summaryPath}`,
+              );
+            }
+            if (
+              judgeResult.summary.failed_judged > 0 ||
+              judgeResult.summary.error_judged > 0 ||
+              judgeResult.summary.aborted_early
+            ) {
+              judgeFailed = true;
+            }
+          }
+        }
+      }
+
+      exitCode =
+        summary.failed_cases > 0 || summary.aborted_early || judgeFailed
           ? 1
           : 0;
     });

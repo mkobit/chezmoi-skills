@@ -38,6 +38,14 @@ export const RubricSchema = z.object({
   include_references: z.array(z.string().min(1)).optional(),
 });
 
+export const SimulationConfigSchema = z.object({
+  persona: z.string().min(1),
+  goal: z.string().min(1),
+  scenario_facts: z.array(z.string().min(1)).min(1),
+  max_turns: z.number().int().min(2).max(8).default(4),
+  shim_call_cap: z.number().int().min(1).max(40).default(25),
+});
+
 export const MockResponseSchema = z
   .object({
     match_args: z.array(z.string()).optional(),
@@ -93,6 +101,7 @@ export const TestCaseSchema = z.object({
   }),
   token_budget: z.number().optional(),
   mock_responses: z.array(MockResponseSchema).optional(),
+  simulation: SimulationConfigSchema.optional(),
 });
 
 export type TestCase = z.infer<typeof TestCaseSchema>;
@@ -100,6 +109,7 @@ export type AnswerQuality = z.infer<typeof AnswerQualitySchema>;
 export type MockResponse = z.infer<typeof MockResponseSchema>;
 export type RubricCriterion = z.infer<typeof RubricCriterionSchema>;
 export type Rubric = z.infer<typeof RubricSchema>;
+export type SimulationConfig = z.infer<typeof SimulationConfigSchema>;
 
 export type MockCallOutcome =
   "matched_case" | "matched_default" | "unmocked_fallback" | "cap_exceeded";
