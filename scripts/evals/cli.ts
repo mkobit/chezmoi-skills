@@ -5,8 +5,15 @@ import { filterCases, loadCorpus, type TestCase } from "./corpus.ts";
 import {
   appendHistoryRecord,
   buildHistoryRecord,
+  type JudgeHistorySummary,
   validateHistoryFile,
 } from "./history.ts";
+import {
+  CALIBRATION_MIN_AGREEMENT,
+  runJudgeCalibration,
+  runJudgeSuite,
+  toJudgeHistorySummary,
+} from "./judge.ts";
 import {
   compareAgainstBaseline,
   ConfigError,
@@ -32,12 +39,52 @@ interface RunCliOptions {
   outDir: string;
   recordHistory?: boolean;
   historyFile: string;
+  judge?: boolean;
+  judgeHarness: string;
+  judgeModel?: string;
+  judgeRuns: string;
+  judgeTimeout: string;
+}
+
+interface JudgeCliOptions {
+  run?: string;
+  judgeHarness: string;
+  judgeModel?: string;
+  rubric?: string;
+  skill?: string;
+  case?: string;
+  onlyPassed?: boolean;
+  judgeRuns: string;
+  maxCases?: string;
+  timeout: string;
+  calibrate?: boolean;
+  calibrationFile: string;
+  dryRun?: boolean;
+  keepWorkdir?: boolean;
+  evalsDir: string;
+  skillsDir: string;
 }
 
 interface ValidateCliOptions {
   evalsDir: string;
   historyFile?: string;
 }
+
+const parseHarness = (raw: string, flagName: string): HarnessName => {
+  if (raw !== "codex" && raw !== "agy") {
+    throw new ConfigError(
+      `Unsupported ${flagName} "${raw}". Supported harnesses: codex, agy.`,
+    );
+  }
+  return raw;
+};
+
+const parseJudgeRuns = (raw: string): 1 | 3 => {
+  if (raw !== "1" && raw !== "3") {
+    throw new ConfigError(`Invalid --judge-runs "${raw}": must be 1 or 3.`);
+  }
+  return raw === "3" ? 3 : 1;
+};
 
 const parsePositiveInt = (raw: string, flagName: string): number => {
   if (!/^\d+$/.test(raw)) {
@@ -130,13 +177,27 @@ export const runCli = async (argv: string[]): Promise<number> => {
       "Path to eval history ledger",
       "tests/evals/history.jsonl",
     )
+    .option("--judge", "Run post-hoc LLM-as-a-judge grading after completion")
+    .option(
+      "--judge-harness <name>",
+      "Harness used for --judge (codex or agy)",
+      "codex",
+    )
+    .option("--judge-model <model>", "Model override for --judge")
+    .option("--judge-runs <n>", "Repeat judge grading (1 or 3)", "1")
+    .option(
+      "--judge-timeout <ms>",
+      "Per-case judge timeout in milliseconds",
+      "60000",
+    )
     .action(async (opts: RunCliOptions) => {
-      if (opts.harness !== "codex" && opts.harness !== "agy") {
-        throw new ConfigError(
-          `Unsupported harness "${opts.harness}". Supported harnesses: codex, agy.`,
-        );
-      }
-      const harness: HarnessName = opts.harness;
+      const harness = parseHarness(opts.harness, "harness");
+      const judgeHarness = parseHarness(opts.judgeHarness, "judge-harness");
+      const judgeRuns = parseJudgeRuns(opts.judgeRuns);
+      const judgeTimeoutMs = parsePositiveInt(
+        opts.judgeTimeout,
+        "--judge-timeout",
+      );
 
       let origin: TestCase["origin"] | undefined;
       if (opts.origin !== undefined) {
@@ -232,6 +293,45 @@ export const runCli = async (argv: string[]): Promise<number> => {
         console.error(`Aborted early: ${summary.abort_reason}`);
       }
 
+      let judgeHistorySummary: JudgeHistorySummary | undefined;
+      let judgeFailed = false;
+      if (opts.judge) {
+        if (summary.aborted_early) {
+          console.warn(
+            "Skipping post-hoc judge because the run aborted early.",
+          );
+        } else {
+          const judgeResult = await runJudgeSuite({
+            runDir: runOutDir,
+            judgeHarness,
+            ...(opts.judgeModel ? { judgeModel: opts.judgeModel } : {}),
+            judgeRuns,
+            timeoutMs: judgeTimeoutMs,
+            keepWorkdir: Boolean(opts.keepWorkdir),
+            evalsDir: opts.evalsDir,
+            skillsDir: opts.skillsDir,
+          });
+          if (judgeResult.summary) {
+            judgeHistorySummary = toJudgeHistorySummary(judgeResult.summary);
+            console.log(
+              `Judge completed ${judgeResult.summary.total_judged} case(s): ${judgeResult.summary.passed_judged} passed, ${judgeResult.summary.failed_judged} failed, ${judgeResult.summary.error_judged} error(s).`,
+            );
+            if (judgeResult.summaryPath) {
+              console.log(
+                `Judge summary written to ${judgeResult.summaryPath}`,
+              );
+            }
+            if (
+              judgeResult.summary.failed_judged > 0 ||
+              judgeResult.summary.error_judged > 0 ||
+              judgeResult.summary.aborted_early
+            ) {
+              judgeFailed = true;
+            }
+          }
+        }
+      }
+
       if (opts.recordHistory) {
         if (summary.aborted_early) {
           console.warn(
@@ -245,6 +345,7 @@ export const runCli = async (argv: string[]): Promise<number> => {
           }
           const record = buildHistoryRecord({
             summary,
+            ...(judgeHistorySummary ? { judge: judgeHistorySummary } : {}),
             corpusTotalCases: cases.length,
           });
           const { appended, recordId } = appendHistoryRecord(
@@ -280,7 +381,161 @@ export const runCli = async (argv: string[]): Promise<number> => {
         }
       }
 
-      exitCode = summary.failed_cases > 0 || summary.aborted_early ? 1 : 0;
+      exitCode =
+        summary.failed_cases > 0 || summary.aborted_early || judgeFailed
+          ? 1
+          : 0;
+    });
+
+  program
+    .command("judge")
+    .description("Run post-hoc LLM-as-a-judge rubric grading on a saved run")
+    .option(
+      "--run <dir>",
+      "Path to an existing eval_results/runs/<timestamp> directory",
+    )
+    .option(
+      "--judge-harness <name>",
+      "Local harness used as judge (codex or agy)",
+      "codex",
+    )
+    .option("--judge-model <model>", "Explicit model override for the judge")
+    .option(
+      "--rubric <file>",
+      "Optional fallback RubricSchema JSON file for cases lacking expected.rubric",
+    )
+    .option("--skill <skill>", "Filter graded cases by target_skill")
+    .option("--case <id>", "Filter graded cases by case ID")
+    .option(
+      "--only-passed",
+      "Skip cases that already failed T2 deterministic assertions",
+    )
+    .option(
+      "--judge-runs <n>",
+      "Repeat grading (1 or 3) and take per-criterion majority vote",
+      "1",
+    )
+    .option("--max-cases <n>", "Hard cap on judged cases in one invocation")
+    .option("--timeout <ms>", "Per-case judge timeout in milliseconds", "60000")
+    .option(
+      "--calibrate",
+      "Run judge against golden calibration fixture verdicts",
+    )
+    .option(
+      "--calibration-file <path>",
+      "Path to golden calibration fixture JSON",
+      "tests/fixtures/judge_calibration.json",
+    )
+    .option(
+      "--dry-run",
+      "List cases eligible for judging without invoking any model",
+    )
+    .option("--keep-workdir", "Retain temporary isolated judge workspace")
+    .option("--evals-dir <dir>", "Path to eval corpus directory", "tests/evals")
+    .option("--skills-dir <dir>", "Path to skills directory", "skills")
+    .action(async (opts: JudgeCliOptions) => {
+      const judgeHarness = parseHarness(opts.judgeHarness, "judge-harness");
+      const judgeRuns = parseJudgeRuns(opts.judgeRuns);
+      const timeoutMs = parsePositiveInt(opts.timeout, "--timeout");
+      const maxCases =
+        opts.maxCases !== undefined
+          ? parsePositiveInt(opts.maxCases, "--max-cases")
+          : undefined;
+
+      if (opts.calibrate) {
+        const report = await runJudgeCalibration({
+          calibrationFile: opts.calibrationFile,
+          judgeHarness,
+          ...(opts.judgeModel ? { judgeModel: opts.judgeModel } : {}),
+          judgeRuns,
+          timeoutMs,
+          dryRun: Boolean(opts.dryRun),
+          keepWorkdir: Boolean(opts.keepWorkdir),
+          skillsDir: opts.skillsDir,
+        });
+
+        if (report.dryRun) {
+          console.log(
+            `Matched ${report.total_cases} calibration case(s) in ${opts.calibrationFile}:`,
+          );
+          for (const calCase of report.cases ?? []) {
+            console.log(
+              `- ${calCase.id} (${calCase.target_skill}): ${calCase.description}`,
+            );
+          }
+          exitCode = 0;
+          return;
+        }
+
+        const pct = (report.agreement_rate * 100).toFixed(1);
+        const minPct = (CALIBRATION_MIN_AGREEMENT * 100).toFixed(0);
+        console.log(
+          `Calibration agreement: ${report.agreement_count}/${report.total_cases} (${pct}%, required >= ${minPct}%), critical false-passes: ${report.critical_false_passes}.`,
+        );
+        if (report.aborted_early) {
+          console.error(`Aborted early: ${report.abort_reason}`);
+        }
+        for (const mismatch of report.mismatches) {
+          console.log(
+            `- Mismatch ${mismatch.case_id}: expected=${mismatch.expected_passed} actual=${mismatch.actual_passed} status=${mismatch.verdict_status}${mismatch.critical_false_pass_criteria.length > 0 ? ` critical_false_pass=[${mismatch.critical_false_pass_criteria.join(", ")}]` : ""}${mismatch.error ? ` (${mismatch.error})` : ""}`,
+          );
+        }
+        exitCode = report.passed ? 0 : 1;
+        return;
+      }
+
+      if (!opts.run) {
+        throw new ConfigError(
+          "--run <dir> is required unless --calibrate is specified.",
+        );
+      }
+
+      const result = await runJudgeSuite({
+        runDir: opts.run,
+        judgeHarness,
+        ...(opts.judgeModel ? { judgeModel: opts.judgeModel } : {}),
+        ...(opts.rubric ? { rubricPath: opts.rubric } : {}),
+        ...(opts.skill ? { skill: opts.skill } : {}),
+        ...(opts.case ? { caseId: opts.case } : {}),
+        onlyPassed: Boolean(opts.onlyPassed),
+        judgeRuns,
+        ...(maxCases !== undefined ? { maxCases } : {}),
+        timeoutMs,
+        dryRun: Boolean(opts.dryRun),
+        keepWorkdir: Boolean(opts.keepWorkdir),
+        evalsDir: opts.evalsDir,
+        skillsDir: opts.skillsDir,
+      });
+
+      if (result.dryRun) {
+        const dryCases = result.dryRunCases ?? [];
+        console.log(`Matched ${dryCases.length} judgeable case(s):`);
+        for (const c of dryCases) {
+          console.log(
+            `- ${c.case_id} (${c.target_skill}, t2_passed=${c.t2_passed}, criteria=${c.criteria_count})`,
+          );
+        }
+        exitCode = 0;
+        return;
+      }
+
+      const summary = result.summary!;
+      console.log(
+        `Judged ${summary.total_judged} case(s): ${summary.passed_judged} passed, ${summary.failed_judged} failed, ${summary.error_judged} error(s).`,
+      );
+      if (result.summaryPath) {
+        console.log(`Judge summary written to ${result.summaryPath}`);
+      }
+      if (summary.aborted_early) {
+        console.error(`Aborted early: ${summary.abort_reason}`);
+      }
+
+      exitCode =
+        summary.failed_judged > 0 ||
+        summary.error_judged > 0 ||
+        summary.aborted_early
+          ? 1
+          : 0;
     });
 
   try {

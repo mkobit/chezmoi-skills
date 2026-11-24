@@ -26,6 +26,18 @@ export const AnswerQualitySchema = z
     "Answer quality expectations must include at least one assertion.",
   );
 
+export const RubricCriterionSchema = z.object({
+  id: z.string().min(1),
+  description: z.string().min(1),
+  critical: z.boolean().default(true),
+});
+
+export const RubricSchema = z.object({
+  criteria: z.array(RubricCriterionSchema).min(1).max(8),
+  min_pass_ratio: z.number().min(0).max(1).default(1),
+  include_references: z.array(z.string().min(1)).optional(),
+});
+
 export const MockResponseSchema = z
   .object({
     match_args: z.array(z.string()).optional(),
@@ -77,6 +89,7 @@ export const TestCaseSchema = z.object({
     answer_quality: AnswerQualitySchema.optional(),
     required_references: z.array(z.string().min(1)).optional(),
     allow_prose_command: z.boolean().optional(),
+    rubric: RubricSchema.optional(),
   }),
   token_budget: z.number().optional(),
   mock_responses: z.array(MockResponseSchema).optional(),
@@ -85,6 +98,8 @@ export const TestCaseSchema = z.object({
 export type TestCase = z.infer<typeof TestCaseSchema>;
 export type AnswerQuality = z.infer<typeof AnswerQualitySchema>;
 export type MockResponse = z.infer<typeof MockResponseSchema>;
+export type RubricCriterion = z.infer<typeof RubricCriterionSchema>;
+export type Rubric = z.infer<typeof RubricSchema>;
 
 export type MockCallOutcome =
   "matched_case" | "matched_default" | "unmocked_fallback" | "cap_exceeded";

@@ -10,6 +10,7 @@ import {
 import { writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, isAbsolute, join, relative, resolve } from "path";
+import { z } from "zod";
 import {
   corpusHash,
   evaluateTrace,
@@ -95,7 +96,7 @@ export interface ParsedHarnessTrace {
 
 export type ParsedCodexTrace = ParsedHarnessTrace;
 
-const AUTH_OR_RATE_LIMIT_RE =
+export const AUTH_OR_RATE_LIMIT_RE =
   /401|unauthorized|invalid.*auth|authentication.*(?:fail|required|timed out)|rate.?limit|429|quota/i;
 const SKILL_DISCOVERY_RE = /\.agents\/skills\/([^/\s"'`]+)\/SKILL\.md/g;
 const REFERENCE_READ_RE =
@@ -124,7 +125,9 @@ const runSyncCommand = (
 /**
  * Verifies that the `codex` CLI is installed and supports required isolation flags.
  */
-export const checkCodexPreflight = (): { harness_version: string } => {
+export const checkCodexPreflight = (opts?: {
+  structured?: boolean;
+}): { harness_version: string } => {
   const versionResult = runSyncCommand(["codex", "--version"]);
   if (versionResult.exitCode !== 0) {
     throw new ConfigError(
@@ -140,7 +143,10 @@ export const checkCodexPreflight = (): { harness_version: string } => {
   }
 
   const helpText = `${helpResult.stdout}\n${helpResult.stderr}`;
-  for (const flag of ["--ignore-user-config", "--ignore-rules"]) {
+  const requiredFlags = opts?.structured
+    ? ["--ignore-user-config", "--ignore-rules", "--output-schema", "-o"]
+    : ["--ignore-user-config", "--ignore-rules"];
+  for (const flag of requiredFlags) {
     if (!helpText.includes(flag)) {
       throw new ConfigError(
         `codex exec --help does not advertise required flag ${flag}.`,
@@ -155,7 +161,9 @@ export const checkCodexPreflight = (): { harness_version: string } => {
 /**
  * Verifies that the `agy` CLI is installed and supports print-mode stream-json output.
  */
-export const checkAgyPreflight = (): { harness_version: string } => {
+export const checkAgyPreflight = (opts?: {
+  structured?: boolean;
+}): { harness_version: string } => {
   const versionResult = runSyncCommand(["agy", "--version"]);
   if (versionResult.exitCode !== 0) {
     throw new ConfigError(
@@ -171,7 +179,16 @@ export const checkAgyPreflight = (): { harness_version: string } => {
   }
 
   const helpText = `${helpResult.stdout}\n${helpResult.stderr}`;
-  for (const flag of ["--print", "--output-format"]) {
+  const requiredFlags = opts?.structured
+    ? [
+        "--print",
+        "--output-format",
+        "--json-schema",
+        "--disable-slash-commands",
+        "--sandbox",
+      ]
+    : ["--print", "--output-format"];
+  for (const flag of requiredFlags) {
     if (!helpText.includes(flag)) {
       throw new ConfigError(
         `agy --help does not advertise required flag ${flag}.`,
@@ -182,6 +199,15 @@ export const checkAgyPreflight = (): { harness_version: string } => {
   const harnessVersion = versionResult.stdout.trim() || "unknown";
   return { harness_version: harnessVersion };
 };
+
+/**
+ * Runs harness CLI preflight checks for the specified harness.
+ */
+export const checkHarnessPreflight = (
+  harness: HarnessName,
+  opts?: { structured?: boolean },
+): { harness_version: string } =>
+  harness === "codex" ? checkCodexPreflight(opts) : checkAgyPreflight(opts);
 
 /**
  * Resolves and verifies the existence of the Codex `auth.json` credential file.
@@ -215,6 +241,37 @@ export const resolveAgyAuthTokenPath = (): string => {
     throw new ConfigError(`Antigravity OAuth token not found at ${tokenPath}.`);
   }
   return tokenPath;
+};
+
+/**
+ * Creates a `0700` directory copying only the isolated OAuth credential for `codex` or `agy`.
+ */
+export const prepareIsolatedHarnessAuth = (
+  baseDir: string,
+  harness: HarnessName,
+): string => {
+  if (harness === "codex") {
+    const authPath = resolveAuthJsonPath();
+    const codexHomeDir = join(baseDir, "codex_home");
+    mkdirSync(codexHomeDir, { recursive: true, mode: 0o700 });
+    chmodSync(codexHomeDir, 0o700);
+
+    const targetAuthPath = join(codexHomeDir, "auth.json");
+    cpSync(authPath, targetAuthPath);
+    chmodSync(targetAuthPath, 0o600);
+    return codexHomeDir;
+  }
+
+  const tokenPath = resolveAgyAuthTokenPath();
+  const agyHomeDir = join(baseDir, "agy_home");
+  const agyCliDir = join(agyHomeDir, ".gemini", "antigravity-cli");
+  mkdirSync(agyCliDir, { recursive: true, mode: 0o700 });
+  chmodSync(agyHomeDir, 0o700);
+
+  const targetTokenPath = join(agyCliDir, "antigravity-oauth-token");
+  cpSync(tokenPath, targetTokenPath);
+  chmodSync(targetTokenPath, 0o600);
+  return agyHomeDir;
 };
 
 /**
@@ -810,6 +867,7 @@ const spawnWithTimeout = async (
   cwd: string,
   env: Record<string, string | undefined>,
   timeoutMs: number,
+  stdinText?: string,
 ): Promise<CaseExecResult> => {
   const startedAt = Date.now();
   const proc = Bun.spawn(cmd, {
@@ -817,6 +875,9 @@ const spawnWithTimeout = async (
     stdout: "pipe",
     stderr: "pipe",
     env,
+    ...(stdinText !== undefined
+      ? { stdin: new TextEncoder().encode(stdinText) }
+      : {}),
   });
 
   let timedOut = false;
@@ -885,6 +946,200 @@ const runAgyCase = (
     buildIsolatedCaseEnv(workspace, { HOME: agyHomeDir }),
     timeoutMs,
   );
+
+/**
+ * Strips optional Markdown code fences around a JSON payload.
+ */
+export const stripMarkdownCodeFence = (raw: string): string => {
+  const trimmed = raw.trim();
+  const match = /^```(?:json)?\s*\r?\n([\s\S]*?)\r?\n```\s*$/i.exec(trimmed);
+  return match ? (match[1] ?? "").trim() : trimmed;
+};
+
+export interface InvokeStructuredHarnessParams<T extends z.ZodType> {
+  harness: HarnessName;
+  prompt: string;
+  schema: T;
+  authHomeDir: string;
+  workDir: string;
+  timeoutMs: number;
+  model?: string;
+}
+
+export interface InvokeStructuredHarnessResult<T> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  authOrRateLimitError: string | null;
+  modelId: string | null;
+  usage?: Record<string, unknown>;
+  durationMs: number;
+  rawOutput: string;
+  stderr: string;
+}
+
+/**
+ * Executes `codex` or `agy` in an empty read-only directory with a JSON schema and validates output via Zod.
+ */
+export const invokeStructuredHarness = async <T extends z.ZodType>(
+  params: InvokeStructuredHarnessParams<T>,
+): Promise<InvokeStructuredHarnessResult<z.infer<T>>> => {
+  mkdirSync(params.workDir, { recursive: true, mode: 0o700 });
+  chmodSync(params.workDir, 0o700);
+
+  const metaDir = join(params.workDir, ".structured_meta");
+  mkdirSync(metaDir, { recursive: true, mode: 0o700 });
+  const schemaPath = join(metaDir, "schema.json");
+  const outputPath = join(metaDir, "output.json");
+
+  const jsonSchema = z.toJSONSchema(params.schema, { unrepresentable: "any" });
+  writeFileSync(schemaPath, JSON.stringify(jsonSchema, null, 2), "utf-8");
+
+  const env: Record<string, string | undefined> = {
+    ...process.env,
+    HOME: params.harness === "agy" ? params.authHomeDir : params.workDir,
+    XDG_CONFIG_HOME: join(metaDir, "xdg_config"),
+    XDG_DATA_HOME: join(metaDir, "xdg_data"),
+    ...(params.harness === "codex" ? { CODEX_HOME: params.authHomeDir } : {}),
+  };
+
+  const cmd =
+    params.harness === "codex"
+      ? [
+          "codex",
+          "exec",
+          "--json",
+          "-C",
+          params.workDir,
+          "-s",
+          "read-only",
+          "--ephemeral",
+          "--ignore-user-config",
+          "--ignore-rules",
+          "--skip-git-repo-check",
+          "--output-schema",
+          schemaPath,
+          "-o",
+          outputPath,
+          ...(params.model ? ["-m", params.model] : []),
+          "-",
+        ]
+      : [
+          "agy",
+          "--output-format",
+          "stream-json",
+          "--sandbox",
+          "--disable-slash-commands",
+          "--json-schema",
+          schemaPath,
+          ...(params.model ? ["--model", params.model] : []),
+          `--print=${params.prompt}`,
+        ];
+
+  const execResult = await spawnWithTimeout(
+    cmd,
+    params.workDir,
+    env,
+    params.timeoutMs,
+    params.harness === "codex" ? params.prompt : undefined,
+  );
+
+  const parsedTrace =
+    params.harness === "codex"
+      ? parseCodexTrace(execResult.rawJsonl, "", {
+          metaDir,
+          repoEvalsDir: metaDir,
+          durationMs: execResult.durationMs,
+        })
+      : parseAgyTrace(execResult.rawJsonl, "", {
+          metaDir,
+          repoEvalsDir: metaDir,
+          durationMs: execResult.durationMs,
+        });
+
+  const stderrAuthError = AUTH_OR_RATE_LIMIT_RE.test(execResult.stderr)
+    ? execResult.stderr.trim()
+    : null;
+  const authOrRateLimitError =
+    parsedTrace.authOrRateLimitError ?? stderrAuthError;
+
+  const fileOutput =
+    params.harness === "codex" && existsSync(outputPath)
+      ? readFileSync(outputPath, "utf-8").trim()
+      : "";
+  const rawOutput = fileOutput || parsedTrace.trace.final_response;
+
+  if (execResult.timedOut) {
+    return {
+      ok: false,
+      error: `Timed out after ${params.timeoutMs}ms`,
+      authOrRateLimitError,
+      modelId: parsedTrace.modelId ?? params.model ?? null,
+      ...(parsedTrace.usage ? { usage: parsedTrace.usage } : {}),
+      durationMs: execResult.durationMs,
+      rawOutput,
+      stderr: execResult.stderr,
+    };
+  }
+
+  if (execResult.exitCode !== 0 && !rawOutput) {
+    return {
+      ok: false,
+      error: `${params.harness} exited with code ${execResult.exitCode}${execResult.stderr.trim() ? `: ${execResult.stderr.trim()}` : ""}`,
+      authOrRateLimitError,
+      modelId: parsedTrace.modelId ?? params.model ?? null,
+      ...(parsedTrace.usage ? { usage: parsedTrace.usage } : {}),
+      durationMs: execResult.durationMs,
+      rawOutput,
+      stderr: execResult.stderr,
+    };
+  }
+
+  const stripped = stripMarkdownCodeFence(rawOutput);
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(stripped);
+  } catch (error) {
+    return {
+      ok: false,
+      error: `Failed to parse structured JSON output: ${error instanceof Error ? error.message : String(error)}`,
+      authOrRateLimitError,
+      modelId: parsedTrace.modelId ?? params.model ?? null,
+      ...(parsedTrace.usage ? { usage: parsedTrace.usage } : {}),
+      durationMs: execResult.durationMs,
+      rawOutput,
+      stderr: execResult.stderr,
+    };
+  }
+
+  const validation = params.schema.safeParse(parsedJson);
+  if (!validation.success) {
+    const issues = validation.error.issues
+      .map((issue) => `${issue.path.join(".") || "<root>"}: ${issue.message}`)
+      .join("; ");
+    return {
+      ok: false,
+      error: `Structured output failed schema validation: ${issues}`,
+      authOrRateLimitError,
+      modelId: parsedTrace.modelId ?? params.model ?? null,
+      ...(parsedTrace.usage ? { usage: parsedTrace.usage } : {}),
+      durationMs: execResult.durationMs,
+      rawOutput,
+      stderr: execResult.stderr,
+    };
+  }
+
+  return {
+    ok: true,
+    data: validation.data,
+    authOrRateLimitError,
+    modelId: parsedTrace.modelId ?? params.model ?? null,
+    ...(parsedTrace.usage ? { usage: parsedTrace.usage } : {}),
+    durationMs: execResult.durationMs,
+    rawOutput,
+    stderr: execResult.stderr,
+  };
+};
 
 /**
  * Builds the `RunSummary` object from completed case results and repository metadata.
@@ -1051,25 +1306,11 @@ export const runEvalSuite = async (
 
   let codexHomeDir = "";
   let agyHomeDir = "";
+  const authHomeDir = prepareIsolatedHarnessAuth(runRoot, options.harness);
   if (options.harness === "codex") {
-    const authPath = resolveAuthJsonPath();
-    codexHomeDir = join(runRoot, "codex_home");
-    mkdirSync(codexHomeDir, { recursive: true, mode: 0o700 });
-    chmodSync(codexHomeDir, 0o700);
-
-    const targetAuthPath = join(codexHomeDir, "auth.json");
-    cpSync(authPath, targetAuthPath);
-    chmodSync(targetAuthPath, 0o600);
+    codexHomeDir = authHomeDir;
   } else {
-    const tokenPath = resolveAgyAuthTokenPath();
-    agyHomeDir = join(runRoot, "agy_home");
-    const agyCliDir = join(agyHomeDir, ".gemini", "antigravity-cli");
-    mkdirSync(agyCliDir, { recursive: true, mode: 0o700 });
-    chmodSync(agyHomeDir, 0o700);
-
-    const targetTokenPath = join(agyCliDir, "antigravity-oauth-token");
-    cpSync(tokenPath, targetTokenPath);
-    chmodSync(targetTokenPath, 0o600);
+    agyHomeDir = authHomeDir;
   }
 
   const cleanup = (): void => {
