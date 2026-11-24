@@ -106,9 +106,13 @@ const runSyncCommand = (
   cmd: string[],
 ): { exitCode: number; stdout: string; stderr: string } => {
   try {
-    const proc = Bun.spawnSync(cmd, {
+    const binary = cmd[0] ?? "";
+    const executable =
+      (binary ? Bun.which(binary, { PATH: process.env.PATH }) : null) ?? binary;
+    const proc = Bun.spawnSync([executable, ...cmd.slice(1)], {
       stdout: "pipe",
       stderr: "pipe",
+      env: process.env,
     });
     return {
       exitCode: proc.exitCode,
@@ -280,7 +284,9 @@ export const prepareIsolatedHarnessAuth = (
 export const generateChezmoiShimScript = (): string => `#!/usr/bin/env bun
 import { appendFileSync, readFileSync } from "fs";
 
-const CALL_CAP = 25;
+const rawCap = process.env.CHEZMOI_SHIM_CALL_CAP;
+const parsedCap = rawCap ? Number.parseInt(rawCap, 10) : 25;
+const CALL_CAP = Number.isSafeInteger(parsedCap) && parsedCap > 0 ? parsedCap : 25;
 const rulesPath = process.env.CHEZMOI_SHIM_RULES;
 const logPath = process.env.CHEZMOI_SHIM_LOG;
 
@@ -308,7 +314,7 @@ const existingLines = readFileSync(logPath, "utf-8")
 
 if (existingLines.length >= CALL_CAP) {
   appendLog("cap_exceeded", 1);
-  process.stderr.write("chezmoi shim: call cap (25) exceeded\\n");
+  process.stderr.write(\`chezmoi shim: call cap (\${CALL_CAP}) exceeded\\n\`);
   process.exit(1);
 }
 
@@ -480,11 +486,12 @@ const recordSkillAndReferenceMatches = (
   }
 };
 
-const parseShimLog = (
+export const parseShimLog = (
   shimLogJsonl: string,
   commandsInvoked: string[],
   traceViolations: string[],
   mockCalls: MockCallRecord[],
+  shimCallCap = 25,
 ): void => {
   for (const line of shimLogJsonl.split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -518,7 +525,10 @@ const parseShimLog = (
     addUnique(commandsInvoked, invoked);
 
     if (outcome === "cap_exceeded") {
-      addUnique(traceViolations, "chezmoi shim call cap (25) exceeded");
+      addUnique(
+        traceViolations,
+        `chezmoi shim call cap (${shimCallCap}) exceeded`,
+      );
     }
   }
 };
@@ -838,7 +848,7 @@ export const getGitMetadata = (): { commitSha: string; gitDirty: boolean } => {
   }
 };
 
-interface CaseExecResult {
+export interface CaseExecResult {
   rawJsonl: string;
   stderr: string;
   exitCode: number;
@@ -846,7 +856,7 @@ interface CaseExecResult {
   durationMs: number;
 }
 
-const buildIsolatedCaseEnv = (
+export const buildIsolatedCaseEnv = (
   workspace: CaseWorkspace,
   extraEnv: Record<string, string> = {},
 ): Record<string, string | undefined> => ({
@@ -862,7 +872,7 @@ const buildIsolatedCaseEnv = (
   ...extraEnv,
 });
 
-const spawnWithTimeout = async (
+export const spawnWithTimeout = async (
   cmd: string[],
   cwd: string,
   env: Record<string, string | undefined>,
