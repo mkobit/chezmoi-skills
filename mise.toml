@@ -35,6 +35,10 @@ depends = ["validate:contracts"]
 description = "Run live model-calling evals via codex or agy"
 run = "bun run scripts/evals/cli.ts run"
 
+[tasks."eval:live:judge"]
+description = "Run post-hoc LLM-as-a-judge rubric grading"
+run = "bun run scripts/evals/cli.ts judge"
+
 [tasks."lint:md"]
 description = "Lint markdown files"
 run = "bun run markdownlint-cli2"

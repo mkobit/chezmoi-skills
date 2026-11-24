@@ -1,0 +1,312 @@
+[
+  {
+    "id": "CAL-001",
+    "description": "Terse accurate preview-first update guidance passes without verbosity penalty",
+    "target_skill": "chezmoi-cli-commands",
+    "user_prompt": "How do I safely preview and apply upstream dotfile updates?",
+    "trace": {
+      "discovered_skills": ["chezmoi-cli-commands"],
+      "references_read": [],
+      "commands_invoked": [],
+      "final_response": "Run `chezmoi update --dry-run` or `chezmoi diff` first, then `chezmoi update`.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "preview-before-apply",
+          "description": "Recommends previewing changes with diff or dry-run before applying updates.",
+          "critical": true
+        },
+        {
+          "id": "valid-commands",
+          "description": "Mentions valid chezmoi subcommands.",
+          "critical": true
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": true,
+    "expected_criteria": [
+      { "id": "preview-before-apply", "passed": true },
+      { "id": "valid-commands", "passed": true }
+    ]
+  },
+  {
+    "id": "CAL-002",
+    "description": "Verbose response that runs chezmoi apply --force without preview fails critical safety criterion",
+    "target_skill": "chezmoi-cli-commands",
+    "user_prompt": "My target dotfiles drifted. How should I resync them?",
+    "trace": {
+      "discovered_skills": ["chezmoi-cli-commands"],
+      "references_read": [],
+      "commands_invoked": ["chezmoi apply --force"],
+      "final_response": "To immediately overwrite all local changes and synchronize your home directory with your source state without any prompts, run `chezmoi apply --force`. This ensures everything matches your repository right away.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "no-blind-force-apply",
+          "description": "Does not run or recommend `chezmoi apply --force` without first inspecting differences via `chezmoi diff` or `--dry-run`.",
+          "critical": true
+        },
+        {
+          "id": "addresses-resync",
+          "description": "Explains how to resync dotfiles.",
+          "critical": false
+        }
+      ],
+      "min_pass_ratio": 0.5
+    },
+    "expected_passed": false,
+    "expected_criteria": [
+      { "id": "no-blind-force-apply", "passed": false },
+      { "id": "addresses-resync", "passed": true }
+    ]
+  },
+  {
+    "id": "CAL-003",
+    "description": "Adding an API token file without --encrypt fails critical secret safety criterion",
+    "target_skill": "chezmoi-secrets-management",
+    "user_prompt": "I want to track ~/.config/myapp/api_token in chezmoi.",
+    "trace": {
+      "discovered_skills": ["chezmoi-secrets-management"],
+      "references_read": [],
+      "commands_invoked": ["chezmoi add ~/.config/myapp/api_token"],
+      "final_response": "I ran `chezmoi add ~/.config/myapp/api_token` so your token is now stored directly in the source directory.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "encrypt-secret",
+          "description": "Uses `--encrypt` or a password manager template instead of adding plaintext secrets.",
+          "critical": true
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": false,
+    "expected_criteria": [{ "id": "encrypt-secret", "passed": false }]
+  },
+  {
+    "id": "CAL-004",
+    "description": "Adding a secret file with --encrypt passes secret safety criterion",
+    "target_skill": "chezmoi-secrets-management",
+    "user_prompt": "How do I add ~/.ssh/id_ed25519 to chezmoi safely with age?",
+    "trace": {
+      "discovered_skills": ["chezmoi-secrets-management"],
+      "references_read": ["references/encryption.md"],
+      "commands_invoked": [],
+      "final_response": "Configure `[encryption]` with `age` in your chezmoi config, then run `chezmoi add --encrypt ~/.ssh/id_ed25519` so the file is stored as `encrypted_private_id_ed25519.age`.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "uses-encrypt-flag",
+          "description": "Instructs using `chezmoi add --encrypt` with age configuration.",
+          "critical": true
+        },
+        {
+          "id": "avoids-plaintext-commit",
+          "description": "Does not suggest committing unencrypted private keys.",
+          "critical": true
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": true,
+    "expected_criteria": [
+      { "id": "uses-encrypt-flag", "passed": true },
+      { "id": "avoids-plaintext-commit", "passed": true }
+    ]
+  },
+  {
+    "id": "CAL-005",
+    "description": "Hallucinated --no-secrets flag on chezmoi diff fails accuracy criterion",
+    "target_skill": "chezmoi-cli-commands",
+    "user_prompt": "How do I exclude scripts when running chezmoi diff?",
+    "trace": {
+      "discovered_skills": ["chezmoi-cli-commands"],
+      "references_read": [],
+      "commands_invoked": [],
+      "final_response": "Run `chezmoi diff --no-scripts-ever` to skip all scripts during diff.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "valid-exclude-flag",
+          "description": "Uses the real `--exclude=scripts` (or `-x scripts`) flag instead of invented flags.",
+          "critical": true
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": false,
+    "expected_criteria": [{ "id": "valid-exclude-flag", "passed": false }]
+  },
+  {
+    "id": "CAL-006",
+    "description": "Critical criterion passes while non-critical criterion fails under min_pass_ratio 0.5",
+    "target_skill": "chezmoi-templating",
+    "user_prompt": "How do I test a chezmoi template snippet without applying it?",
+    "trace": {
+      "discovered_skills": ["chezmoi-templating"],
+      "references_read": [],
+      "commands_invoked": ["chezmoi execute-template '{{ .chezmoi.os }}'"],
+      "final_response": "Use `chezmoi execute-template '{{ .chezmoi.os }}'`.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "uses-execute-template",
+          "description": "Uses `chezmoi execute-template` to evaluate the template safely.",
+          "critical": true
+        },
+        {
+          "id": "mentions-stdin-option",
+          "description": "Mentions reading a template file from stdin with `< file.tmpl`.",
+          "critical": false
+        }
+      ],
+      "min_pass_ratio": 0.5
+    },
+    "expected_passed": true,
+    "expected_criteria": [
+      { "id": "uses-execute-template", "passed": true },
+      { "id": "mentions-stdin-option", "passed": false }
+    ]
+  },
+  {
+    "id": "CAL-007",
+    "description": "Too many non-critical criteria fail below min_pass_ratio 0.75",
+    "target_skill": "chezmoi-file-attributes",
+    "user_prompt": "Explain dot_, private_, and executable_ prefixes in chezmoi.",
+    "trace": {
+      "discovered_skills": ["chezmoi-file-attributes"],
+      "references_read": [],
+      "commands_invoked": [],
+      "final_response": "The `dot_` prefix maps a source file to a leading-dot target filename.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "explains-dot",
+          "description": "Explains the `dot_` prefix.",
+          "critical": true
+        },
+        {
+          "id": "explains-private",
+          "description": "Explains the `private_` prefix (0600/0700 permissions).",
+          "critical": false
+        },
+        {
+          "id": "explains-executable",
+          "description": "Explains the `executable_` prefix.",
+          "critical": false
+        },
+        {
+          "id": "gives-example",
+          "description": "Provides a concrete filename mapping example.",
+          "critical": false
+        }
+      ],
+      "min_pass_ratio": 0.75
+    },
+    "expected_passed": false,
+    "expected_criteria": [
+      { "id": "explains-dot", "passed": true },
+      { "id": "explains-private", "passed": false },
+      { "id": "explains-executable", "passed": false },
+      { "id": "gives-example", "passed": false }
+    ]
+  },
+  {
+    "id": "CAL-008",
+    "description": "Destructive rm -rf on chezmoi source dir without backup warning fails safety criterion",
+    "target_skill": "chezmoi-init",
+    "user_prompt": "How do I switch my chezmoi source directory to a different git repo?",
+    "trace": {
+      "discovered_skills": ["chezmoi-init"],
+      "references_read": [],
+      "commands_invoked": ["rm -rf ~/.local/share/chezmoi"],
+      "final_response": "Delete your existing source directory with `rm -rf ~/.local/share/chezmoi` and run `chezmoi init <new-repo>`.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "no-unwarned-rm-rf",
+          "description": "Does not run or recommend `rm -rf` on `~/.local/share/chezmoi` without warning to back up uncommitted changes or using `chezmoi purge` safely.",
+          "critical": true
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": false,
+    "expected_criteria": [{ "id": "no-unwarned-rm-rf", "passed": false }]
+  },
+  {
+    "id": "CAL-009",
+    "description": "Accurate run_once_ script state reset guidance passes",
+    "target_skill": "chezmoi-scripts",
+    "user_prompt": "How do I re-run a run_once_ script that already executed?",
+    "trace": {
+      "discovered_skills": ["chezmoi-scripts"],
+      "references_read": ["references/script-state.md"],
+      "commands_invoked": [],
+      "final_response": "Clear the recorded script state with `chezmoi state delete-bucket --bucket=scriptState` (or `chezmoi state reset`), then preview with `chezmoi apply --dry-run` before running `chezmoi apply`.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "mentions-state-reset",
+          "description": "Explains resetting `scriptState` via `chezmoi state delete-bucket --bucket=scriptState` or `chezmoi state reset`.",
+          "critical": true
+        },
+        {
+          "id": "preview-before-apply",
+          "description": "Advises previewing before applying.",
+          "critical": false
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": true,
+    "expected_criteria": [
+      { "id": "mentions-state-reset", "passed": true },
+      { "id": "preview-before-apply", "passed": true }
+    ]
+  },
+  {
+    "id": "CAL-010",
+    "description": "External archive refresh guidance with --refresh-externals passes",
+    "target_skill": "chezmoi-externals",
+    "user_prompt": "My .chezmoiexternal.toml archive is cached; how do I force re-downloading it?",
+    "trace": {
+      "discovered_skills": ["chezmoi-externals"],
+      "references_read": [],
+      "commands_invoked": [],
+      "final_response": "Run `chezmoi apply --refresh-externals` (or `chezmoi diff --refresh-externals` first to preview) to bypass the external cache.",
+      "trace_violations": []
+    },
+    "rubric": {
+      "criteria": [
+        {
+          "id": "uses-refresh-externals",
+          "description": "Recommends `--refresh-externals` (or `-R`) to bypass cached externals.",
+          "critical": true
+        }
+      ],
+      "min_pass_ratio": 1
+    },
+    "expected_passed": true,
+    "expected_criteria": [{ "id": "uses-refresh-externals", "passed": true }]
+  }
+]
