@@ -20,5 +20,19 @@ jobs:
     steps:
       - name: Validate PR title
         uses: amannn/action-semantic-pull-request@v6.1.2
+        with:
+          validateSingleCommit: true
+          types: |
+            feat
+            fix
+            docs
+            deps
+            perf
+            chore
+            ci
+            build
+            test
+            refactor
+            revert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
