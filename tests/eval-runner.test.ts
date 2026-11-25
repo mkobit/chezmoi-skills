@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, spyOn } from "bun:test";
 import {
   chmodSync,
   existsSync,
@@ -507,6 +507,10 @@ describe("prepareCaseWorkspace and buildRunSummary", () => {
     expect(summary.unmocked_fallback_count).toBe(1);
     expect(summary.skill_source_sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(summary.corpus_sha256).toMatch(/^[0-9a-f]{64}$/);
+
+    const baselinePath = join(root, "summary.json");
+    writeFileSync(baselinePath, JSON.stringify(summary));
+    expect(loadBaselineSummary(baselinePath)).toEqual(summary);
   });
 });
 
@@ -601,85 +605,157 @@ describe("eval CLI", () => {
 });
 
 describe("baseline comparison", () => {
+  const makeSummary = (
+    overrides: Partial<ReturnType<typeof buildRunSummary>>,
+  ) => ({
+    schema_version: "1" as const,
+    timestamp: "2026-11-22T00:00:00.000Z",
+    commit_sha: "abc123",
+    git_dirty: false,
+    harness_name: "codex" as const,
+    harness_version: "codex-cli 0.169.0",
+    model_id: null,
+    skill_source_sha256: "a".repeat(64),
+    corpus_sha256: "b".repeat(64),
+    aborted_early: false,
+    abort_reason: null,
+    total_cases: 3,
+    passed_cases: 2,
+    failed_cases: 1,
+    failed_case_ids: ["TC-2"],
+    unmocked_fallback_count: 0,
+    cases: [
+      {
+        id: "TC-1",
+        name: "Pass -> Fail",
+        eval_type: "trigger_matching" as const,
+        target_skill: "chezmoi-cli-commands",
+        passed: true,
+        duration_ms: 10,
+        assertions: [],
+        trace: {
+          discovered_skills: [],
+          references_read: [],
+          commands_invoked: [],
+          final_response: "",
+          trace_violations: [],
+        },
+      },
+      {
+        id: "TC-2",
+        name: "Fail -> Pass",
+        eval_type: "trigger_matching" as const,
+        target_skill: "chezmoi-cli-commands",
+        passed: false,
+        duration_ms: 10,
+        assertions: [],
+        trace: {
+          discovered_skills: [],
+          references_read: [],
+          commands_invoked: [],
+          final_response: "",
+          trace_violations: [],
+        },
+      },
+      {
+        id: "TC-3",
+        name: "Fail -> Fail",
+        eval_type: "trigger_matching" as const,
+        target_skill: "chezmoi-cli-commands",
+        passed: false,
+        duration_ms: 10,
+        assertions: [],
+        trace: {
+          discovered_skills: [],
+          references_read: [],
+          commands_invoked: [],
+          final_response: "",
+          trace_violations: [],
+        },
+      },
+    ],
+    ...overrides,
+  });
+
+  it.each([
+    ["null case", [null], "$.cases[0]"],
+    [
+      "missing ID",
+      [{ ...makeSummary({}).cases[0], id: undefined }],
+      "$.cases[0].id",
+    ],
+    [
+      "non-boolean passed",
+      [{ ...makeSummary({}).cases[0], passed: "false" }],
+      "$.cases[0].passed",
+    ],
+    [
+      "invalid assertion",
+      [{ ...makeSummary({}).cases[0], assertions: [null] }],
+      "$.cases[0].assertions[0]",
+    ],
+    [
+      "duplicate ID",
+      [makeSummary({}).cases[0], makeSummary({}).cases[0]],
+      "$.cases[1].id: duplicate case ID",
+    ],
+  ] as const)(
+    "rejects %s before starting the harness",
+    async (_label, cases, field) => {
+      const dir = makeTempDir("chezmoi-invalid-baseline-");
+      const baselinePath = join(dir, "baseline.json");
+      writeFileSync(
+        baselinePath,
+        JSON.stringify({ ...makeSummary({}), cases }),
+      );
+
+      const stderr = spyOn(console, "error").mockImplementation(() => {});
+      const which = spyOn(Bun, "which");
+      try {
+        expect(
+          await runCli([
+            "bun",
+            "cli.ts",
+            "run",
+            "--harness",
+            "codex",
+            "--baseline",
+            baselinePath,
+          ]),
+        ).toBe(2);
+        expect(stderr).toHaveBeenCalledWith(
+          expect.stringContaining(`${baselinePath} at ${field}`),
+        );
+        expect(which.mock.calls.some(([binary]) => binary === "codex")).toBe(
+          false,
+        );
+      } finally {
+        which.mockRestore();
+        stderr.mockRestore();
+      }
+    },
+  );
+
+  it("reports the field when a summary field has the wrong type", () => {
+    const dir = makeTempDir("chezmoi-invalid-summary-");
+    const baselinePath = join(dir, "baseline.json");
+    writeFileSync(
+      baselinePath,
+      JSON.stringify({ ...makeSummary({}), harness_version: false }),
+    );
+    expect(() => loadBaselineSummary(baselinePath)).toThrow(
+      `${baselinePath} at $.harness_version`,
+    );
+  });
+
   it("reports new_failures, new_passes, unchanged_failures, and drift warnings", () => {
     const dir = makeTempDir("chezmoi-baseline-");
     const baselinePath = join(dir, "baseline.json");
 
-    const makeSummary = (
-      overrides: Partial<ReturnType<typeof buildRunSummary>>,
-    ) => ({
-      schema_version: "1" as const,
-      timestamp: "2026-11-22T00:00:00.000Z",
-      commit_sha: "abc123",
-      git_dirty: false,
-      harness_name: "codex" as const,
-      harness_version: "codex-cli 0.169.0",
-      model_id: null,
-      skill_source_sha256: "a".repeat(64),
-      corpus_sha256: "b".repeat(64),
-      aborted_early: false,
-      abort_reason: null,
-      total_cases: 3,
-      passed_cases: 2,
-      failed_cases: 1,
-      failed_case_ids: ["TC-2"],
-      unmocked_fallback_count: 0,
-      cases: [
-        {
-          id: "TC-1",
-          name: "Pass -> Fail",
-          eval_type: "trigger_matching" as const,
-          target_skill: "chezmoi-cli-commands",
-          passed: true,
-          duration_ms: 10,
-          assertions: [],
-          trace: {
-            discovered_skills: [],
-            references_read: [],
-            commands_invoked: [],
-            final_response: "",
-            trace_violations: [],
-          },
-        },
-        {
-          id: "TC-2",
-          name: "Fail -> Pass",
-          eval_type: "trigger_matching" as const,
-          target_skill: "chezmoi-cli-commands",
-          passed: false,
-          duration_ms: 10,
-          assertions: [],
-          trace: {
-            discovered_skills: [],
-            references_read: [],
-            commands_invoked: [],
-            final_response: "",
-            trace_violations: [],
-          },
-        },
-        {
-          id: "TC-3",
-          name: "Fail -> Fail",
-          eval_type: "trigger_matching" as const,
-          target_skill: "chezmoi-cli-commands",
-          passed: false,
-          duration_ms: 10,
-          assertions: [],
-          trace: {
-            discovered_skills: [],
-            references_read: [],
-            commands_invoked: [],
-            final_response: "",
-            trace_violations: [],
-          },
-        },
-      ],
-      ...overrides,
-    });
-
     const baseline = makeSummary({});
     writeFileSync(baselinePath, JSON.stringify(baseline), "utf-8");
     const loaded = loadBaselineSummary(baselinePath);
+    expect(loaded).toEqual(baseline);
 
     const current = makeSummary({
       corpus_sha256: "c".repeat(64),

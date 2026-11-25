@@ -15,6 +15,7 @@ import {
   corpusHash,
   evaluateTrace,
   listedFilesRecursive,
+  TestCaseSchema,
   type MockCallOutcome,
   type MockCallRecord,
   type NormalizedTrace,
@@ -1207,6 +1208,68 @@ export const buildRunSummary = (params: {
   };
 };
 
+const baselineCaseSchema = z.looseObject({
+  id: z.string(),
+  name: z.string(),
+  eval_type: TestCaseSchema.shape.eval_type,
+  target_skill: z.string(),
+  passed: z.boolean(),
+  reason: z.string().optional(),
+  duration_ms: z.number(),
+  assertions: z.array(
+    z.looseObject({
+      name: z.string(),
+      passed: z.boolean(),
+      reason: z.string().optional(),
+    }),
+  ),
+  trace: z.looseObject({
+    discovered_skills: z.array(z.string()),
+    references_read: z.array(z.string()),
+    commands_invoked: z.array(z.string()),
+    final_response: z.string(),
+    trace_violations: z.array(z.string()),
+    mock_calls: z
+      .array(
+        z.looseObject({
+          command: z.string(),
+          args: z.array(z.string()),
+          outcome: z.enum([
+            "matched_case",
+            "matched_default",
+            "unmocked_fallback",
+            "cap_exceeded",
+          ]),
+          exit_code: z.number(),
+        }),
+      )
+      .optional(),
+  }),
+  usage: z.record(z.string(), z.unknown()).optional(),
+});
+
+const baselineSummarySchema = z.looseObject({
+  schema_version: z.literal("1"),
+  timestamp: z.string(),
+  commit_sha: z.string(),
+  git_dirty: z.boolean(),
+  harness_name: z.enum(["codex", "agy"]),
+  harness_version: z.string(),
+  model_id: z.string().nullable(),
+  skill_source_sha256: z.string(),
+  corpus_sha256: z.string(),
+  aborted_early: z.boolean(),
+  abort_reason: z.string().nullable(),
+  total_cases: z.number(),
+  passed_cases: z.number(),
+  failed_cases: z.number(),
+  skipped_cases: z.number().optional(),
+  run_scope: z.enum(["full", "smoke", "filtered"]).optional(),
+  failed_case_ids: z.array(z.string()),
+  unmocked_fallback_count: z.number(),
+  cases: z.array(baselineCaseSchema),
+});
+
 /**
  * Loads and validates a baseline `summary.json` artifact for run comparison.
  */
@@ -1224,20 +1287,30 @@ export const loadBaselineSummary = (baselinePath: string): RunSummary => {
     );
   }
 
-  if (!parsed || typeof parsed !== "object") {
+  const result = baselineSummarySchema.safeParse(parsed);
+  if (!result.success) {
+    const issue = result.error.issues[0]!;
+    const field = issue.path.reduce<string>(
+      (path, key) =>
+        typeof key === "number" ? `${path}[${key}]` : `${path}.${String(key)}`,
+      "$",
+    );
     throw new ConfigError(
-      `Invalid baseline summary ${baselinePath}: expected JSON object.`,
+      `Invalid baseline summary ${baselinePath} at ${field}: ${issue.message}.`,
     );
   }
 
-  const record = parsed as Record<string, unknown>;
-  if (record.schema_version !== "1" || !Array.isArray(record.cases)) {
-    throw new ConfigError(
-      `Invalid baseline summary ${baselinePath}: expected schema_version "1" and cases array.`,
-    );
+  const ids = new Set<string>();
+  for (const [index, { id }] of result.data.cases.entries()) {
+    if (ids.has(id)) {
+      throw new ConfigError(
+        `Invalid baseline summary ${baselinePath} at $.cases[${index}].id: duplicate case ID ${JSON.stringify(id)}.`,
+      );
+    }
+    ids.add(id);
   }
 
-  return parsed as RunSummary;
+  return result.data;
 };
 
 /**
