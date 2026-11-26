@@ -111,6 +111,15 @@ bun run eval:live:generate --skill chezmoi-cli-commands --focus flag_edge_case -
 2. Candidates have already passed the generator's `schema`, `security_lint`, `deduplication`, and `contract` gates and carry `origin: "synthetic"` with `TC-<SKILL_CODE>-SYN-<NNN>` IDs.
 3. Copy approved cases into the target `tests/evals/*_eval.json` array, verify unique IDs and `smoke` tags, and validate.
 
+### Review a sampled Codex session
+
+Run `scripts/review-chezmoi-session.py` from the dotfiles checkout to accept a personal session and open a Codex fork in this repo.
+Set `CHEZMOI_SKILLS_CHECKOUT` to the path of this checkout if it is outside your usual workspace.
+The [session review skill](../.agents/skills/session-eval-review/SKILL.md) stages one redacted candidate under `eval_results/session-review/`.
+Check that the case has an observable expected result and contains only the context needed to reproduce it.
+Promote approved cases to the matching corpus file, then run the validation steps below.
+See the [capture design](designs/session-eval-capture.md) for the opt-in and sampling workflow.
+
 ### Transcript candidates
 
 Extract candidate cases from agent transcript JSONL logs using [extract-transcript-evals.ts](../scripts/evals/extract-transcript-evals.ts):
