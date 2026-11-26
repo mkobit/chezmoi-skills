@@ -31,7 +31,7 @@
           "jsonpath": "$.version"
         }
       ],
-      "bump-minor-pre-major": true,
+      "prerelease": true,
       "include-v-in-tag": false,
       "pull-request-title-pattern": "chore: release ${version}",
       "skip-changelog": true,

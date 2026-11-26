@@ -81,7 +81,13 @@ Use `feat` or `fix` for skill-content changes that should produce a release, and
 
 Open a pull request against `main`, wait for required checks, and merge through the pull-request workflow.
 
-Release Please creates releases from eligible commits on `main` and synchronizes manifest versions.
+Run the **Release Please** workflow to open a release pull request for the UTC date.
+The release version and tag use CalVer in `YYYY.M.D` format, for example `2026.11.5`.
+Use `-rc.N` for a release candidate, for example `2026.11.5-rc.1`.
+The tag has no `v` prefix and the month and day have no leading zeroes.
+
+Release Please updates the manifests and creates a GitHub release when the release pull request merges.
+Use the [GitHub release list](https://github.com/mkobit/chezmoi-skills/releases) to find releases in order.
 
 ## License
 

@@ -5,12 +5,22 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      release-candidate:
+        description: Release candidate number. Leave empty for a stable release.
+        type: string
+        required: false
 
 permissions: {}
 
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
+
 jobs:
   release-please:
-    name: Manage release PR
+    name: Manage release
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -18,7 +28,42 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - id: release
+      - name: Open a CalVer release PR
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          CANDIDATE: ${{ inputs.release-candidate }}
+        run: |
+          set -euo pipefail
+          version=$(date -u +'%Y.%-m.%-d')
+          if [[ -n "$CANDIDATE" ]]; then
+            if [[ ! "$CANDIDATE" =~ ^[1-9][0-9]*$ ]]; then
+              printf 'Use a positive integer for the release candidate number.\n' >&2
+              exit 1
+            fi
+            version+="-rc.$CANDIDATE"
+          fi
+          token_file=$(mktemp)
+          trap 'rm -f "$token_file"' EXIT
+          printf '%s' "$GH_TOKEN" > "$token_file"
+          npx --yes release-please@17.11.2 release-pr --token "$token_file" \
+            --repo-url "$GITHUB_REPOSITORY" --target-branch main --release-as "$version"
+
+      - name: Check the release version on main
+        if: github.event_name == 'push'
+        id: release-version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(gh api "repos/$GITHUB_REPOSITORY/contents/.release-please-manifest.json?ref=$GITHUB_SHA" \
+            --jq .content | base64 -d | jq -er '.["."]')
+          if [[ "$version" =~ ^[1-9][0-9]{3}\.[1-9][0-9]?\.[1-9][0-9]?(-rc\.[1-9][0-9]*)?$ ]]; then
+            printf 'calver=true\n' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish the merged release
+        if: steps.release-version.outputs.calver == 'true'
         uses: googleapis/release-please-action@v5.0.0
         with:
           # PAT so CI and PR-title checks run on the release PR
@@ -26,8 +71,10 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          skip-github-pull-request: true
 
       - id: open-release-pr
+        if: github.event_name == 'workflow_dispatch'
         name: Check for open release PR
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
