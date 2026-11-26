@@ -5,6 +5,7 @@
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-blue)](https://agentskills.io/)
 [![Plugin manifest](https://img.shields.io/badge/plugin%20manifest-Claude-blue)](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview)
 [![chezmoi](https://img.shields.io/badge/chezmoi-tools-blue)](https://github.com/twpayne/chezmoi)
+[![chezmoi docs baseline](https://img.shields.io/badge/chezmoi%20docs%20baseline-unverified-lightgrey)](https://github.com/twpayne/chezmoi/releases)
 
 Agent skills for use with chezmoi.
 
